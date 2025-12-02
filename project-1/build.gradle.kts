@@ -1,12 +1,6 @@
 plugins {
     kotlin("jvm") version "2.2.21"
     application
-    id("org.openjfx.javafxplugin") version "0.1.0"
-}
-
-javafx {
-    setVersion("20")
-    setModules(listOf("javafx.controls"))
 }
 
 group = "com.andmal"
@@ -17,9 +11,6 @@ repositories {
 }
 
 dependencies {
-    runtimeOnly("org.openjfx:javafx-graphics:$javafx.version:win")
-    runtimeOnly("org.openjfx:javafx-graphics:$javafx.version:linux")
-    runtimeOnly("org.openjfx:javafx-graphics:$javafx.version:mac")
     testImplementation(kotlin("test"))
 }
 
@@ -32,12 +23,12 @@ kotlin {
 }
 
 application {
-    mainClass.set("Main")
+    mainClass.set("org.pdi.MainKt")
 }
 
 tasks.jar {
     manifest {
-        attributes(mapOf("Main-Class" to "Main"))
+        attributes(mapOf("Main-Class" to "org.pdi.MainKt"))
     }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(sourceSets.main.get().output)

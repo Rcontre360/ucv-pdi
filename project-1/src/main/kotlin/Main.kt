@@ -1,179 +1,129 @@
-import javafx.application.Application
-import javafx.geometry.Insets
-import javafx.scene.Parent
-import javafx.scene.Scene
-import javafx.scene.control.*
-import javafx.scene.layout.*
-import javafx.scene.paint.Paint
-import javafx.scene.text.Font
-import javafx.scene.text.Text
-import javafx.stage.Stage
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpRequest.BodyPublishers
-import java.net.http.HttpResponse.BodyHandlers
-import java.nio.file.Files
-import java.nio.file.Path
-import java.time.Instant
-import kotlin.io.path.writeBytes
+package org.pdi
 
-class Main : Application() {
-    override fun start(primaryStage: Stage?) {
-        val scene = Scene(createContent(), 1200.0, 900.0)
-        primaryStage?.title = "HTTP Client"
-        primaryStage?.scene = scene
-        primaryStage?.show()
-    }
+import java.awt.BorderLayout
+import java.awt.image.BufferedImage
+import java.io.File
+import javax.imageio.ImageIO
+import javax.swing.*
+import org.pdi.Image
+import org.pdi.ImageType
+import org.pdi.HistogramPanel
+import java.awt.Color
+import java.awt.Point
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 
-    private fun createContent(): Parent {
-        val mainBox = VBox()
-        mainBox.padding = Insets(10.0)
-
-        val requestBox = VBox()
-        requestBox.padding = Insets(10.0)
-        requestBox.border = Border.stroke(Paint.valueOf("orange"))
-        HBox.setMargin(requestBox, Insets(10.0))
-
-        val reqPane = GridPane()
-
-        // request headers
-        val reqHeaderButton = Button("Headers")
-
-        // todo
-        reqHeaderButton.setOnMouseClicked {evt ->
-            val btn = evt.target
-            // todo
-        }
-
-        // req body
-        val reqBody = TextArea()
-        reqBody.minWidth = 500.0
-        reqBody.minHeight = 200.0
-
-        val methodType: ChoiceBox<Pair<String, String>> = ChoiceBox()
-        methodType.items.addAll(
-            Pair("GET", "GET"),
-            Pair("POST", "POST"),
-            Pair("PUT", "PUT"),
-            Pair("DELETE", "DELETE"),
-        )
-        methodType.maxWidth = 100.0
-        methodType.value = Pair("GET", "GET")
-
-        methodType.setOnAction {
-            when (methodType.value.first) {
-                "GET" -> reqPane.children.remove(reqBody)
-                "POST" ->  reqPane.add(reqBody, 1, 3)
-                "PUT" ->  reqPane.add(reqBody, 1, 3)
-            }
-        }
-
-        // response
-        val responseBox = VBox()
-        responseBox.padding = Insets(10.0)
-        responseBox.border = Border.stroke(Paint.valueOf("green"))
-        HBox.setMargin(responseBox, Insets(10.0))
-
-        val responsePane = GridPane()
-        responsePane.padding = Insets(10.0)
-
-        val urlLabel = Label("URL")
-        val urlField = TextField()
-        urlField.padding = Insets(7.0)
-        urlField.minWidth = 700.0
-
-        val infoHeader = Label("")
-        val responseSection = TextArea()
-        responseSection.minWidth = 700.0
-//        responseSection.style = "width: 700px"
-
-        val reqButton = Button("Send")
-//        reqButton.background = Background.fill(Paint.valueOf("orange"))
-        reqButton.setOnMouseClicked { event ->
-            if (urlField.length == 0) {
-                infoHeader.text = "Error: please fill in URL"
-                infoHeader.background = Background.fill(Paint.valueOf("red"))
-                infoHeader.textFill = Paint.valueOf("white")
-                infoHeader.font = Font.font(17.0)
-                responsePane.add(infoHeader, 0, 0)
-            } else {
-                // correct request data
-                responseBox.children.removeAll()
-
-                // HTTP client
-                val client = HttpClient.newBuilder()
-                    .version(HttpClient.Version.HTTP_1_1).build()
-
-                val req = HttpRequest.newBuilder()
-                    .uri(URI.create(urlField.text))
-
-                when(methodType.value.second) {
-                    "GET" -> req.GET()
-                    "POST" -> req.POST(BodyPublishers.ofString(reqBody.text))
-                    "PUT" -> req.PUT(BodyPublishers.ofString(reqBody.text))
-                    "DELETE" -> req.DELETE()
-                }
-
-                // response
-                val httpResponse = client.send(req.build(), BodyHandlers.ofString())
-                val statusCode = httpResponse.statusCode()
-                val statusText = Text(String.format("Status code: %s", statusCode.toString()))
-                statusText.selectionFill = Paint.valueOf("green")
-
-                responsePane.add(statusText, 0, 4)
-
-                val buttonsPane = GridPane()
-                val respMenuButtons = HBox()
-
-                val headersButton = Button("Headers")
-                buttonsPane.add(headersButton, 1, 3)
-                headersButton.padding = Insets(6.0)
-//                headersButton.background = Background.fill(Paint.valueOf("orange"))
-
-                val statusButton = Button("Status")
-                statusButton.padding = Insets(6.0)
-//                statusButton.background = Background.fill(Paint.valueOf("orange"))
-
-                val saveAsFileBtn = Button("Save File")
-                saveAsFileBtn.setOnMouseClicked {
-                    val file = Files.createFile(Path.of("./response_${Instant.now().epochSecond}"))
-                    file.writeBytes(httpResponse.body().toByteArray())
-                }
-
-                buttonsPane.add(statusButton, 1, 3)
-
-                respMenuButtons.children.addAll(statusButton, headersButton, saveAsFileBtn)
-
-//                val respHeaders = httpResponse.headers()
-//                respHeaders.map().forEach {
-//                    val headerText = Text(it.key)
-//
-//                }
-
-                responseBox.children.add(0, respMenuButtons)
-
-                responseSection.text = httpResponse.body()
-                responseSection.padding = Insets(10.0)
-                responseSection.minWidth(600.0)
-                responseSection.prefHeight(400.0)
-                responsePane.add(responseSection, 0, 5)
-            }
-        }
-
-//        reqPane.add(urlLabel, 0, 1)
-        reqPane.add(methodType, 0, 2)
-        reqPane.add(urlField, 1, 2)
-        reqPane.add(reqButton, 2, 2)
-        reqPane.add(reqHeaderButton, 2, 3)
-
-        requestBox.children.add(reqPane)
-        responseBox.children.add(responsePane)
-
-        mainBox.children.addAll(
-            requestBox, responseBox
-        )
-
-        return mainBox
+fun main(args: Array<String>) {
+    SwingUtilities.invokeLater {
+        createAndShowGUI()
     }
 }
+
+fun createAndShowGUI() {
+    val frame = JFrame("Image Viewer")
+    frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+    frame.setSize(800, 600) // Set a default size
+
+    val mainPanel = JPanel(BorderLayout())
+
+    // Image Information Panel
+    val infoPanel = JPanel()
+    infoPanel.layout = BoxLayout(infoPanel, BoxLayout.Y_AXIS)
+    infoPanel.border = BorderFactory.createTitledBorder("Image Information")
+
+    val widthLabel = JLabel("Width: ")
+    val heightLabel = JLabel("Height: ")
+    val bppLabel = JLabel("Bits Per Pixel: ")
+    val uniqueColorsLabel = JLabel("Unique Colors: ")
+
+    infoPanel.add(widthLabel)
+    infoPanel.add(heightLabel)
+    infoPanel.add(bppLabel)
+    infoPanel.add(uniqueColorsLabel)
+
+    mainPanel.add(infoPanel, BorderLayout.WEST)
+
+    val helloButton = JButton("Hello World")
+    helloButton.addActionListener {
+        println("Hello, World!")
+    }
+
+    val imageLabel = JLabel()
+    val imageScrollPane = JScrollPane(imageLabel)
+
+    var currentImage: Image? = null // To store the currently loaded image
+
+    val selectImageButton = JButton("Select Image")
+    selectImageButton.addActionListener {
+        val fileChooser = JFileChooser()
+        val result = fileChooser.showOpenDialog(frame)
+        if (result == JFileChooser.APPROVE_OPTION) {
+            val selectedFile: File = fileChooser.selectedFile
+            try {
+                currentImage = Image(selectedFile) // Use our Image class
+                imageLabel.icon = ImageIcon(currentImage!!.image)
+
+                widthLabel.text = "Width: ${currentImage!!.width}"
+                heightLabel.text = "Height: ${currentImage!!.height}"
+bppLabel.text = "Bits Per Pixel: ${currentImage!!.bitsPerPixel}"
+                uniqueColorsLabel.text = "Unique Colors: ${currentImage!!.uniqueColors}"
+
+                frame.pack()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                JOptionPane.showMessageDialog(frame, "Error loading image", "Error", JOptionPane.ERROR_MESSAGE)
+            }
+        }
+    }
+
+    val showHistogramButton = JButton("Show Histogram")
+    showHistogramButton.addActionListener {
+        if (currentImage != null) {
+            val histogramFrame = JFrame("Histogram")
+            histogramFrame.setSize(400, 300)
+            histogramFrame.add(HistogramPanel(currentImage!!.histogram))
+            histogramFrame.isVisible = true
+
+            // Make the histogram window movable
+            var initialClick: Point? = null
+            histogramFrame.addMouseListener(object : MouseAdapter() {
+                override fun mousePressed(e: MouseEvent) {
+                    initialClick = e.point
+                    histogramFrame.getComponent(0).background = Color.RED // Just to show it's active
+                }
+
+                override fun mouseReleased(e: MouseEvent) {
+                    histogramFrame.getComponent(0).background = UIManager.getColor("Panel.background")
+                }
+            })
+
+            histogramFrame.addMouseMotionListener(object : MouseAdapter() {
+                override fun mouseDragged(e: MouseEvent) {
+                    val thisX = histogramFrame.location.x
+                    val thisY = histogramFrame.location.y
+                    val xMoved = e.x - initialClick!!.x
+                    val yMoved = e.y - initialClick!!.y
+                    val newX = thisX + xMoved
+                    val newY = thisY + yMoved
+                    histogramFrame.setLocation(newX, newY)
+                }
+            })
+
+        } else {
+            JOptionPane.showMessageDialog(frame, "Please select an image first.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
+        }
+    }
+
+    val buttonPanel = JPanel()
+    buttonPanel.add(helloButton)
+    buttonPanel.add(selectImageButton)
+    buttonPanel.add(showHistogramButton)
+
+    mainPanel.add(buttonPanel, BorderLayout.NORTH)
+    mainPanel.add(imageScrollPane, BorderLayout.CENTER)
+
+    frame.contentPane.add(mainPanel)
+    frame.pack()
+    frame.isVisible = true
+}
+
