@@ -28,18 +28,18 @@ class Image(val buff: BufferedImage) {
 
     fun toGrayscale(tint: Color): Image {
         val newImage = BufferedImage(_metadata.width, _metadata.height, BufferedImage.TYPE_INT_RGB)
+        val (tintR,tintG,tintB) = listOf(tint.red / 255.0, tint.green / 255.0, tint.blue / 255.0)
 
         for (y in 0 until _metadata.height) {
             for (x in 0 until _metadata.width) {
                 val pixel = image.getRGB(x, y)
                 val color = Color(pixel)
-                // from https://stackoverflow.com/questions/17615963/standard-rgb-to-grayscale-conversion
                 val gray = (0.2126 * color.red + 0.7152 * color.green + 0.0722 * color.blue).toInt().coerceIn(0, 255)
 
                 val newColor = Color(
-                    gray * (tint.red / 255),
-                    gray * (tint.green / 255),
-                    gray * (tint.blue / 255)
+                    (gray * tintR).toInt().coerceIn(0, 255),
+                    (gray * tintG).toInt().coerceIn(0, 255),
+                    (gray * tintB).toInt().coerceIn(0, 255)
                 ).rgb
                 newImage.setRGB(x, y, newColor)
             }
