@@ -163,12 +163,63 @@ fun createButtonPanel(state: AppState, infoPanel: InfoPanel): JPanel {
     // Panel de Controles Unificado
     val topButtonsPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
         add(selectImageButton)
+
+        val undoButton = JButton("Undo").apply {
+            addActionListener {
+                if (state.undo()) {
+                    updateImageView(state)
+                    infoPanel.updateMetadata(state.getCurrentMetadata())
+                }
+            }
+        }
+        add(undoButton)
+
+        val redoButton = JButton("Redo").apply {
+            addActionListener {
+                if (state.redo()) {
+                    updateImageView(state)
+                    infoPanel.updateMetadata(state.getCurrentMetadata())
+                }
+            }
+        }
+        add(redoButton)
+
         add(applyNegativeButton)
         add(applyGrayscaleButton)
         add(selectColorButton)
         add(colorDisplayPanel)
         add(showHistogramButton)
         add(showTonalCurveButton)
+
+        val rotate90Button = JButton("Rotate 90°").apply {
+            addActionListener {
+                if (state.rotate(90)) {
+                    updateImageView(state)
+                    infoPanel.updateMetadata(state.getCurrentMetadata())
+                }
+            }
+        }
+        add(rotate90Button)
+
+        val rotate180Button = JButton("Rotate 180°").apply {
+            addActionListener {
+                if (state.rotate(180)) {
+                    updateImageView(state)
+                    infoPanel.updateMetadata(state.getCurrentMetadata())
+                }
+            }
+        }
+        add(rotate180Button)
+
+        val rotate270Button = JButton("Rotate 270°").apply {
+            addActionListener {
+                if (state.rotate(270)) {
+                    updateImageView(state)
+                    infoPanel.updateMetadata(state.getCurrentMetadata())
+                }
+            }
+        }
+        add(rotate270Button)
 
         val showUmbralizationButton = JButton("Umbralization").apply {
             addActionListener {

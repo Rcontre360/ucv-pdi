@@ -23,13 +23,13 @@ class Image(val buff: BufferedImage) {
         uniqueColors = image.colorModel.numComponents
     )
     val histogram: Histogram by lazy { Histogram(calculateHistogram()) }
-    val is_grayscale = isGrayscale()
+    val isGrayscale = getIsGrayscale()
 
     fun getMetadata(): Metadata{
         return _metadata
     }
 
-    private fun isGrayscale(): Boolean{
+    private fun getIsGrayscale(): Boolean{
         for (y in 0 until _metadata.height) {
             for (x in 0 until _metadata.width) {
                 val pixel = image.getRGB(x, y)
@@ -146,6 +146,43 @@ class Image(val buff: BufferedImage) {
             val newGray = thresholding(gray)
             Color(newGray, newGray, newGray).rgb
         }
+    }
+
+    fun rotateStraight(angle: Int): Image {
+        if (angle % 90 != 0) return this
+
+        val w = _metadata.width
+        val h = _metadata.height
+
+        val newWidth: Int
+        val newHeight: Int
+
+        when (angle) {
+            90, 270 -> {
+                newWidth = h
+                newHeight = w
+            }
+            180 -> {
+                newWidth = w
+                newHeight = h
+            }
+            else -> return this // No change for 0, 360, etc.
+        }
+
+        val newImage = BufferedImage(newWidth, newHeight, image.type)
+
+        for (y in 0 until h) {
+            for (x in 0 until w) {
+                val pixel = image.getRGB(x, y)
+                when (angle) {
+                    90 -> newImage.setRGB(h - 1 - y, x, pixel)
+                    180 -> newImage.setRGB(w - 1 - x, h - 1 - y, pixel)
+                    270 -> newImage.setRGB(y, w - 1 - x, pixel)
+                }
+            }
+        }
+
+        return Image(newImage)
     }
 
     private fun calculateHistogram(): Map<Int, IntArray> {
