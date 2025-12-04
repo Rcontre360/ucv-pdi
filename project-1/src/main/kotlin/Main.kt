@@ -1,27 +1,16 @@
 package org.pdi
 
-import java.awt.BorderLayout
-import java.awt.Color
-import java.awt.Dimension
-import java.awt.Point
+import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.File
 import javax.swing.*
-import org.pdi.core.AppState
-import org.pdi.core.Metadata
-
-private val widthLabel = JLabel("Width: ")
-private val heightLabel = JLabel("Height: ")
-private val bppLabel = JLabel("Bits Per Pixel: ")
-private val uniqueColorsLabel = JLabel("Unique Colors: ")
-private val formatLabel = JLabel("Format: ")
+import org.pdi.core.*
+import org.pdi.ui.*
 
 private val imageLabel = JLabel()
 private val colorDisplayPanel = JPanel()
 private lateinit var mainFrame: JFrame
-
-// -----------------------------------------------------------------
 
 fun main(args: Array<String>) {
     val state = AppState()
@@ -30,36 +19,7 @@ fun main(args: Array<String>) {
     }
 }
 
-fun updateMetadataDisplay(metadata: Metadata?) {
-    if (metadata != null) {
-        widthLabel.text = "Width: ${metadata.width}"
-        heightLabel.text = "Height: ${metadata.height}"
-        bppLabel.text = "Bits Per Pixel: ${metadata.bitsPerPixel}"
-        uniqueColorsLabel.text = "Unique Colors: ${metadata.uniqueColors}"
-        formatLabel.text = "Format: ${metadata.format}"
-    } else {
-        widthLabel.text = "Width: "
-        heightLabel.text = "Height: "
-        bppLabel.text = "Bits Per Pixel: "
-        uniqueColorsLabel.text = "Unique Colors: "
-        formatLabel.text = "Format: "
-    }
-}
-
-fun createInfoPanel(): JPanel {
-    val infoPanel = JPanel().apply {
-        layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        border = BorderFactory.createTitledBorder("Image Information")
-        add(widthLabel)
-        add(heightLabel)
-        add(bppLabel)
-        add(uniqueColorsLabel)
-        add(formatLabel)
-    }
-    return infoPanel
-}
-
-fun createButtonPanel(state: AppState): JPanel {
+fun createButtonPanel(state: AppState, infoPanel: InfoPanel): JPanel {
     colorDisplayPanel.background = state.getColor()
     colorDisplayPanel.border = BorderFactory.createLineBorder(Color.BLACK)
     colorDisplayPanel.preferredSize = Dimension(20, 20)
@@ -73,7 +33,7 @@ fun createButtonPanel(state: AppState): JPanel {
                 val metadata = state.loadImage(selectedFile)
 
                 if (metadata != null) {
-                    updateMetadataDisplay(metadata)
+                    infoPanel.updateMetadata(metadata)
                     val currentImage = state.getImage()
                     if (currentImage != null) {
                         imageLabel.icon = ImageIcon(currentImage)
@@ -93,9 +53,23 @@ fun createButtonPanel(state: AppState): JPanel {
                 if (newImage != null) {
                     imageLabel.icon = ImageIcon(newImage)
                 }
-                updateMetadataDisplay(state.getCurrentMetadata())
+                infoPanel.updateMetadata(state.getCurrentMetadata())
                 mainFrame.pack()
-                println("Grayscale filter applied successfully.")
+            } else {
+                JOptionPane.showMessageDialog(mainFrame, "No image loaded to apply filter.", "Error", JOptionPane.WARNING_MESSAGE)
+            }
+        }
+    }
+
+    val applyNegativeButton = JButton("Negative").apply {
+        addActionListener {
+            if (state.applyNegative()) {
+                val newImage = state.getImage()
+                if (newImage != null) {
+                    imageLabel.icon = ImageIcon(newImage)
+                }
+                infoPanel.updateMetadata(state.getCurrentMetadata())
+                mainFrame.pack()
             } else {
                 JOptionPane.showMessageDialog(mainFrame, "No image loaded to apply filter.", "Error", JOptionPane.WARNING_MESSAGE)
             }
@@ -122,18 +96,54 @@ fun createButtonPanel(state: AppState): JPanel {
             if (histogramData != null) {
                 showHistogramWindow(histogramData)
             } else {
-                JOptionPane.showMessageDialog(mainFrame, "Please select an image first.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
+                JOptionPane.showMessageDialog(mainFrame, "No image loaded.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
+            }
+        }
+    }
+
+    val showTonalCurveButton = JButton("Show Tonal Curve").apply {
+        addActionListener {
+            if (state.getImage() != null) {
+                showTonalCurveWindow(state)
+            } else {
+                JOptionPane.showMessageDialog(mainFrame, "No image loaded or curve data unavailable.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
             }
         }
     }
 
     return JPanel().apply {
         add(selectImageButton)
+        add(applyNegativeButton)
         add(applyGrayscaleButton)
         add(selectColorButton)
         add(colorDisplayPanel)
         add(showHistogramButton)
+        add(showTonalCurveButton)
     }
+}
+
+fun setupWindowDrag(frame: JFrame) {
+    var initialClick: Point? = null
+    frame.addMouseListener(object : MouseAdapter() {
+        override fun mousePressed(e: MouseEvent) {
+            initialClick = e.point
+            frame.contentPane.background = Color.LIGHT_GRAY
+        }
+
+        override fun mouseReleased(e: MouseEvent) {
+            frame.contentPane.background = UIManager.getColor("Panel.background")
+        }
+    })
+
+    frame.addMouseMotionListener(object : MouseAdapter() {
+        override fun mouseDragged(e: MouseEvent) {
+            val thisX = frame.location.x
+            val thisY = frame.location.y
+            val xMoved = e.x - initialClick!!.x
+            val yMoved = e.y - initialClick!!.y
+            frame.setLocation(thisX + xMoved, thisY + yMoved)
+        }
+    })
 }
 
 fun showHistogramWindow(histogramData: Map<Int, IntArray>) {
@@ -142,28 +152,53 @@ fun showHistogramWindow(histogramData: Map<Int, IntArray>) {
         add(HistogramPanel(histogramData))
         isVisible = true
     }
+    setupWindowDrag(histogramFrame)
+}
 
-    var initialClick: Point? = null
-    histogramFrame.addMouseListener(object : MouseAdapter() {
-        override fun mousePressed(e: MouseEvent) {
-            initialClick = e.point
-            histogramFrame.contentPane.background = Color.LIGHT_GRAY
-        }
+fun showTonalCurveWindow(state: AppState) {
+    val curveData = state.getTonalCurve()
+    if (curveData == null) {
+        JOptionPane.showMessageDialog(mainFrame, "Curve data is not available.", "Error", JOptionPane.ERROR_MESSAGE)
+        return
+    }
 
-        override fun mouseReleased(e: MouseEvent) {
-            histogramFrame.contentPane.background = UIManager.getColor("Panel.background")
-        }
-    })
+    val curveFrame = JFrame("Tonal Curve Viewer").apply {
+        setSize(450, 500)
+        layout = BorderLayout()
+    }
 
-    histogramFrame.addMouseMotionListener(object : MouseAdapter() {
-        override fun mouseDragged(e: MouseEvent) {
-            val thisX = histogramFrame.location.x
-            val thisY = histogramFrame.location.y
-            val xMoved = e.x - initialClick!!.x
-            val yMoved = e.y - initialClick!!.y
-            histogramFrame.setLocation(thisX + xMoved, thisY + yMoved)
+    val curvePanel = TonalCurvePanel(fullCurveData = curveData)
+
+    val controlPanel = JPanel().apply {
+        layout = FlowLayout(FlowLayout.CENTER)
+        border = BorderFactory.createTitledBorder("Seleccionar Canal")
+    }
+
+    val group = ButtonGroup()
+
+    fun updatePanel(channel: CurveChannel) {
+        curvePanel.updateCurve(curveData, channel)
+    }
+
+    CurveChannel.entries.forEach { channel ->
+        val button = JRadioButton(channel.label).apply {
+            addActionListener { updatePanel(channel) }
         }
-    })
+        group.add(button)
+        controlPanel.add(button)
+
+        if (channel == CurveChannel.LUMINOSITY) {
+            button.isSelected = true
+        }
+    }
+
+    curveFrame.add(controlPanel, BorderLayout.NORTH)
+    curveFrame.add(curvePanel, BorderLayout.CENTER)
+
+    updatePanel(CurveChannel.LUMINOSITY)
+
+    curveFrame.isVisible = true
+    setupWindowDrag(curveFrame)
 }
 
 fun createAndShowGUI(state: AppState) {
@@ -172,11 +207,11 @@ fun createAndShowGUI(state: AppState) {
         setSize(800, 600)
     }
 
+    val infoPanel = InfoPanel()
+
     val mainPanel = JPanel(BorderLayout()).apply {
-        add(createButtonPanel(state), BorderLayout.NORTH)
-
-        add(createInfoPanel(), BorderLayout.WEST)
-
+        add(createButtonPanel(state, infoPanel), BorderLayout.NORTH)
+        add(infoPanel, BorderLayout.WEST)
         val imageScrollPane = JScrollPane(imageLabel)
         add(imageScrollPane, BorderLayout.CENTER)
     }

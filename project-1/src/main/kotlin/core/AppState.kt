@@ -41,6 +41,22 @@ class AppState {
         return true
     }
 
+    fun applyNegative(): Boolean {
+        val currentImage = _original ?: return false
+        val grayscaleImage = currentImage.negative()
+
+        _current = grayscaleImage
+        return true
+    }
+
+    fun getTonalCurve(): List<Pair<Color, Color>>? {
+        return _original?.let { originalImage ->
+            _current?.let { currentImage ->
+                originalImage.tonalCurve(currentImage)
+            }
+        }
+    }
+
     fun getCurrentMetadata(): Metadata? {
         return _current?.getMetadata()
     }

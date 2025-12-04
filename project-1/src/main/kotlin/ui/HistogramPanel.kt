@@ -1,4 +1,4 @@
-package org.pdi
+package org.pdi.ui
 
 import java.awt.Color
 import java.awt.Dimension

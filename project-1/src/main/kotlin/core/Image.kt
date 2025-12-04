@@ -4,6 +4,8 @@ import java.awt.Color
 import java.awt.image.BufferedImage
 import kotlin.Int
 
+typealias PixelProcessor = (x: Int, y: Int, originalColor: Color) -> Int
+
 data class Metadata(
     val width: Int,
     val height: Int,
@@ -20,31 +22,63 @@ class Image(val buff: BufferedImage) {
         bitsPerPixel = image.colorModel.pixelSize,
         uniqueColors = image.colorModel.numComponents
     )
-    val histogram: Map<Int, IntArray> = calculateHistogram()
+    val histogram: Map<Int, IntArray> by lazy { calculateHistogram() }
 
     fun getMetadata(): Metadata{
         return _metadata
     }
 
-    fun toGrayscale(tint: Color): Image {
+    private fun applyPerPixel(processor: PixelProcessor): Image {
         val newImage = BufferedImage(_metadata.width, _metadata.height, BufferedImage.TYPE_INT_RGB)
-        val (tintR,tintG,tintB) = listOf(tint.red / 255.0, tint.green / 255.0, tint.blue / 255.0)
 
         for (y in 0 until _metadata.height) {
             for (x in 0 until _metadata.width) {
                 val pixel = image.getRGB(x, y)
                 val color = Color(pixel)
-                val gray = (0.2126 * color.red + 0.7152 * color.green + 0.0722 * color.blue).toInt().coerceIn(0, 255)
-
-                val newColor = Color(
-                    (gray * tintR).toInt().coerceIn(0, 255),
-                    (gray * tintG).toInt().coerceIn(0, 255),
-                    (gray * tintB).toInt().coerceIn(0, 255)
-                ).rgb
-                newImage.setRGB(x, y, newColor)
+                val newRgbValue = processor(x, y, color)
+                newImage.setRGB(x, y, newRgbValue)
             }
         }
+
         return Image(newImage)
+    }
+
+    fun tonalCurve(resImg: Image): List<Pair<Color,Color>>{
+        val res: MutableList<Pair<Color, Color>> = mutableListOf()
+
+        for (y in 0 until _metadata.height) {
+            for (x in 0 until _metadata.width) {
+                val src = Color(image.getRGB(x, y))
+                val dst = Color(resImg.image.getRGB(x, y))
+                res.add(src to dst)
+            }
+        }
+
+        return res
+    }
+
+    fun toGrayscale(tint: Color): Image {
+        val (tintR, tintG, tintB) = listOf(tint.red / 255.0, tint.green / 255.0, tint.blue / 255.0)
+
+        return applyPerPixel { _, _, color ->
+            val gray = (0.2126 * color.red + 0.7152 * color.green + 0.0722 * color.blue).toInt().coerceIn(0, 255)
+
+            Color(
+                (gray * tintR).toInt().coerceIn(0, 255),
+                (gray * tintG).toInt().coerceIn(0, 255),
+                (gray * tintB).toInt().coerceIn(0, 255)
+            ).rgb
+        }
+    }
+
+    fun negative(): Image {
+        return applyPerPixel { _, _, color ->
+            Color(
+                255 - color.red,
+                255 - color.green,
+                255 - color.blue
+            ).rgb
+        }
     }
 
     private fun calculateHistogram(): Map<Int, IntArray> {
