@@ -126,21 +126,25 @@ class Image(val buff: BufferedImage) {
     }
 
     fun makeThreshold(umbrals: Array<Int>): Image {
-        fun thresholding(v: Int): Int{
-            for (i in 1..umbrals.size){
-                if (v > umbrals[i-1] && v < umbrals[i]){
-                    return (255 / umbrals.size * i).toInt()
+        val sortedUmbrals = umbrals.sorted()
+
+        fun thresholding(v: Int): Int {
+            if (sortedUmbrals.isEmpty()) return v
+
+            for (i in sortedUmbrals.indices) {
+                if (v < sortedUmbrals[i]) {
+                    val intensity = (255.0 / (sortedUmbrals.size) * i).toInt()
+                    return intensity.coerceIn(0, 255)
                 }
             }
             return 255
         }
 
         return applyPerPixel { _, _, color ->
-            Color(
-                thresholding(color.red),
-                thresholding(color.green),
-                thresholding(color.blue)
-            ).rgb
+            // Since it's a grayscale image, R, G, and B are the same.
+            val gray = color.red
+            val newGray = thresholding(gray)
+            Color(newGray, newGray, newGray).rgb
         }
     }
 

@@ -169,6 +169,20 @@ fun createButtonPanel(state: AppState, infoPanel: InfoPanel): JPanel {
         add(colorDisplayPanel)
         add(showHistogramButton)
         add(showTonalCurveButton)
+
+        val showUmbralizationButton = JButton("Umbralization").apply {
+            addActionListener {
+                if (state.isCurrentImageGrayscale()) {
+                    showUmbralizationWindow(state) {
+                        updateImageView(state)
+                        infoPanel.updateMetadata(state.getCurrentMetadata())
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(mainFrame, "Please apply grayscale filter first.", "Grayscale Required", JOptionPane.WARNING_MESSAGE)
+                }
+            }
+        }
+        add(showUmbralizationButton)
     }
 
     return JPanel().apply {
@@ -177,6 +191,23 @@ fun createButtonPanel(state: AppState, infoPanel: InfoPanel): JPanel {
         add(brightnessPanel)
         add(contrastPanel)
     }
+}
+
+fun showUmbralizationWindow(state: AppState, onApply: () -> Unit) {
+    val umbralizationFrame = JFrame("Umbralization").apply {
+        defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
+        setSize(400, 300)
+        setLocationRelativeTo(mainFrame)
+    }
+
+    val umbralizationPanel = UmbralizationPanel(state) {
+        onApply()
+        umbralizationFrame.dispose()
+    }
+
+    umbralizationFrame.contentPane.add(umbralizationPanel)
+    umbralizationFrame.pack()
+    umbralizationFrame.isVisible = true
 }
 
 fun setupWindowDrag(frame: JFrame) {

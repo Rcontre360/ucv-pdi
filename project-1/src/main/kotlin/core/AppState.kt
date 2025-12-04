@@ -63,6 +63,19 @@ class AppState {
         return true
     }
 
+    fun isCurrentImageGrayscale(): Boolean {
+        return _current?.is_grayscale ?: false
+    }
+
+    fun applyThresholding(thresholds: List<Int>): Boolean {
+        if (!isCurrentImageGrayscale()) {
+            return false
+        }
+        val currentImage = _current ?: return false
+        _current = currentImage.makeThreshold(thresholds.toTypedArray())
+        return true
+    }
+
     fun getTonalCurve(): List<Pair<Color, Color>>? {
         return _original?.let { originalImage ->
             _current?.let { currentImage ->
