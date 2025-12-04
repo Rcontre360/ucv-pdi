@@ -56,6 +56,12 @@ class AppState {
         return true
     }
 
+    fun applyContrast(factor:Float): Boolean {
+        val currentImage = _original ?: return false
+        val contrast = currentImage.changeContrast(factor)
+        _current = contrast
+        return true
+    }
 
     fun getTonalCurve(): List<Pair<Color, Color>>? {
         return _original?.let { originalImage ->

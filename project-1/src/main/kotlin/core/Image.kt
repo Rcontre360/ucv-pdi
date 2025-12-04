@@ -92,10 +92,11 @@ class Image(val buff: BufferedImage) {
     }
 
     fun changeContrast(factor: Float): Image {
-        val min = factor
-        val max = 1 - factor
-
-        val newHistogram = histogram.stretch(min,max)
+        val min = (factor * 127)
+        val max = 255 - min
+        println(min)
+        println(max)
+        val newHistogram = histogram.stretch(min.toInt(),max.toInt())
 
         return applyPerPixel { _, _, color ->
             val rMap = newHistogram[0]!!

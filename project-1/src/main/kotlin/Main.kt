@@ -33,7 +33,6 @@ fun createButtonPanel(state: AppState, infoPanel: InfoPanel): JPanel {
     colorDisplayPanel.border = BorderFactory.createLineBorder(Color.BLACK)
     colorDisplayPanel.preferredSize = Dimension(20, 20)
 
-    // --- SLIDER DE BRILLO ---
     val brightnessSlider = JSlider(JSlider.HORIZONTAL, -100, 100, 0).apply {
         majorTickSpacing = 50
         minorTickSpacing = 10
@@ -52,6 +51,7 @@ fun createButtonPanel(state: AppState, infoPanel: InfoPanel): JPanel {
             }
         }
     }
+
     val brightnessPanel = JPanel(BorderLayout()).apply {
         border = BorderFactory.createTitledBorder("Brillo (Slider)")
         add(brightnessSlider, BorderLayout.CENTER)
@@ -59,8 +59,31 @@ fun createButtonPanel(state: AppState, infoPanel: InfoPanel): JPanel {
         preferredSize = Dimension(400, 70)
         maximumSize = Dimension(Int.MAX_VALUE, 70)
     }
-    // ----------------------------
 
+    val contrastSlider = JSlider(JSlider.HORIZONTAL, 0, 100, 0).apply {
+        majorTickSpacing = 50
+        minorTickSpacing = 10
+        paintTicks = true
+        paintLabels = true
+        toolTipText = "Ajuste de Contraste (0.0 a 1.0)"
+
+        addChangeListener {
+            if (!this.valueIsAdjusting) {
+                val factor = this.value / 100f
+                if (state.applyContrast(factor)) {
+                    updateImageView(state)
+                }
+            }
+        }
+    }
+
+    val contrastPanel = JPanel(BorderLayout()).apply {
+        border = BorderFactory.createTitledBorder("Contrast (Slider)")
+        add(contrastSlider, BorderLayout.CENTER)
+        // Establecer un tamaño fijo para que no se estire demasiado horizontalmente
+        preferredSize = Dimension(400, 70)
+        maximumSize = Dimension(Int.MAX_VALUE, 70)
+    }
 
     val selectImageButton = JButton("Select Image").apply {
         addActionListener {
@@ -148,12 +171,11 @@ fun createButtonPanel(state: AppState, infoPanel: InfoPanel): JPanel {
         add(showTonalCurveButton)
     }
 
-    // Contenedor principal para apilar botones y sliders
     return JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         add(topButtonsPanel)
         add(brightnessPanel)
-        // Aquí podrías añadir el panel de contraste si lo reintroduces
+        add(contrastPanel)
     }
 }
 
