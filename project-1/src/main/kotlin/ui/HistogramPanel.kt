@@ -1,11 +1,12 @@
 package org.pdi.ui
 
+import org.pdi.core.Histogram
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Graphics
 import javax.swing.JPanel
 
-class HistogramPanel(private val histogramData: Map<Int, IntArray>) : JPanel() {
+class HistogramPanel(private val histogramData: Histogram) : JPanel() {
 
     init {
         preferredSize = Dimension(400, 300)

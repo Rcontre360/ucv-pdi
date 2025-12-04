@@ -22,7 +22,7 @@ class Image(val buff: BufferedImage) {
         bitsPerPixel = image.colorModel.pixelSize,
         uniqueColors = image.colorModel.numComponents
     )
-    val histogram: Map<Int, IntArray> by lazy { calculateHistogram() }
+    val histogram: Histogram by lazy { Histogram(calculateHistogram()) }
 
     fun getMetadata(): Metadata{
         return _metadata
@@ -78,6 +78,35 @@ class Image(val buff: BufferedImage) {
                 255 - color.green,
                 255 - color.blue
             ).rgb
+        }
+    }
+
+    fun changeBrightness(factor: Float): Image {
+        return applyPerPixel { _, _, color ->
+            Color(
+                (color.red * (1 + factor)).toInt().coerceIn(0, 255),
+                (color.green * (1 + factor)).toInt().coerceIn(0, 255),
+                (color.blue * (1 + factor)).toInt().coerceIn(0, 255)
+            ).rgb
+        }
+    }
+
+    fun changeContrast(factor: Float): Image {
+        val min = factor
+        val max = 1 - factor
+
+        val newHistogram = histogram.stretch(min,max)
+
+        return applyPerPixel { _, _, color ->
+            val rMap = newHistogram[0]!!
+            val gMap = newHistogram[1]!!
+            val bMap = newHistogram[2]!!
+
+            val newR = rMap[color.red]
+            val newG = gMap[color.green]
+            val newB = bMap[color.blue]
+
+            Color(newR, newG, newB, color.alpha).rgb
         }
     }
 

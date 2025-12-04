@@ -43,11 +43,19 @@ class AppState {
 
     fun applyNegative(): Boolean {
         val currentImage = _original ?: return false
-        val grayscaleImage = currentImage.negative()
+        val negative = currentImage.negative()
 
-        _current = grayscaleImage
+        _current = negative
         return true
     }
+
+    fun applyBrightness(factor:Float): Boolean {
+        val currentImage = _original ?: return false
+        val bright = currentImage.changeBrightness(factor)
+        _current = bright
+        return true
+    }
+
 
     fun getTonalCurve(): List<Pair<Color, Color>>? {
         return _original?.let { originalImage ->
@@ -65,7 +73,7 @@ class AppState {
         println("AppState update called.")
     }
 
-    fun getHistogram(): Map<Int, IntArray>? {
+    fun getHistogram(): Histogram? {
         return _current?.histogram
     }
 
