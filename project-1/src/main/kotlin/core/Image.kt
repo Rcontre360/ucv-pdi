@@ -23,9 +23,23 @@ class Image(val buff: BufferedImage) {
         uniqueColors = image.colorModel.numComponents
     )
     val histogram: Histogram by lazy { Histogram(calculateHistogram()) }
+    val is_grayscale = isGrayscale()
 
     fun getMetadata(): Metadata{
         return _metadata
+    }
+
+    private fun isGrayscale(): Boolean{
+        for (y in 0 until _metadata.height) {
+            for (x in 0 until _metadata.width) {
+                val pixel = image.getRGB(x, y)
+                val color = Color(pixel)
+                if (color.red != color.green && color.green != color.blue) {
+                    return false
+                }
+            }
+        }
+        return true
     }
 
     private fun applyPerPixel(processor: PixelProcessor): Image {
@@ -108,6 +122,25 @@ class Image(val buff: BufferedImage) {
             val newB = bMap[color.blue]
 
             Color(newR, newG, newB, color.alpha).rgb
+        }
+    }
+
+    fun makeThreshold(umbrals: Array<Int>): Image {
+        fun thresholding(v: Int): Int{
+            for (i in 1..umbrals.size){
+                if (v > umbrals[i-1] && v < umbrals[i]){
+                    return (255 / umbrals.size * i).toInt()
+                }
+            }
+            return 255
+        }
+
+        return applyPerPixel { _, _, color ->
+            Color(
+                thresholding(color.red),
+                thresholding(color.green),
+                thresholding(color.blue)
+            ).rgb
         }
     }
 

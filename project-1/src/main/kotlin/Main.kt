@@ -60,7 +60,7 @@ fun createButtonPanel(state: AppState, infoPanel: InfoPanel): JPanel {
         maximumSize = Dimension(Int.MAX_VALUE, 70)
     }
 
-    val contrastSlider = JSlider(JSlider.HORIZONTAL, 0, 100, 0).apply {
+    val contrastSlider = JSlider(JSlider.HORIZONTAL, -100, 100, 0).apply {
         majorTickSpacing = 50
         minorTickSpacing = 10
         paintTicks = true
@@ -206,7 +206,6 @@ fun setupWindowDrag(frame: JFrame) {
 fun showHistogramWindow(histogramData: Histogram) {
     val histogramFrame = JFrame("Histogram").apply {
         setSize(400, 300)
-        // Asumo que HistogramPanel existe en org.pdi.ui
         add(org.pdi.ui.HistogramPanel(histogramData))
         isVisible = true
     }
