@@ -5,3 +5,5 @@ comportamiento del incremento de brillo/contraste
 como preocuparnos por la composicion de acciones? ejemplo, grayscale, coloring con algun color no puro y luego contraste hace que aparezcan colores nuevos
 
 la umbralizacion solo con imagenes grises? se puede hacer con a color calculando el gris "on the fly"
+
+Con el zoom in and out, deberiamos ser capaces de recuperar la imagen como era luego de hacer soom in? o no importa si perdemos la info mientras exista el boton "clear" para usar la original

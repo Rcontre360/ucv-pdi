@@ -3,6 +3,7 @@ package org.pdi.core
 import java.awt.Color
 import java.awt.image.BufferedImage
 import kotlin.Int
+import kotlin.math.roundToInt
 
 enum class ZoomAlgorithm {
     CLOSEST_NEIGHTBOUR,
@@ -191,32 +192,48 @@ class Image(val buff: BufferedImage) {
     }
 
     fun zoom(factor: Float, algo: ZoomAlgorithm): Image {
-        val newWidth = (_metadata.width * factor).toInt()
-        val newHeight = (_metadata.height * factor).toInt()
-        if (newWidth <= 0 || newHeight <= 0) return this
+        val w = (_metadata.width * factor).toInt()
+        val h = (_metadata.height * factor).toInt()
+        val newImg = BufferedImage(w, h, image.type)
 
-        val newImage = BufferedImage(newWidth, newHeight, image.type)
-
-        for (y in 0 until newHeight) {
-            for (x in 0 until newWidth) {
-                val srcX = (x / factor).toInt().coerceIn(0, _metadata.width - 1)
-                val srcY = (y / factor).toInt().coerceIn(0, _metadata.height - 1)
+        for (y in 0 until h) {
+            for (x in 0 until w) {
 
                 when (algo) {
                     ZoomAlgorithm.CLOSEST_NEIGHTBOUR -> {
+                        // when factor < 0 it acts as a multiplicationn. Sometimes it gets out of range
+                        val srcX = (x / factor).toInt().coerceIn(0,_metadata.width - 1)
+                        val srcY = (y / factor).toInt().coerceIn(0,_metadata.height - 1)
                         val pixel = image.getRGB(srcX, srcY)
-                        newImage.setRGB(x, y, pixel)
+                        newImg.setRGB(x, y, pixel)
                     }
                     ZoomAlgorithm.LINEAR_INTERPOLATION -> {
-                        // Not implemented, fallback to closest neighbour
-                        val pixel = image.getRGB(srcX, srcY)
-                        newImage.setRGB(x, y, pixel)
+                        val a = (x/factor) - (x / factor).toInt()
+                        val b = (y/factor) - (y / factor).toInt()
+                        val srcX = (x / factor).toInt().coerceIn(0,_metadata.width - 2)
+                        val srcY = (y / factor).toInt().coerceIn(0,_metadata.height - 2)
+
+                        fun interpolateChannel(is_v:Int, ds:Int, ir:Int, dr:Int): Int{
+                            return ((1-a) * (1-b) * is_v + a*(1-b) * ds + (1-a)*b*ir + a*b*dr).toInt();
+                        }
+
+                        val p_is = Color(image.getRGB(srcX, srcY))
+                        val p_ds =Color( image.getRGB(srcX + 1, srcY))
+                        val p_ir = Color(image.getRGB(srcX, srcY + 1))
+                        val p_dr = Color(image.getRGB(srcX + 1, srcY + 1))
+
+                        val res = Color(
+                            interpolateChannel(p_is.red, p_ds.red, p_ir.red, p_dr.red),
+                            interpolateChannel(p_is.green, p_ds.green, p_ir.green, p_dr.green),
+                            interpolateChannel(p_is.blue, p_ds.blue, p_ir.blue, p_dr.blue),
+                        )
+                        newImg.setRGB(x, y, res.rgb)
                     }
                 }
             }
         }
 
-        return Image(newImage)
+        return Image(newImg)
     }
 
     private fun calculateHistogram(): Map<Int, IntArray> {

@@ -111,7 +111,7 @@ class AppState {
         return true
     }
 
-    var zoomAlgorithm: ZoomAlgorithm = ZoomAlgorithm.CLOSEST_NEIGHTBOUR
+    var zoomAlgorithm: ZoomAlgorithm = ZoomAlgorithm.LINEAR_INTERPOLATION
     private val zoomLevels = listOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f)
     private var currentZoomLevelIndex = 9 // index for 1.0f
 
