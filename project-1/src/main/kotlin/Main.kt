@@ -9,6 +9,7 @@ import javax.swing.JScrollPane
 import javax.swing.SwingUtilities
 import org.pdi.core.*
 import org.pdi.ui.BottomPanel
+import org.pdi.ui.FiltersPanel
 import org.pdi.ui.InfoPanel
 import org.pdi.ui.LeftPanel
 import org.pdi.ui.MainButtonsPanel
@@ -43,11 +44,13 @@ fun createAndShowGUI(state: AppState) {
     val mainButtonsPanel = MainButtonsPanel(state, infoPanel)
     val leftPanel = LeftPanel(state, infoPanel)
     val bottomPanel = BottomPanel(state)
+    val filtersPanel = FiltersPanel(state)
 
     val mainPanel = JPanel(BorderLayout()).apply {
         add(mainButtonsPanel, BorderLayout.NORTH)
         add(leftPanel, BorderLayout.WEST)
         add(bottomPanel, BorderLayout.SOUTH)
+        add(filtersPanel, BorderLayout.EAST)
         val imageScrollPane = JScrollPane(imageLabel)
         add(imageScrollPane, BorderLayout.CENTER)
     }
