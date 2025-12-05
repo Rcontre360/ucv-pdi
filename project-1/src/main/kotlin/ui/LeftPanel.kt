@@ -5,6 +5,7 @@ import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.FlowLayout
+import javax.swing.Box
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.JLabel
@@ -20,7 +21,9 @@ class LeftPanel(
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
-        preferredSize = Dimension(250, preferredSize.height) // Set a preferred width for the left panel
+        preferredSize = Dimension(250, 600) // Set a preferred width and height for the left panel
+        minimumSize = Dimension(250, 600)
+        maximumSize = Dimension(250, Int.MAX_VALUE) // Allow vertical expansion but maintain width
         alignmentX = Component.LEFT_ALIGNMENT
 
         // Add InfoPanel
@@ -31,8 +34,10 @@ class LeftPanel(
         // Add other transformations
         val transformationsPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            border = BorderFactory.createTitledBorder("Transformations")
-            maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height) // Make transformationsPanel expand horizontally
+            // border = BorderFactory.createTitledBorder("Transformations") // Removed border
+            preferredSize = Dimension(250, 300) // Fixed width, reasonable preferred height
+            minimumSize = Dimension(250, 300) // Fixed width, reasonable minimum height
+            maximumSize = Dimension(250, 300) // Fixed width, fixed maximum height
             alignmentX = Component.LEFT_ALIGNMENT
 
             // Brightness
@@ -86,6 +91,8 @@ class LeftPanel(
                 alignmentX = Component.LEFT_ALIGNMENT
             }
             add(colorSelectionPanel)
+
+            add(Box.createVerticalGlue()) // Push everything to the top
         }
         add(transformationsPanel)
     }
