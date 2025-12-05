@@ -1,15 +1,18 @@
 package org.pdi
 
-import java.awt.*
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
-import java.io.File
-import javax.swing.*
+import java.awt.BorderLayout
+import javax.swing.ImageIcon
+import javax.swing.JFrame
+import javax.swing.JLabel
+import javax.swing.JPanel
+import javax.swing.JScrollPane
+import javax.swing.SwingUtilities
 import org.pdi.core.*
-import org.pdi.ui.*
+import org.pdi.ui.InfoPanel
+import org.pdi.ui.MainButtonsPanel
+import java.awt.image.BufferedImage
 
 private val imageLabel = JLabel()
-private val colorDisplayPanel = JPanel()
 private lateinit var mainFrame: JFrame
 
 fun main(args: Array<String>) {
@@ -19,339 +22,26 @@ fun main(args: Array<String>) {
     }
 }
 
-// Función auxiliar para actualizar la vista de la imagen
-private fun updateImageView(state: AppState) {
-    val currentImage = state.getImage()
-    if (currentImage != null) {
-        imageLabel.icon = ImageIcon(currentImage)
-    }
-    mainFrame.pack()
-}
-
-fun createButtonPanel(state: AppState, infoPanel: InfoPanel): JPanel {
-    colorDisplayPanel.background = state.getColor()
-    colorDisplayPanel.border = BorderFactory.createLineBorder(Color.BLACK)
-    colorDisplayPanel.preferredSize = Dimension(20, 20)
-
-    val brightnessSlider = JSlider(JSlider.HORIZONTAL, -100, 100, 0).apply {
-        majorTickSpacing = 50
-        minorTickSpacing = 10
-        paintTicks = true
-        paintLabels = true
-        toolTipText = "Ajuste de Brillo (-1.0 a 1.0)"
-
-        addChangeListener {
-            // Solo aplicar cuando el usuario suelta el slider (mejora rendimiento)
-            if (!this.valueIsAdjusting) {
-                // Mapear valor de -100 a 100 a -1.0f a 1.0f
-                val factor = this.value / 100f
-                if (state.applyBrightness(factor)) {
-                    updateImageView(state)
-                }
-            }
-        }
-    }
-
-    val brightnessPanel = JPanel(BorderLayout()).apply {
-        border = BorderFactory.createTitledBorder("Brillo (Slider)")
-        add(brightnessSlider, BorderLayout.CENTER)
-        // Establecer un tamaño fijo para que no se estire demasiado horizontalmente
-        preferredSize = Dimension(400, 70)
-        maximumSize = Dimension(Int.MAX_VALUE, 70)
-    }
-
-    val contrastSlider = JSlider(JSlider.HORIZONTAL, -100, 100, 0).apply {
-        majorTickSpacing = 50
-        minorTickSpacing = 10
-        paintTicks = true
-        paintLabels = true
-        toolTipText = "Ajuste de Contraste (0.0 a 1.0)"
-
-        addChangeListener {
-            if (!this.valueIsAdjusting) {
-                val factor = this.value / 100f
-                if (state.applyContrast(factor)) {
-                    updateImageView(state)
-                }
-            }
-        }
-    }
-
-    val contrastPanel = JPanel(BorderLayout()).apply {
-        border = BorderFactory.createTitledBorder("Contrast (Slider)")
-        add(contrastSlider, BorderLayout.CENTER)
-        // Establecer un tamaño fijo para que no se estire demasiado horizontalmente
-        preferredSize = Dimension(400, 70)
-        maximumSize = Dimension(Int.MAX_VALUE, 70)
-    }
-
-    val selectImageButton = JButton("Select Image").apply {
-        addActionListener {
-            val fileChooser = JFileChooser()
-            val result = fileChooser.showOpenDialog(mainFrame)
-            if (result == JFileChooser.APPROVE_OPTION) {
-                val selectedFile: File = fileChooser.selectedFile
-                val metadata = state.loadImage(selectedFile)
-
-                if (metadata != null) {
-                    infoPanel.updateMetadata(metadata)
-                    updateImageView(state)
-                } else {
-                    JOptionPane.showMessageDialog(mainFrame, "Error loading image. Check console.", "Error", JOptionPane.ERROR_MESSAGE)
-                }
-            }
-        }
-    }
-
-    val applyGrayscaleButton = JButton("Apply Grayscale").apply {
-        addActionListener {
-            if (state.applyGrayscale()) {
-                updateImageView(state)
-                infoPanel.updateMetadata(state.getCurrentMetadata())
-            } else {
-                JOptionPane.showMessageDialog(mainFrame, "No image loaded to apply filter.", "Error", JOptionPane.WARNING_MESSAGE)
-            }
-        }
-    }
-
-    val applyNegativeButton = JButton("Negative").apply {
-        addActionListener {
-            if (state.applyNegative()) {
-                updateImageView(state)
-                infoPanel.updateMetadata(state.getCurrentMetadata())
-            } else {
-                JOptionPane.showMessageDialog(mainFrame, "No image loaded to apply filter.", "Error", JOptionPane.WARNING_MESSAGE)
-            }
-        }
-    }
-
-    val selectColorButton = JButton("Pick Color").apply {
-        addActionListener {
-            val newColor = JColorChooser.showDialog(
-                mainFrame,
-                "Choose Tint Color",
-                state.getColor()
-            )
-            if (newColor != null) {
-                state.setColor(newColor)
-                colorDisplayPanel.background = newColor
-            }
-        }
-    }
-
-    val showHistogramButton = JButton("Show Histogram").apply {
-        addActionListener {
-            val histogramData = state.getHistogram()
-            if (histogramData != null) {
-                showHistogramWindow(histogramData)
-            } else {
-                JOptionPane.showMessageDialog(mainFrame, "No image loaded.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
-            }
-        }
-    }
-
-    val showTonalCurveButton = JButton("Show Tonal Curve").apply {
-        addActionListener {
-            if (state.getImage() != null) {
-                showTonalCurveWindow(state)
-            } else {
-                JOptionPane.showMessageDialog(mainFrame, "No image loaded or curve data unavailable.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
-            }
-        }
-    }
-
-    // Panel de Controles Unificado
-    val topButtonsPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-        add(selectImageButton)
-
-        val undoButton = JButton("Undo").apply {
-            addActionListener {
-                if (state.undo()) {
-                    updateImageView(state)
-                    infoPanel.updateMetadata(state.getCurrentMetadata())
-                }
-            }
-        }
-        add(undoButton)
-
-        val redoButton = JButton("Redo").apply {
-            addActionListener {
-                if (state.redo()) {
-                    updateImageView(state)
-                    infoPanel.updateMetadata(state.getCurrentMetadata())
-                }
-            }
-        }
-        add(redoButton)
-
-        add(applyNegativeButton)
-        add(applyGrayscaleButton)
-        add(selectColorButton)
-        add(colorDisplayPanel)
-        add(showHistogramButton)
-        add(showTonalCurveButton)
-
-        val rotate90Button = JButton("Rotate 90°").apply {
-            addActionListener {
-                if (state.rotate(90)) {
-                    updateImageView(state)
-                    infoPanel.updateMetadata(state.getCurrentMetadata())
-                }
-            }
-        }
-        add(rotate90Button)
-
-        val rotate180Button = JButton("Rotate 180°").apply {
-            addActionListener {
-                if (state.rotate(180)) {
-                    updateImageView(state)
-                    infoPanel.updateMetadata(state.getCurrentMetadata())
-                }
-            }
-        }
-        add(rotate180Button)
-
-        val rotate270Button = JButton("Rotate 270°").apply {
-            addActionListener {
-                if (state.rotate(270)) {
-                    updateImageView(state)
-                    infoPanel.updateMetadata(state.getCurrentMetadata())
-                }
-            }
-        }
-        add(rotate270Button)
-
-        val showUmbralizationButton = JButton("Umbralization").apply {
-            addActionListener {
-                if (state.isCurrentImageGrayscale()) {
-                    showUmbralizationWindow(state) {
-                        updateImageView(state)
-                        infoPanel.updateMetadata(state.getCurrentMetadata())
-                    }
-                } else {
-                    JOptionPane.showMessageDialog(mainFrame, "Please apply grayscale filter first.", "Grayscale Required", JOptionPane.WARNING_MESSAGE)
-                }
-            }
-        }
-        add(showUmbralizationButton)
-    }
-
-    return JPanel().apply {
-        layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        add(topButtonsPanel)
-        add(brightnessPanel)
-        add(contrastPanel)
-    }
-}
-
-fun showUmbralizationWindow(state: AppState, onApply: () -> Unit) {
-    val umbralizationFrame = JFrame("Umbralization").apply {
-        defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
-        setSize(400, 300)
-        setLocationRelativeTo(mainFrame)
-    }
-
-    val umbralizationPanel = UmbralizationPanel(state) {
-        onApply()
-        umbralizationFrame.dispose()
-    }
-
-    umbralizationFrame.contentPane.add(umbralizationPanel)
-    umbralizationFrame.pack()
-    umbralizationFrame.isVisible = true
-}
-
-fun setupWindowDrag(frame: JFrame) {
-    var initialClick: Point? = null
-    frame.addMouseListener(object : MouseAdapter() {
-        override fun mousePressed(e: MouseEvent) {
-            initialClick = e.point
-            frame.contentPane.background = Color.LIGHT_GRAY
-        }
-
-        override fun mouseReleased(e: MouseEvent) {
-            frame.contentPane.background = UIManager.getColor("Panel.background")
-        }
-    })
-
-    frame.addMouseMotionListener(object : MouseAdapter() {
-        override fun mouseDragged(e: MouseEvent) {
-            val thisX = frame.location.x
-            val thisY = frame.location.y
-            val xMoved = e.x - initialClick!!.x
-            val yMoved = e.y - initialClick!!.y
-            frame.setLocation(thisX + xMoved, thisY + yMoved)
-        }
-    })
-}
-
-fun showHistogramWindow(histogramData: Histogram) {
-    val histogramFrame = JFrame("Histogram").apply {
-        setSize(400, 300)
-        add(org.pdi.ui.HistogramPanel(histogramData))
-        isVisible = true
-    }
-    setupWindowDrag(histogramFrame)
-}
-
-fun showTonalCurveWindow(state: AppState) {
-    val curveData = state.getTonalCurve()
-    if (curveData == null) {
-        JOptionPane.showMessageDialog(mainFrame, "Curve data is not available.", "Error", JOptionPane.ERROR_MESSAGE)
-        return
-    }
-
-    val curveFrame = JFrame("Tonal Curve Viewer").apply {
-        setSize(450, 500)
-        layout = BorderLayout()
-    }
-
-    // Asumo que TonalCurvePanel existe en org.pdi.ui
-    val curvePanel = org.pdi.ui.TonalCurvePanel(fullCurveData = curveData)
-
-    val controlPanel = JPanel().apply {
-        layout = FlowLayout(FlowLayout.CENTER)
-        border = BorderFactory.createTitledBorder("Seleccionar Canal")
-    }
-
-    val group = ButtonGroup()
-
-    fun updatePanel(channel: CurveChannel) {
-        curvePanel.updateCurve(curveData, channel)
-    }
-
-    CurveChannel.entries.forEach { channel ->
-        val button = JRadioButton(channel.label).apply {
-            addActionListener { updatePanel(channel) }
-        }
-        group.add(button)
-        controlPanel.add(button)
-
-        if (channel == CurveChannel.LUMINOSITY) {
-            button.isSelected = true
-        }
-    }
-
-    curveFrame.add(controlPanel, BorderLayout.NORTH)
-    curveFrame.add(curvePanel, BorderLayout.CENTER)
-
-    updatePanel(CurveChannel.LUMINOSITY)
-
-    curveFrame.isVisible = true
-    setupWindowDrag(curveFrame)
-}
-
 fun createAndShowGUI(state: AppState) {
     mainFrame = JFrame("Image Viewer").apply {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         setSize(800, 600)
     }
 
-    // Asumo que InfoPanel existe en org.pdi.ui
-    val infoPanel = org.pdi.ui.InfoPanel()
+    val infoPanel = InfoPanel()
+
+    state.setOnImageUpdateListener { image: BufferedImage? ->
+        imageLabel.icon = image?.let { ImageIcon(it) }
+        mainFrame.pack()
+    }
+    state.setOnMetadataUpdateListener { metadata: Metadata? ->
+        infoPanel.updateMetadata(metadata)
+    }
+
+    val buttonsPanel = MainButtonsPanel(state, infoPanel)
 
     val mainPanel = JPanel(BorderLayout()).apply {
-        add(createButtonPanel(state, infoPanel), BorderLayout.NORTH)
+        add(buttonsPanel, BorderLayout.NORTH)
         add(infoPanel, BorderLayout.WEST)
         val imageScrollPane = JScrollPane(imageLabel)
         add(imageScrollPane, BorderLayout.CENTER)

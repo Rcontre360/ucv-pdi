@@ -4,6 +4,11 @@ import java.awt.Color
 import java.awt.image.BufferedImage
 import kotlin.Int
 
+enum class ZoomAlgorithm {
+    CLOSEST_NEIGHTBOUR,
+    LINEAR_INTERPOLATION,
+}
+
 typealias PixelProcessor = (x: Int, y: Int, originalColor: Color) -> Int
 
 data class Metadata(
@@ -166,7 +171,7 @@ class Image(val buff: BufferedImage) {
                 newWidth = w
                 newHeight = h
             }
-            else -> return this // No change for 0, 360, etc.
+            else -> return this
         }
 
         val newImage = BufferedImage(newWidth, newHeight, image.type)
@@ -178,6 +183,35 @@ class Image(val buff: BufferedImage) {
                     90 -> newImage.setRGB(h - 1 - y, x, pixel)
                     180 -> newImage.setRGB(w - 1 - x, h - 1 - y, pixel)
                     270 -> newImage.setRGB(y, w - 1 - x, pixel)
+                }
+            }
+        }
+
+        return Image(newImage)
+    }
+
+    fun zoom(factor: Float, algo: ZoomAlgorithm): Image {
+        val newWidth = (_metadata.width * factor).toInt()
+        val newHeight = (_metadata.height * factor).toInt()
+        if (newWidth <= 0 || newHeight <= 0) return this
+
+        val newImage = BufferedImage(newWidth, newHeight, image.type)
+
+        for (y in 0 until newHeight) {
+            for (x in 0 until newWidth) {
+                val srcX = (x / factor).toInt().coerceIn(0, _metadata.width - 1)
+                val srcY = (y / factor).toInt().coerceIn(0, _metadata.height - 1)
+
+                when (algo) {
+                    ZoomAlgorithm.CLOSEST_NEIGHTBOUR -> {
+                        val pixel = image.getRGB(srcX, srcY)
+                        newImage.setRGB(x, y, pixel)
+                    }
+                    ZoomAlgorithm.LINEAR_INTERPOLATION -> {
+                        // Not implemented, fallback to closest neighbour
+                        val pixel = image.getRGB(srcX, srcY)
+                        newImage.setRGB(x, y, pixel)
+                    }
                 }
             }
         }

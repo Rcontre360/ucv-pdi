@@ -1,119 +1,104 @@
 package org.pdi.core
 
 import java.awt.Color
-import java.io.File
 import java.awt.image.BufferedImage
+import java.io.File
 import javax.imageio.ImageIO
 
 class AppState {
     private var _initialImage: Image? = null
     private var _current: Image? = null
-    private val _history: ArrayDeque<Image> = ArrayDeque()
-    private var _historyIndex: Int = -1
-    private val HISTORY_LIMIT = 20
+    var color: Color = Color.white
+        private set
 
-    private var _color: Color = Color.white
+    // Transformation state
+    var brightness: Float = 0.0f
+        private set
+    var contrast: Float = 0.0f
+        private set
+    var rotationApplied: Int = 0
+        private set
+    var isGrayscaleApplied: Boolean = false
+        private set
 
-    fun loadImage(file: File): Metadata? {
-        return try {
-            val loadedImage = Image(ImageIO.read(file))
-            _initialImage = loadedImage
-            clear() // Set up the initial state
-            loadedImage.getMetadata()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            _initialImage = null
-            _current = null
-            _history.clear()
-            _historyIndex = -1
-            null
-        }
+    // Listeners
+    private var onImageUpdate: ((BufferedImage?) -> Unit)? = null
+    private var onMetadataUpdate: ((Metadata?) -> Unit)? = null
+    private var onBrightnessUpdate: ((Float) -> Unit)? = null
+    private var onContrastUpdate: ((Float) -> Unit)? = null
+    private var onZoomUpdate: ((Float) -> Unit)? = null
+
+    fun setOnImageUpdateListener(listener: (BufferedImage?) -> Unit) {
+        onImageUpdate = listener
+    }
+
+    fun setOnMetadataUpdateListener(listener: (Metadata?) -> Unit) {
+        onMetadataUpdate = listener
+    }
+
+    fun setOnBrightnessUpdateListener(listener: (Float) -> Unit) {
+        onBrightnessUpdate = listener
+    }
+
+    fun setOnContrastUpdateListener(listener: (Float) -> Unit) {
+        onContrastUpdate = listener
     }
 
     fun clear() {
-        _history.clear()
-        _historyIndex = -1
-        _initialImage?.let {
-            _history.add(it)
-            _historyIndex = 0
-            _current = it
-        }
+        brightness = 0.0f
+        contrast = 0.0f
+        isGrayscaleApplied = false
+        rotationApplied = 0
+        _current = _initialImage
+        notifyUpdates()
+        onBrightnessUpdate?.invoke(brightness)
+        onContrastUpdate?.invoke(contrast)
     }
 
-    private fun _update(newImage: Image) {
-        // Truncate future history if we branched off
-        while (_history.lastIndex > _historyIndex) {
-            _history.removeLast()
-        }
-
-        _history.add(newImage)
-        _historyIndex++
-
-        // Enforce history limit
-        if (_history.size > HISTORY_LIMIT) {
-            _history.removeFirst()
-            _historyIndex-- // Adjust index since we removed from the start
-        }
-
-        _current = newImage
-    }
-
-    fun undo(): Boolean {
-        if (_historyIndex > 0) {
-            _historyIndex--
-            _current = _history[_historyIndex]
-            return true
-        }
-        return false
-    }
-
-    fun redo(): Boolean {
-        if (_historyIndex < _history.lastIndex) {
-            _historyIndex++
-            _current = _history[_historyIndex]
-            return true
-        }
-        return false
+    private fun notifyUpdates() {
+        onImageUpdate?.invoke(_current?.image)
+        onMetadataUpdate?.invoke(_current?.getMetadata())
     }
 
     fun setColor(color: Color) {
-        _color = color
+        this.color = color
     }
 
-    fun getColor(): Color {
-        return _color
+    fun applyGrayscale() {
+        isGrayscaleApplied = true
+        _current = _current?.toGrayscale(color)
+        notifyUpdates()
     }
 
-    fun applyGrayscale(): Boolean {
-        val imageToChange = _current ?: return false
-        val grayscaleImage = imageToChange.toGrayscale(_color)
-        _update(grayscaleImage)
-        return true
+    fun applyNegative() {
+        _current = _current?.negative()
+        notifyUpdates()
     }
 
-    fun applyNegative(): Boolean {
-        val imageToChange = _current ?: return false
-        val negativeImage = imageToChange.negative()
-        _update(negativeImage)
-        return true
+    fun setBrightness(newFactor: Float) {
+        val oldFactor = this.brightness
+        this.brightness = newFactor
+        val adjustment = (1 + newFactor) / (1 + oldFactor) - 1
+        _current = _current?.changeBrightness(adjustment)
+        notifyUpdates()
     }
 
-    fun applyBrightness(factor: Float): Boolean {
-        val imageToChange = _current ?: return false
-        val brightImage = imageToChange.changeBrightness(factor)
-        _update(brightImage)
-        return true
+    fun setContrast(newFactor: Float) {
+        val oldFactor = this.contrast
+        this.contrast = newFactor
+        val adjustment = (1 + newFactor) / (1 + oldFactor) - 1
+        _current = _current?.changeContrast(adjustment)
+        notifyUpdates()
     }
 
-    fun applyContrast(factor: Float): Boolean {
-        val imageToChange = _current ?: return false
-        val contrastImage = imageToChange.changeContrast(factor)
-        _update(contrastImage)
-        return true
+    fun rotate(angle: Int) {
+        rotationApplied = (rotationApplied + angle) % 360
+        _current = _current?.rotateStraight(angle)
+        notifyUpdates()
     }
 
     fun isCurrentImageGrayscale(): Boolean {
-        return _current?.isGrayscale ?: false
+        return isGrayscaleApplied
     }
 
     fun applyThresholding(thresholds: List<Int>): Boolean {
@@ -121,19 +106,56 @@ class AppState {
             return false
         }
         val imageToChange = _current ?: return false
-        val thresholdedImage = imageToChange.makeThreshold(thresholds.toTypedArray())
-        _update(thresholdedImage)
+        _current = imageToChange.makeThreshold(thresholds.toTypedArray())
+        notifyUpdates()
         return true
     }
 
-    fun rotate(angle:Int): Boolean {
-        if (angle % 90 != 0) {
-            return false
+    var zoomAlgorithm: ZoomAlgorithm = ZoomAlgorithm.CLOSEST_NEIGHTBOUR
+    private val zoomLevels = listOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f)
+    private var currentZoomLevelIndex = 9 // index for 1.0f
+
+    fun setOnZoomUpdateListener(listener: (Float) -> Unit) {
+        onZoomUpdate = listener
+    }
+
+    fun zoomIn() {
+        if (currentZoomLevelIndex < zoomLevels.size - 1) {
+            val oldFactor = zoomLevels[currentZoomLevelIndex]
+            currentZoomLevelIndex++
+            val newFactor = zoomLevels[currentZoomLevelIndex]
+            val adjustment = newFactor / oldFactor
+            _current = _current?.zoom(adjustment, zoomAlgorithm)
+            notifyUpdates()
+            onZoomUpdate?.invoke(newFactor)
         }
-        val imageToChange = _current ?: return false
-        val rotated = imageToChange.rotateStraight(angle)
-        _update(rotated)
-        return true
+    }
+
+    fun zoomOut() {
+        if (currentZoomLevelIndex > 0) {
+            val oldFactor = zoomLevels[currentZoomLevelIndex]
+            currentZoomLevelIndex--
+            val newFactor = zoomLevels[currentZoomLevelIndex]
+            val adjustment = newFactor / oldFactor
+            _current = _current?.zoom(adjustment, zoomAlgorithm)
+            notifyUpdates()
+            onZoomUpdate?.invoke(newFactor)
+        }
+    }
+
+    fun loadImage(file: File) {
+        try {
+            val loadedImage = Image(ImageIO.read(file))
+            _initialImage = loadedImage
+            clear()
+            currentZoomLevelIndex = 9
+            onZoomUpdate?.invoke(zoomLevels[currentZoomLevelIndex])
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _initialImage = null
+            _current = null
+            notifyUpdates()
+        }
     }
 
     fun getTonalCurve(): List<Pair<Color, Color>>? {
