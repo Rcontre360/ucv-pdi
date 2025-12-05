@@ -15,34 +15,9 @@ class MainButtonsPanel(
     private val colorDisplayPanel = JPanel()
 
     init {
-        layout = BoxLayout(this, BoxLayout.Y_AXIS)
-
-        colorDisplayPanel.background = state.color
-        colorDisplayPanel.border = BorderFactory.createLineBorder(Color.BLACK)
-        colorDisplayPanel.preferredSize = Dimension(20, 20)
-
-        val brightnessSlider = createBrightnessSlider(state)
-        val brightnessPanel = JPanel(BorderLayout()).apply {
-            border = BorderFactory.createTitledBorder("Brillo (Slider)")
-            add(brightnessSlider, BorderLayout.CENTER)
-            preferredSize = Dimension(400, 70)
-            maximumSize = Dimension(Int.MAX_VALUE, 70)
-        }
-
-        val contrastSlider = createContrastSlider(state)
-        val contrastPanel = JPanel(BorderLayout()).apply {
-            border = BorderFactory.createTitledBorder("Contrast (Slider)")
-            add(contrastSlider, BorderLayout.CENTER)
-            preferredSize = Dimension(400, 70)
-            maximumSize = Dimension(Int.MAX_VALUE, 70)
-        }
+        layout = FlowLayout(FlowLayout.LEFT)
 
         val selectImageButton = createSelectImageButton(state, this)
-        val applyGrayscaleButton = createApplyGrayscaleButton(state, this)
-        val applyNegativeButton = createApplyNegativeButton(state, this)
-        val selectColorButton = createSelectColorButton(state, this) { newColor ->
-            colorDisplayPanel.background = newColor
-        }
 
         val showHistogramButton = JButton("Show Histogram").apply {
             addActionListener {
@@ -65,53 +40,21 @@ class MainButtonsPanel(
             }
         }
 
-        val topButtonsPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(selectImageButton)
-            add(applyNegativeButton)
-            add(applyGrayscaleButton)
-            add(selectColorButton)
-            add(colorDisplayPanel)
-            add(showHistogramButton)
-            add(showTonalCurveButton)
-            add(ZoomPanel(state))
-
-            val rotate90Button = JButton("Rotate 90°").apply {
-                addActionListener {
-                    state.rotate(90)
+        val showUmbralizationButton = JButton("Umbralization").apply {
+            addActionListener {
+                if (state.isCurrentImageGrayscale()) {
+                    showUmbralizationWindow()
+                }
+                else {
+                    JOptionPane.showMessageDialog(this@MainButtonsPanel, "Please apply grayscale filter first.", "Grayscale Required", JOptionPane.WARNING_MESSAGE)
                 }
             }
-            add(rotate90Button)
-
-            val rotate180Button = JButton("Rotate 180°").apply {
-                addActionListener {
-                    state.rotate(180)
-                }
-            }
-            add(rotate180Button)
-
-            val rotate270Button = JButton("Rotate 270°").apply {
-                addActionListener {
-                    state.rotate(270)
-                }
-            }
-            add(rotate270Button)
-
-            val showUmbralizationButton = JButton("Umbralization").apply {
-                addActionListener {
-                    if (state.isCurrentImageGrayscale()) {
-                        showUmbralizationWindow()
-                    }
-                    else {
-                        JOptionPane.showMessageDialog(this@MainButtonsPanel, "Please apply grayscale filter first.", "Grayscale Required", JOptionPane.WARNING_MESSAGE)
-                    }
-                }
-            }
-            add(showUmbralizationButton)
         }
 
-        add(topButtonsPanel)
-        add(brightnessPanel)
-        add(contrastPanel)
+        add(selectImageButton)
+        add(showHistogramButton)
+        add(showTonalCurveButton)
+        add(showUmbralizationButton)
     }
 
     private fun showHistogramWindow(histogramData: Histogram) {

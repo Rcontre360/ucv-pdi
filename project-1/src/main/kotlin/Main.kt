@@ -8,7 +8,9 @@ import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.SwingUtilities
 import org.pdi.core.*
+import org.pdi.ui.BottomPanel
 import org.pdi.ui.InfoPanel
+import org.pdi.ui.LeftPanel
 import org.pdi.ui.MainButtonsPanel
 import java.awt.image.BufferedImage
 
@@ -38,11 +40,14 @@ fun createAndShowGUI(state: AppState) {
         infoPanel.updateMetadata(metadata)
     }
 
-    val buttonsPanel = MainButtonsPanel(state, infoPanel)
+    val mainButtonsPanel = MainButtonsPanel(state, infoPanel)
+    val leftPanel = LeftPanel(state, infoPanel)
+    val bottomPanel = BottomPanel(state)
 
     val mainPanel = JPanel(BorderLayout()).apply {
-        add(buttonsPanel, BorderLayout.NORTH)
-        add(infoPanel, BorderLayout.WEST)
+        add(mainButtonsPanel, BorderLayout.NORTH)
+        add(leftPanel, BorderLayout.WEST)
+        add(bottomPanel, BorderLayout.SOUTH)
         val imageScrollPane = JScrollPane(imageLabel)
         add(imageScrollPane, BorderLayout.CENTER)
     }
