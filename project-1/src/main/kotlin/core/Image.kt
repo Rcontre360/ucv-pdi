@@ -258,8 +258,5 @@ class Image(val buff: BufferedImage) {
         return histogram
     }
 
-    fun applyConvolution(kernel: Array<FloatArray>): Image {
-        // Placeholder implementation
-        return this
-    }
+
 }

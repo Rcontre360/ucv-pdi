@@ -178,8 +178,8 @@ class AppState {
         return _current?.image
     }
 
-    fun applyConvolution(kernel: Array<FloatArray>) {
-        _current = _current?.applyConvolution(kernel)
+    fun applyConvolution(kernel: Kernel) {
+        _current = _current?.let { Image(kernel.execute(it.image)) }
         notifyUpdates()
     }
 }
