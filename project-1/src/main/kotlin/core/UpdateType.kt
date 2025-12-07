@@ -4,6 +4,7 @@ import java.awt.Color
 import java.io.File
 
 sealed class UpdateType {
+    object Clear : UpdateType()
     data class BrightnessUpdate(val newFactor: Float) : UpdateType()
     data class ContrastUpdate(val newFactor: Float) : UpdateType()
     data class GrayscaleUpdate(val tint: Color) : UpdateType()

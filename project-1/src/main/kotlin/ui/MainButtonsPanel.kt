@@ -72,7 +72,7 @@ class MainButtonsPanel(
             // Update buttons based on stateContext
             showHistogramButton.isEnabled = stateContext.currentImage != null
             showTonalCurveButton.isEnabled = stateContext.currentImage != null
-            showUmbralizationButton.isEnabled = stateContext.isGrayscaleApplied
+            showUmbralizationButton.isEnabled = stateContext.currentImage?.isGrayscale?:false
             showLineProfileButton.isEnabled = stateContext.currentImage != null
         }
     }

@@ -33,10 +33,41 @@ class AppState {
     var zoomAlgorithm: ZoomAlgorithm = ZoomAlgorithm.LINEAR_INTERPOLATION
     val zoomLevels = listOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f)
 
-    fun update(updateType: UpdateType) {
+    fun clear() {
+        update(UpdateType.Clear)
+    }
+
+    fun setColor(color: Color) {
+        update(UpdateType.ColorUpdate(context.color))
+    }
+
+    fun applyGrayscale() {
+        update(UpdateType.GrayscaleUpdate(context.color))
+    }
+
+    fun applyNegative() {
+        update(UpdateType.NegativeUpdate)
+    }
+
+    fun setBrightness(newFactor: Float) {
+        update(UpdateType.BrightnessUpdate(newFactor))
+    }
+
+    fun setContrast(newFactor: Float) {
+        update(UpdateType.ContrastUpdate(newFactor))
+    }
+
+    fun rotate(angle: Int) {
+        update(UpdateType.RotationUpdate(angle))
+    }
+
+    private fun update(updateType: UpdateType) {
         var newStateContext = context.copy()
 
         when (updateType) {
+            is UpdateType.Clear -> {
+                context = StateContext(currentImage = _initialImage)
+            }
             is UpdateType.BrightnessUpdate -> {
                 val oldFactor = newStateContext.brightness
                 val newFactor = updateType.newFactor
@@ -74,7 +105,7 @@ class AppState {
             }
             is UpdateType.ThresholdUpdate -> {
                 if (!newStateContext.isGrayscaleApplied) {
-                    return // Cannot apply thresholding to non-grayscale image
+                    return 
                 }
                 val imageToChange = newStateContext.currentImage ?: return
                 newStateContext = newStateContext.copy(
@@ -135,37 +166,8 @@ class AppState {
         _contextListeners.forEach { it.invoke(context) }
     }
 
-    fun clear() {
-        context = StateContext(currentImage = _initialImage)
-        _contextListeners.forEach { it.invoke(context) }
-    }
-
-    fun setColor(color: Color) {
-        update(UpdateType.ColorUpdate(context.color))
-    }
-
-    fun applyGrayscale() {
-        update(UpdateType.GrayscaleUpdate(context.color))
-    }
-
-    fun applyNegative() {
-        update(UpdateType.NegativeUpdate)
-    }
-
-    fun setBrightness(newFactor: Float) {
-        update(UpdateType.BrightnessUpdate(newFactor))
-    }
-
-    fun setContrast(newFactor: Float) {
-        update(UpdateType.ContrastUpdate(newFactor))
-    }
-
-    fun rotate(angle: Int) {
-        update(UpdateType.RotationUpdate(angle))
-    }
-
     fun isCurrentImageGrayscale(): Boolean {
-        return context.isGrayscaleApplied
+        return context.currentImage?.isGrayscale?:false
     }
 
     fun applyThresholding(thresholds: List<Int>): Boolean {
