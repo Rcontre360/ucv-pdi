@@ -4,6 +4,9 @@ import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
+import org.pdi.core.kernels.MedianKernel
+import org.pdi.core.kernels.SobelXKernel
+import org.pdi.core.kernels.SobelYKernel
 
 class AppState {
     private var _initialImage: Image? = null

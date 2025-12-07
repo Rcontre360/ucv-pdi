@@ -3,9 +3,13 @@ package org.pdi.ui
 import org.pdi.core.AppState
 import org.pdi.core.BorderDetection
 import org.pdi.core.BorderDetectionType
-import org.pdi.core.Sobel
-import org.pdi.core.SobelXKernel
-import org.pdi.core.SobelYKernel
+import org.pdi.core.Kernel
+import org.pdi.core.kernels.PrewittXKernel
+import org.pdi.core.kernels.PrewittYKernel
+import org.pdi.core.kernels.RobertsXKernel
+import org.pdi.core.kernels.RobertsYKernel
+import org.pdi.core.kernels.SobelXKernel
+import org.pdi.core.kernels.SobelYKernel
 import java.awt.BorderLayout
 import javax.swing.JComboBox
 import java.awt.Dimension
@@ -26,15 +30,17 @@ class OperationsPanel(private val state: AppState) : JPanel() {
         add(applyButton, BorderLayout.SOUTH)
 
         operationsComboBox.addActionListener {
-            selectedOperation = operationsComboBox.selectedItem
+            selectedOperation = operationsComboBox.selectedItem as BorderDetectionType
         }
 
         applyButton.addActionListener {
             selectedOperation?.let {
                 val operation = when (selectedOperation) {
                     BorderDetectionType.SOBEL -> BorderDetection(SobelXKernel(3,3), SobelYKernel(3,3))
+                    BorderDetectionType.ROBERTS -> BorderDetection(RobertsXKernel(), RobertsYKernel())
+                    BorderDetectionType.PREWITT -> BorderDetection(PrewittXKernel(), PrewittYKernel())
                 }
-                state.applyOperation(it)
+                state.applyOperation(operation)
             }
         }
     }

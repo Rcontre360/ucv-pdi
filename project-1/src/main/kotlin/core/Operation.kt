@@ -3,10 +3,13 @@ package org.pdi.core
 import java.awt.Color
 import java.awt.image.BufferedImage
 import kotlin.math.sqrt
+import org.pdi.core.kernels.SobelXKernel
+import org.pdi.core.kernels.SobelYKernel
 
 enum class BorderDetectionType {
     SOBEL,
-    ROBERTS
+    ROBERTS,
+    PREWITT
 }
 
 class BorderDetection(val kernelX:Kernel,val kernelY:Kernel) {

@@ -1,0 +1,28 @@
+package org.pdi.core.kernels
+
+import org.pdi.core.LinearKernel
+import kotlin.math.pow
+
+class AverageKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
+    init {
+        generateKernel()
+    }
+
+    override fun generateKernel() {
+        this.type = org.pdi.core.KernelType.AVERAGE
+        val centerX = cols / 2.0
+        val centerY = rows / 2.0
+        val radius = minOf(rows, cols) / 2.0
+
+        for (i in 0 until rows) {
+            for (j in 0 until cols) {
+                val distance = kotlin.math.sqrt((i - centerY + 0.5).pow(2) + (j - centerX + 0.5).pow(2))
+                if (distance <= radius) {
+                    kernel[i][j] = 1f
+                } else {
+                    kernel[i][j] = 0f
+                }
+            }
+        }
+    }
+}

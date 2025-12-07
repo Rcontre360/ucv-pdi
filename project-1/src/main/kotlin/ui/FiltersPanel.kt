@@ -1,6 +1,7 @@
 package org.pdi.ui
 
 import org.pdi.core.*
+import org.pdi.core.kernels.*
 import java.awt.Dimension
 import javax.swing.*
 
