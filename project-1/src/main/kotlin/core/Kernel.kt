@@ -10,6 +10,7 @@ enum class KernelType {
     MEDIAN,
     GAUSSIAN,
     CUSTOM,
+    LAPLACIAN,
     LAPLACIAN_GAUSSIAN,
     SOBEL_X,
     SOBEL_Y
@@ -224,7 +225,7 @@ class LaplacianKernel : LinearKernel(3, 3) {
         generateKernel()
     }
     override fun generateKernel() {
-        this.type = KernelType.CUSTOM // Not visible to user
+        this.type = KernelType.LAPLACIAN
         kernel = arrayOf(
             floatArrayOf(0f, 1f, 0f),
             floatArrayOf(1f, -4f, 1f),
@@ -241,6 +242,7 @@ class LaplacianGaussianKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
         this.type = KernelType.LAPLACIAN_GAUSSIAN
         val gaussian = GaussianKernel(rows, cols)
         gaussian.generateKernel()
+
         val laplacian = LaplacianKernel()
         val logKernel = gaussian.applyKernel(laplacian)
         this.kernel = logKernel.kernel
@@ -279,5 +281,12 @@ class SobelYKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
         this.kernel = sobelY.kernel
         this.rows = sobelY.rows
         this.cols = sobelY.cols
+    }
+}
+
+class CustomKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
+    override fun generateKernel() {
+        this.type = KernelType.CUSTOM
+        kernel = Array(rows) { FloatArray(cols) { 0f } }
     }
 }

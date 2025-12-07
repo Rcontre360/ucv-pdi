@@ -182,4 +182,9 @@ class AppState {
         _current = _current?.let { Image(kernel.execute(it.image)) }
         notifyUpdates()
     }
+
+    fun applyOperation(operation: Operation) {
+        _current = _current?.let { Image(operation.apply(it.image)) }
+        notifyUpdates()
+    }
 }

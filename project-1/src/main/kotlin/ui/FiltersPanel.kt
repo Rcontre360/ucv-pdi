@@ -12,11 +12,13 @@ class FiltersPanel(private val state: AppState) : JPanel() {
     private var selectedKernelType: KernelType = KernelType.GAUSSIAN
     private var currentRows: Int = 3
     private var currentCols: Int = 3
+    private var customKernel: Kernel? = null
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         border = BorderFactory.createTitledBorder("Filters")
-        preferredSize = Dimension(200, 600)
+        preferredSize = Dimension(200, 300)
+        maximumSize = Dimension(Int.MAX_VALUE, 300)
 
         val controlsPanel = JPanel()
         controlsPanel.layout = BoxLayout(controlsPanel, BoxLayout.Y_AXIS)
@@ -28,6 +30,9 @@ class FiltersPanel(private val state: AppState) : JPanel() {
 
         filterTypeComboBox.addActionListener {
             selectedKernelType = filterTypeComboBox.selectedItem as KernelType
+            val isCustom = selectedKernelType == KernelType.CUSTOM
+            kernelRowsField.isEditable = isCustom
+            kernelColsField.isEditable = isCustom
         }
 
         val kernelSizePanel = JPanel()
@@ -58,7 +63,7 @@ class FiltersPanel(private val state: AppState) : JPanel() {
         showKernelButton.addActionListener {
             val rows = kernelRowsField.text.toIntOrNull()
             val cols = kernelColsField.text.toIntOrNull()
-            if (rows == null || cols == null || rows !in 1..7 || cols !in 1..7) {
+            if (rows == null || cols == null || rows !in 1..13 || cols !in 1..13) {
                 JOptionPane.showMessageDialog(this, "Kernel rows and columns must be integers between 1 and 7.", "Invalid Input", JOptionPane.ERROR_MESSAGE)
                 return@addActionListener
             }
@@ -71,7 +76,7 @@ class FiltersPanel(private val state: AppState) : JPanel() {
         applyButton.addActionListener {
             val rows = kernelRowsField.text.toIntOrNull()
             val cols = kernelColsField.text.toIntOrNull()
-            if (rows == null || cols == null || rows !in 1..7 || cols !in 1..7) {
+            if (rows == null || cols == null || rows !in 1..13 || cols !in 1..13) {
                 JOptionPane.showMessageDialog(this, "Kernel rows and columns must be integers between 1 and 7.", "Invalid Input", JOptionPane.ERROR_MESSAGE)
                 return@addActionListener
             }
@@ -90,10 +95,18 @@ class FiltersPanel(private val state: AppState) : JPanel() {
     private fun createKernel(): Kernel {
         val rows = kernelRowsField.text.toIntOrNull() ?: 3
         val cols = kernelColsField.text.toIntOrNull() ?: 3
+        if (selectedKernelType == KernelType.CUSTOM) {
+            if (customKernel == null || customKernel!!.rows != rows || customKernel!!.cols != cols) {
+                customKernel = CustomKernel(rows, cols)
+                customKernel!!.generateKernel()
+            }
+            return customKernel as Kernel
+        }
         val kernel = when (selectedKernelType) {
             KernelType.AVERAGE -> AverageKernel(rows, cols)
             KernelType.MEDIAN -> MedianKernel(rows, cols)
             KernelType.GAUSSIAN -> GaussianKernel(rows, cols)
+            KernelType.LAPLACIAN -> LaplacianKernel()
             KernelType.LAPLACIAN_GAUSSIAN -> LaplacianGaussianKernel(rows, cols)
             KernelType.SOBEL_X -> SobelXKernel(rows, cols)
             KernelType.SOBEL_Y -> SobelYKernel(rows, cols)

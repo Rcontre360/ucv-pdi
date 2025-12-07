@@ -13,6 +13,7 @@ import org.pdi.ui.FiltersPanel
 import org.pdi.ui.InfoPanel
 import org.pdi.ui.LeftPanel
 import org.pdi.ui.MainButtonsPanel
+import org.pdi.ui.OperationsPanel
 import java.awt.image.BufferedImage
 
 private val imageLabel = JLabel()
@@ -45,12 +46,18 @@ fun createAndShowGUI(state: AppState) {
     val leftPanel = LeftPanel(state, infoPanel)
     val bottomPanel = BottomPanel(state)
     val filtersPanel = FiltersPanel(state)
+    val operationsPanel = OperationsPanel(state)
+
+    val eastPanel = JPanel(BorderLayout()).apply {
+        add(filtersPanel, BorderLayout.NORTH)
+        add(operationsPanel, BorderLayout.CENTER)
+    }
 
     val mainPanel = JPanel(BorderLayout()).apply {
         add(mainButtonsPanel, BorderLayout.NORTH)
         add(leftPanel, BorderLayout.WEST)
         add(bottomPanel, BorderLayout.SOUTH)
-        add(filtersPanel, BorderLayout.EAST)
+        add(eastPanel, BorderLayout.EAST)
         val imageScrollPane = JScrollPane(imageLabel)
         add(imageScrollPane, BorderLayout.CENTER)
     }
