@@ -113,6 +113,7 @@ class FiltersPanel(private val state: AppState) : JPanel() {
         val kernelMatrixPanel = KernelMatrixPanel(kernel)
         kernelFrame.contentPane.add(kernelMatrixPanel)
         kernelFrame.pack()
+        kernelFrame.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this))
         kernelFrame.isVisible = true
     }
 }

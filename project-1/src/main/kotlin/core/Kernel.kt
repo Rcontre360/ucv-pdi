@@ -31,24 +31,35 @@ abstract class Kernel(var rows: Int, var cols: Int) {
     abstract fun generateKernel()
 
     fun applyKernel(other: Kernel): Kernel {
-        val newRows = rows + other.rows - 1
-        val newCols = cols + other.cols - 1
-        val newKernel = object : LinearKernel(newRows, newCols) {
+        val newKernel = object : LinearKernel(rows, cols) {
             override fun generateKernel() {
                 // Not needed for this anonymous class
             }
         }
 
-        for (i in 0 until newRows) {
-            for (j in 0 until newCols) {
+        val rowStartOut = other.rows / 2
+        val colStartOut = other.cols / 2
+
+        // i, j for the output kernel (same size as this.kernel)
+        for (i in 0 until rows) {
+            for (j in 0 until cols) {
+
+                val iFull = i + rowStartOut
+                val jFull = j + colStartOut
+
                 var sum = 0f
+                // k, l for this.kernel
                 for (k in 0 until rows) {
                     for (l in 0 until cols) {
-                        if (i - k >= 0 && i - k < other.rows && j - l >= 0 && j - l < other.cols) {
-                            sum += kernel[k][l] * other.kernel[i - k][j - l]
+                        val otherK = iFull - k
+                        val otherL = jFull - l
+                        if (otherK >= 0 && otherK < other.rows && otherL >= 0 && otherL < other.cols) {
+                            println("HERE ($k,$l) AND ($otherK, $otherL)")
+                            sum += kernel[k][l] * other.kernel[otherK][otherL]
                         }
                     }
                 }
+                println("ON ($i,$j)")
                 newKernel.kernel[i][j] = sum
             }
         }
@@ -196,7 +207,7 @@ class DerivativeXKernel() : LinearKernel(1, 2) {
     override fun generateKernel() {
         this.type = KernelType.CUSTOM
         kernel = arrayOf(
-            floatArrayOf(-1f, 1f)
+            floatArrayOf(-1f, 0f, 1f)
         )
     }
 }
@@ -209,6 +220,7 @@ class DerivativeYKernel() : LinearKernel(2, 1) {
         this.type = KernelType.CUSTOM
         kernel = arrayOf(
             floatArrayOf(-1f),
+            floatArrayOf(0f),
             floatArrayOf(1f)
         )
     }
@@ -237,7 +249,7 @@ class LaplacianGaussianKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
         val gaussian = GaussianKernel(rows, cols)
         gaussian.generateKernel()
         val laplacian = LaplacianKernel()
-        val logKernel = laplacian.applyKernel(gaussian)
+        val logKernel = gaussian.applyKernel(laplacian)
         this.kernel = logKernel.kernel
         this.rows = logKernel.rows
         this.cols = logKernel.cols
@@ -254,7 +266,7 @@ class SobelXKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
         val gaussian = GaussianKernel(rows, cols)
         gaussian.generateKernel()
         val derivativeX = DerivativeXKernel()
-        val sobelX = derivativeX.applyKernel(gaussian)
+        val sobelX = gaussian.applyKernel(derivativeX)
         this.kernel = sobelX.kernel
         this.rows = sobelX.rows
         this.cols = sobelX.cols
@@ -270,7 +282,7 @@ class SobelYKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
         val gaussian = GaussianKernel(rows, cols)
         gaussian.generateKernel()
         val derivativeY = DerivativeYKernel()
-        val sobelY = derivativeY.applyKernel(gaussian)
+        val sobelY = gaussian.applyKernel(derivativeY)
         this.kernel = sobelY.kernel
         this.rows = sobelY.rows
         this.cols = sobelY.cols
