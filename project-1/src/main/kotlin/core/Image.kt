@@ -318,5 +318,38 @@ class Image(val buff: BufferedImage) {
         return histogram
     }
 
-
+    fun getLineProfile(axis: Char, lineNumber: Int, channel: Char): List<Pair<Int, Int>> {
+        val profile = mutableListOf<Pair<Int, Int>>()
+        when (axis) {
+            'X' -> { // Horizontal line (row)
+                if (lineNumber !in 0 until _metadata.height) return emptyList()
+                for (x in 0 until _metadata.width) {
+                    val color = Color(image.getRGB(x, lineNumber))
+                    val value = when (channel) {
+                        'R' -> color.red
+                        'G' -> color.green
+                        'B' -> color.blue
+                        'G' -> (color.red + color.green + color.blue) / 3 // Grayscale approximation
+                        else -> 0
+                    }
+                    profile.add(x to value)
+                }
+            }
+            'Y' -> { // Vertical line (column)
+                if (lineNumber !in 0 until _metadata.width) return emptyList()
+                for (y in 0 until _metadata.height) {
+                    val color = Color(image.getRGB(lineNumber, y))
+                    val value = when (channel) {
+                        'R' -> color.red
+                        'G' -> color.green
+                        'B' -> color.blue
+                        'G' -> (color.red + color.green + color.blue) / 3 // Grayscale approximation
+                        else -> 0
+                    }
+                    profile.add(y to value)
+                }
+            }
+        }
+        return profile
+    }
 }

@@ -51,10 +51,35 @@ class MainButtonsPanel(
             }
         }
 
+        val showLineProfileButton = JButton("Line Profile").apply {
+            addActionListener {
+                if (state.getImage() != null) {
+                    showLineProfileWindow()
+                } else {
+                    JOptionPane.showMessageDialog(this@MainButtonsPanel, "No image loaded.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
+                }
+            }
+        }
+
         add(selectImageButton)
         add(showHistogramButton)
         add(showTonalCurveButton)
         add(showUmbralizationButton)
+        add(showLineProfileButton)
+    }
+
+    private fun showLineProfileWindow() {
+        val lineProfileFrame = JFrame("Line Profile").apply {
+            defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
+            setSize(600, 400)
+            setLocationRelativeTo(SwingUtilities.getWindowAncestor(this@MainButtonsPanel))
+        }
+
+        val lineProfilePanel = LineProfilePanel(state)
+
+        lineProfileFrame.contentPane.add(lineProfilePanel)
+        lineProfileFrame.pack()
+        lineProfileFrame.isVisible = true
     }
 
     private fun showHistogramWindow(histogramData: Histogram) {

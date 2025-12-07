@@ -10,7 +10,7 @@ import org.pdi.core.kernels.SobelYKernel
 
 class AppState {
     private var _initialImage: Image? = null
-    private var _current: Image? = null
+    var _current: Image? = null
     var color: Color = Color.white
         private set
 
@@ -189,5 +189,9 @@ class AppState {
     fun applyOperation(operation: BorderDetection) {
         _current = _current?.let { operation.apply(it) }
         notifyUpdates()
+    }
+
+    fun getLineProfile(axis: Char, lineNumber: Int, channel: Char): List<Pair<Int, Int>>? {
+        return _current?.getLineProfile(axis, lineNumber, channel)
     }
 }
