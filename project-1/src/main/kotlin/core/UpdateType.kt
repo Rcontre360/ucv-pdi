@@ -16,5 +16,5 @@ sealed class UpdateType {
     data class LoadImageUpdate(val file: File) : UpdateType()
     data class ColorUpdate(val color: Color) : UpdateType()
     data class ConvolutionUpdate(val kernel: Kernel) : UpdateType()
-    data class OperationUpdate(val operation: BorderDetection) : UpdateType()
+    data class BorderOperation(val kernelX: Kernel,val kernelY: Kernel) : UpdateType()
 }

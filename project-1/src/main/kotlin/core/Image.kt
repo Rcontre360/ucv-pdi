@@ -5,6 +5,7 @@ import java.awt.Color
 import java.awt.image.BufferedImage
 import kotlin.Int
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 enum class ZoomAlgorithm {
     CLOSEST_NEIGHTBOUR,
@@ -33,16 +34,18 @@ class Image(val buff: BufferedImage) {
     val histogram: Histogram by lazy { Histogram(calculateHistogram()) }
     val isGrayscale = getIsGrayscale()
 
-    fun pow(pow: Float): Image {
-        return applyPerPixel { i, j, color ->
-            if (i == 0 && j == 0)
-                println("POW (${i},${j})^${pow} = (${color.red})^${pow} = ${(color.red).toFloat().pow(pow)}")
-            Color(
-                ((color.red).toFloat().pow(pow)).toInt().coerceIn(0, 255),
-                ((color.green).toFloat().pow(pow)).toInt().coerceIn(0, 255),
-                ((color.blue).toFloat().pow(pow)).toInt().coerceIn(0, 255),
-            ).rgb
+    fun getTonalCurve(resImg: Image): List<Pair<Color,Color>>{
+        val res: MutableList<Pair<Color, Color>> = mutableListOf()
+
+        for (y in 0 until metadata.height) {
+            for (x in 0 until metadata.width) {
+                val src = Color(image.getRGB(x, y))
+                val dst = Color(resImg.image.getRGB(x, y))
+                res.add(src to dst)
+            }
         }
+
+        return res
     }
 
     operator fun plus(other: Image): Image {
@@ -51,8 +54,6 @@ class Image(val buff: BufferedImage) {
 
         return applyPerPixel { x, y, color ->
             val other = Color(other.image.getRGB(x, y))
-            if (x == 0 && y == 0)
-                println("SUM (${x},${y}) = (${color.red}) + (${other.red}) = ${color.red + other.red}")
             Color(
                 (color.red + other.red).toInt().coerceIn(0, 255),
                 (color.green + other.green).toInt().coerceIn(0, 255),
@@ -61,32 +62,14 @@ class Image(val buff: BufferedImage) {
         }
     }
 
-    private fun getIsGrayscale(): Boolean{
-        for (y in 0 until metadata.height) {
-            for (x in 0 until metadata.width) {
-                val pixel = image.getRGB(x, y)
-                val color = Color(pixel)
-                if (color.red != color.green && color.green != color.blue) {
-                    return false
-                }
-            }
+    fun pow(pow: Float): Image {
+        return applyPerPixel { i, j, color ->
+            Color(
+                ((color.red).toFloat().pow(pow)).toInt().coerceIn(0, 255),
+                ((color.green).toFloat().pow(pow)).toInt().coerceIn(0, 255),
+                ((color.blue).toFloat().pow(pow)).toInt().coerceIn(0, 255),
+            ).rgb
         }
-        return true
-    }
-
-    private fun applyPerPixel(processor: PixelProcessor): Image {
-        val newImage = BufferedImage(metadata.width, metadata.height, BufferedImage.TYPE_INT_RGB)
-
-        for (y in 0 until metadata.height) {
-            for (x in 0 until metadata.width) {
-                val pixel = image.getRGB(x, y)
-                val color = Color(pixel)
-                val newRgbValue = processor(x, y, color)
-                newImage.setRGB(x, y, newRgbValue)
-            }
-        }
-
-        return Image(newImage)
     }
 
     fun applyKernel(kernel:Kernel):Image{
@@ -120,18 +103,29 @@ class Image(val buff: BufferedImage) {
         return Image(newImage)
     }
 
-    fun tonalCurve(resImg: Image): List<Pair<Color,Color>>{
-        val res: MutableList<Pair<Color, Color>> = mutableListOf()
+    fun applyBorderOperator(kernelX:Kernel,kernelY:Kernel):Image{
+        val imageX = applyKernel(kernelX)
+        val imageY = applyKernel(kernelY)
 
-        for (y in 0 until metadata.height) {
-            for (x in 0 until metadata.width) {
-                val src = Color(image.getRGB(x, y))
-                val dst = Color(resImg.image.getRGB(x, y))
-                res.add(src to dst)
+        val width = metadata.width
+        val height = metadata.height
+        val newImage = BufferedImage(width, height, image.type)
+
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                val cx = Color(imageX.image.getRGB(x, y))
+                val cy = Color(imageY.image.getRGB(x, y))
+
+                val r = sqrt((cx.red*cx.red + cy.red * cy.red).toDouble()).toInt().coerceIn(0, 255)
+                val g = sqrt((cx.green * cx.green + cy.green * cy.green).toDouble()).toInt().coerceIn(0, 255)
+                val b = sqrt((cx.blue * cx.blue + cy.blue * cy.blue).toDouble()).toInt().coerceIn(0, 255)
+
+                val newRgb = Color(r,g,b).rgb
+                newImage.setRGB(x, y, newRgb)
             }
         }
 
-        return res
+        return Image(newImage)
     }
 
     fun toGrayscale(tint: Color): Image {
@@ -204,7 +198,6 @@ class Image(val buff: BufferedImage) {
         }
 
         return applyPerPixel { _, _, color ->
-            // Since it's a grayscale image, R, G, and B are the same.
             val gray = color.red
             val newGray = thresholding(gray)
             Color(newGray, newGray, newGray).rgb
@@ -326,7 +319,7 @@ class Image(val buff: BufferedImage) {
                         'R' -> color.red
                         'G' -> color.green
                         'B' -> color.blue
-                        'G' -> (color.red + color.green + color.blue) / 3 // Grayscale approximation
+                        'L' -> (color.red + color.green + color.blue) / 3 // Grayscale approximation
                         else -> 0
                     }
                     profile.add(x to value)
@@ -340,7 +333,7 @@ class Image(val buff: BufferedImage) {
                         'R' -> color.red
                         'G' -> color.green
                         'B' -> color.blue
-                        'G' -> (color.red + color.green + color.blue) / 3 // Grayscale approximation
+                        'L' -> (color.red + color.green + color.blue) / 3 // Grayscale approximation
                         else -> 0
                     }
                     profile.add(y to value)
@@ -349,4 +342,33 @@ class Image(val buff: BufferedImage) {
         }
         return profile
     }
+
+    private fun getIsGrayscale(): Boolean{
+        for (y in 0 until metadata.height) {
+            for (x in 0 until metadata.width) {
+                val pixel = image.getRGB(x, y)
+                val color = Color(pixel)
+                if (color.red != color.green && color.green != color.blue) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    private fun applyPerPixel(processor: PixelProcessor): Image {
+        val newImage = BufferedImage(metadata.width, metadata.height, BufferedImage.TYPE_INT_RGB)
+
+        for (y in 0 until metadata.height) {
+            for (x in 0 until metadata.width) {
+                val pixel = image.getRGB(x, y)
+                val color = Color(pixel)
+                val newRgbValue = processor(x, y, color)
+                newImage.setRGB(x, y, newRgbValue)
+            }
+        }
+
+        return Image(newImage)
+    }
+
 }

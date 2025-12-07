@@ -4,9 +4,6 @@ import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
-import org.pdi.core.kernels.MedianKernel
-import org.pdi.core.kernels.SobelXKernel
-import org.pdi.core.kernels.SobelYKernel
 
 data class StateContext(
     val currentImage: Image? = null,
@@ -14,24 +11,59 @@ data class StateContext(
     val brightness: Float = 0.0f,
     val contrast: Float = 0.0f,
     val rotationApplied: Int = 0,
-    val isGrayscaleApplied: Boolean = false,
     val currentZoomLevelIndex: Int = 9 // Default for 1.0f
 )
 
 class AppState {
     private var _initialImage: Image? = null
 
+    private val _contextListeners = mutableListOf<(StateContext) -> Unit>()
+
     var context: StateContext = StateContext()
         private set
 
-    private val _contextListeners = mutableListOf<(StateContext) -> Unit>()
+    var zoomAlgorithm: ZoomAlgorithm = ZoomAlgorithm.LINEAR_INTERPOLATION
+    val zoomLevels = listOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f)
+
+    fun isCurrentImageGrayscale(): Boolean {
+        return context.currentImage?.isGrayscale?:false
+    }
+
+    fun getTonalCurve(): List<Pair<Color, Color>>? {
+        return _initialImage?.let { initial ->
+            context.currentImage?.let { current ->
+                initial.getTonalCurve(current)
+            }
+        }
+    }
+
+    fun getCurrentMetadata(): Metadata? {
+        return context.currentImage?.metadata
+    }
+
+    fun getHistogram(): Histogram? {
+        return context.currentImage?.histogram
+    }
+
+    fun getImage(): BufferedImage? {
+        return context.currentImage?.image
+    }
+
+    fun getLineProfile(axis: Char, lineNumber: Int, channel: Char): List<Pair<Int, Int>>? {
+        return context.currentImage?.getLineProfile(axis, lineNumber, channel)
+    }
 
     fun addContextListener(listener: (StateContext) -> Unit) {
         _contextListeners.add(listener)
     }
 
-    var zoomAlgorithm: ZoomAlgorithm = ZoomAlgorithm.LINEAR_INTERPOLATION
-    val zoomLevels = listOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f)
+    fun applyConvolution(kernel: Kernel) {
+        update(UpdateType.ConvolutionUpdate(kernel))
+    }
+
+    fun applyBorderOperator(kernelX:Kernel,kernelY:Kernel) {
+        update(UpdateType.BorderOperation(kernelX,kernelY))
+    }
 
     fun clear() {
         update(UpdateType.Clear)
@@ -61,6 +93,27 @@ class AppState {
         update(UpdateType.RotationUpdate(angle))
     }
 
+
+    fun applyThresholding(thresholds: List<Int>): Boolean {
+        if (!isCurrentImageGrayscale()) {
+            return false
+        }
+        update(UpdateType.ThresholdUpdate(thresholds))
+        return true
+    }
+
+    fun zoomIn() {
+        update(UpdateType.ZoomInUpdate)
+    }
+
+    fun zoomOut() {
+        update(UpdateType.ZoomOutUpdate)
+    }
+
+    fun loadImage(file: File) {
+        update(UpdateType.LoadImageUpdate(file))
+    }
+
     private fun update(updateType: UpdateType) {
         var newStateContext = context.copy()
 
@@ -88,7 +141,6 @@ class AppState {
             }
             is UpdateType.GrayscaleUpdate -> {
                 newStateContext = newStateContext.copy(
-                    isGrayscaleApplied = true,
                     currentImage = newStateContext.currentImage?.toGrayscale(updateType.tint)
                 )
             }
@@ -104,7 +156,7 @@ class AppState {
                 )
             }
             is UpdateType.ThresholdUpdate -> {
-                if (!newStateContext.isGrayscaleApplied) {
+                if (!isCurrentImageGrayscale()) {
                     return 
                 }
                 val imageToChange = newStateContext.currentImage ?: return
@@ -155,9 +207,9 @@ class AppState {
                     currentImage = newStateContext.currentImage?.applyKernel(updateType.kernel)
                 )
             }
-            is UpdateType.OperationUpdate -> {
+            is UpdateType.BorderOperation -> {
                 newStateContext = newStateContext.copy(
-                    currentImage = newStateContext.currentImage?.let { updateType.operation.apply(it) }
+                    currentImage = newStateContext.currentImage?.applyBorderOperator(updateType.kernelX,updateType.kernelY)
                 )
             }
         }
@@ -166,65 +218,5 @@ class AppState {
         _contextListeners.forEach { it.invoke(context) }
     }
 
-    fun isCurrentImageGrayscale(): Boolean {
-        return context.currentImage?.isGrayscale?:false
-    }
-
-    fun applyThresholding(thresholds: List<Int>): Boolean {
-        if (!isCurrentImageGrayscale()) {
-            return false
-        }
-        update(UpdateType.ThresholdUpdate(thresholds))
-        return true
-    }
-
-    fun setOnZoomUpdateListener(listener: (Float) -> Unit) {
-        // This listener is deprecated. UI components should now listen to onStateContextUpdate
-        // and extract zoom level from StateContext.
-    }
-
-    fun zoomIn() {
-        update(UpdateType.ZoomInUpdate)
-    }
-
-    fun zoomOut() {
-        update(UpdateType.ZoomOutUpdate)
-    }
-
-    fun loadImage(file: File) {
-        update(UpdateType.LoadImageUpdate(file))
-    }
-
-    fun getTonalCurve(): List<Pair<Color, Color>>? {
-        return _initialImage?.let { initial ->
-            context.currentImage?.let { current ->
-                initial.tonalCurve(current)
-            }
-        }
-    }
-
-    fun getCurrentMetadata(): Metadata? {
-        return context.currentImage?.metadata
-    }
-
-    fun getHistogram(): Histogram? {
-        return context.currentImage?.histogram
-    }
-
-    fun getImage(): BufferedImage? {
-        return context.currentImage?.image
-    }
-
-    fun applyConvolution(kernel: Kernel) {
-        update(UpdateType.ConvolutionUpdate(kernel))
-    }
-
-    fun applyOperation(operation: BorderDetection) {
-        update(UpdateType.OperationUpdate(operation))
-    }
-
-    fun getLineProfile(axis: Char, lineNumber: Int, channel: Char): List<Pair<Int, Int>>? {
-        return context.currentImage?.getLineProfile(axis, lineNumber, channel)
-    }
 }
 

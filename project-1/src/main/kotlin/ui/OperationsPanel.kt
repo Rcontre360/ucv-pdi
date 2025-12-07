@@ -1,8 +1,6 @@
 package org.pdi.ui
 
 import org.pdi.core.AppState
-import org.pdi.core.BorderDetection
-import org.pdi.core.BorderDetectionType
 import org.pdi.core.Kernel
 import org.pdi.core.kernels.PrewittXKernel
 import org.pdi.core.kernels.PrewittYKernel
@@ -17,10 +15,16 @@ import javax.swing.BorderFactory
 import javax.swing.JButton
 import javax.swing.JPanel
 
+enum class BorderDetectionType {
+    SOBEL,
+    ROBERTS,
+    PREWITT
+}
+
 class OperationsPanel(private val state: AppState) : JPanel() {
     private val operationsComboBox = JComboBox<BorderDetectionType>(BorderDetectionType.values())
     private val applyButton = JButton("Apply")
-    private var selectedOperation: org.pdi.core.BorderDetectionType = BorderDetectionType.SOBEL
+    private var selectedOperation: BorderDetectionType = BorderDetectionType.SOBEL
 
     init {
         layout = BorderLayout()
@@ -35,12 +39,12 @@ class OperationsPanel(private val state: AppState) : JPanel() {
 
         applyButton.addActionListener {
             selectedOperation?.let {
-                val operation = when (selectedOperation) {
-                    BorderDetectionType.SOBEL -> BorderDetection(SobelXKernel(3,3), SobelYKernel(3,3))
-                    BorderDetectionType.ROBERTS -> BorderDetection(RobertsXKernel(), RobertsYKernel())
-                    BorderDetectionType.PREWITT -> BorderDetection(PrewittXKernel(), PrewittYKernel())
+                val (kernelX,kernelY) = when (selectedOperation) {
+                    BorderDetectionType.SOBEL -> Pair(SobelXKernel(3,3), SobelYKernel(3,3))
+                    BorderDetectionType.ROBERTS -> Pair(RobertsXKernel(), RobertsYKernel())
+                    BorderDetectionType.PREWITT -> Pair(PrewittXKernel(), PrewittYKernel())
                 }
-                state.applyOperation(operation)
+                state.applyBorderOperator(kernelX,kernelY)
             }
         }
     }
