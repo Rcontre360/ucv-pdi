@@ -179,12 +179,12 @@ class AppState {
     }
 
     fun applyConvolution(kernel: Kernel) {
-        _current = _current?.let { Image(kernel.execute(it.image)) }
+        _current = _current?.applyKernel(kernel)
         notifyUpdates()
     }
 
-    fun applyOperation(operation: Operation) {
-        _current = _current?.let { Image(operation.apply(it.image)) }
+    fun applyOperation(operation: BorderDetection) {
+        _current = _current?.let { operation.apply(it) }
         notifyUpdates()
     }
 }

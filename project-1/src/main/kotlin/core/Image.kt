@@ -1,5 +1,6 @@
 package org.pdi.core
 
+import kotlin.math.pow
 import java.awt.Color
 import java.awt.image.BufferedImage
 import kotlin.Int
@@ -35,6 +36,34 @@ class Image(val buff: BufferedImage) {
         return _metadata
     }
 
+    fun pow(pow: Float): Image {
+        return applyPerPixel { i, j, color ->
+            if (i == 0 && j == 0)
+                println("POW (${i},${j})^${pow} = (${color.red})^${pow} = ${(color.red).toFloat().pow(pow)}")
+            Color(
+                ((color.red).toFloat().pow(pow)).toInt().coerceIn(0, 255),
+                ((color.green).toFloat().pow(pow)).toInt().coerceIn(0, 255),
+                ((color.blue).toFloat().pow(pow)).toInt().coerceIn(0, 255),
+            ).rgb
+        }
+    }
+
+    operator fun plus(other: Image): Image {
+        if (_metadata.width != other._metadata.width || _metadata.height != other._metadata.height)
+            throw IllegalArgumentException("different image sizes for plus operator")
+
+        return applyPerPixel { x, y, color ->
+            val other = Color(other.image.getRGB(x, y))
+            if (x == 0 && y == 0)
+                println("SUM (${x},${y}) = (${color.red}) + (${other.red}) = ${color.red + other.red}")
+            Color(
+                (color.red + other.red).toInt().coerceIn(0, 255),
+                (color.green + other.green).toInt().coerceIn(0, 255),
+                (color.blue + other.blue).toInt().coerceIn(0, 255),
+            ).rgb
+        }
+    }
+
     private fun getIsGrayscale(): Boolean{
         for (y in 0 until _metadata.height) {
             for (x in 0 until _metadata.width) {
@@ -60,6 +89,37 @@ class Image(val buff: BufferedImage) {
             }
         }
 
+        return Image(newImage)
+    }
+
+    fun applyKernel(kernel:Kernel):Image{
+        val newImage = BufferedImage(_metadata.width, _metadata.height, BufferedImage.TYPE_INT_RGB)
+
+        for (y in 0 until _metadata.height) {
+            for (x in 0 until _metadata.width) {
+                val imgR = Array(kernel.rows) {FloatArray(kernel.cols)}
+                val imgG = Array(kernel.rows) {FloatArray(kernel.cols)}
+                val imgB = Array(kernel.rows) {FloatArray(kernel.cols)}
+
+                for (i in 0 until kernel.rows) {
+                    for (j in 0 until kernel.cols) {
+                        val imageX = (x - kernel.cols / 2 + j).coerceIn(0, image.width - 1)
+                        val imageY = (y - kernel.rows / 2 + i).coerceIn(0, image.height - 1)
+                        val color = Color(image.getRGB(imageX, imageY))
+
+                        imgR[i][j] = color.red.toFloat()
+                        imgG[i][j] = color.green.toFloat()
+                        imgB[i][j] = color.blue.toFloat()
+                    }
+                }
+
+                val r = kernel.convolute(imgR, true).roundToInt().coerceIn(0, 255)
+                val g = kernel.convolute(imgG, true).roundToInt().coerceIn(0, 255)
+                val b = kernel.convolute(imgB, true).roundToInt().coerceIn(0, 255)
+
+                newImage.setRGB(x,y, Color(r,g,b).rgb)
+            }
+        }
         return Image(newImage)
     }
 

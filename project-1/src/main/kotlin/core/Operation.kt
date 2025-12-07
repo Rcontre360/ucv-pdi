@@ -1,45 +1,37 @@
 package org.pdi.core
 
+import java.awt.Color
 import java.awt.image.BufferedImage
 import kotlin.math.sqrt
 
-abstract class Operation {
-    abstract fun apply(image: BufferedImage): BufferedImage
+enum class BorderDetectionType {
+    SOBEL,
+    ROBERTS
 }
 
-class Sobel : Operation() {
-    override fun apply(image: BufferedImage): BufferedImage {
-        val sobelX = SobelXKernel(3, 3)
-        val sobelY = SobelYKernel(3, 3)
+class BorderDetection(val kernelX:Kernel,val kernelY:Kernel) {
+    fun apply(image: Image): Image {
+        val imageX = image.applyKernel(kernelX)
+        val imageY = image.applyKernel(kernelY)
 
-        val imageX = sobelX.execute(image)
-        val imageY = sobelY.execute(image)
-
-        val width = image.width
-        val height = image.height
-        val newImage = BufferedImage(width, height, image.type)
+        val width = image._metadata.width
+        val height = image._metadata.height
+        val newImage = BufferedImage(width, height, image.image.type)
 
         for (x in 0 until width) {
             for (y in 0 until height) {
-                val rgbX = imageX.getRGB(x, y)
-                val rX = (rgbX shr 16) and 0xFF
-                val gX = (rgbX shr 8) and 0xFF
-                val bX = rgbX and 0xFF
+                val cx = Color(imageX.image.getRGB(x, y))
+                val cy = Color(imageY.image.getRGB(x, y))
 
-                val rgbY = imageY.getRGB(x, y)
-                val rY = (rgbY shr 16) and 0xFF
-                val gY = (rgbY shr 8) and 0xFF
-                val bY = rgbY and 0xFF
+                val r = sqrt((cx.red*cx.red + cy.red * cy.red).toDouble()).toInt().coerceIn(0, 255)
+                val g = sqrt((cx.green * cx.green + cy.green * cy.green).toDouble()).toInt().coerceIn(0, 255)
+                val b = sqrt((cx.blue * cx.blue + cy.blue * cy.blue).toDouble()).toInt().coerceIn(0, 255)
 
-                val r = sqrt((rX * rX + rY * rY).toDouble()).toInt().coerceIn(0, 255)
-                val g = sqrt((gX * gX + gY * gY).toDouble()).toInt().coerceIn(0, 255)
-                val b = sqrt((bX * bX + bY * bY).toDouble()).toInt().coerceIn(0, 255)
-
-                val newRgb = (r shl 16) or (g shl 8) or b
+                val newRgb = Color(r,g,b).rgb
                 newImage.setRGB(x, y, newRgb)
             }
         }
 
-        return newImage
+        return Image(newImage)
     }
 }

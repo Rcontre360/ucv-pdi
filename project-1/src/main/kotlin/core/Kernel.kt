@@ -20,7 +20,7 @@ abstract class Kernel(var rows: Int, var cols: Int) {
     var kernel: Array<FloatArray> = Array(rows) { FloatArray(cols) }
     var type: KernelType = KernelType.CUSTOM
 
-    abstract fun execute(image: BufferedImage): BufferedImage
+    abstract fun convolute(src: Array<FloatArray>, normalize: Boolean = false): Float
 
     fun setKernelValue(row: Int, col: Int, value: Float) {
         if (row < rows && col < cols) {
@@ -62,38 +62,16 @@ abstract class Kernel(var rows: Int, var cols: Int) {
 }
 
 abstract class LinearKernel(rows: Int, cols: Int) : Kernel(rows, cols) {
-    override fun execute(image: BufferedImage): BufferedImage {
-        val newImage = BufferedImage(image.width, image.height, image.type)
-        val kernelSum = kernel.sumOf { it.sum().toDouble() }.toFloat().let { if (it == 0f) 1f else it }
-
-        for (y in 0 until image.height) {
-            for (x in 0 until image.width) {
-                var r = 0f
-                var g = 0f
-                var b = 0f
-
-                for (i in 0 until rows) {
-                    for (j in 0 until cols) {
-                        val imageX = (x - cols / 2 + j).coerceIn(0, image.width - 1)
-                        val imageY = (y - rows / 2 + i).coerceIn(0, image.height - 1)
-                        val color = Color(image.getRGB(imageX, imageY))
-                        val kernelValue = kernel[i][j]
-
-                        r += color.red * kernelValue
-                        g += color.green * kernelValue
-                        b += color.blue * kernelValue
-                    }
-                }
-
-                val newColor = Color(
-                    (r / kernelSum).roundToInt().coerceIn(0, 255),
-                    (g / kernelSum).roundToInt().coerceIn(0, 255),
-                    (b / kernelSum).roundToInt().coerceIn(0, 255)
-                )
-                newImage.setRGB(x, y, newColor.rgb)
+    override fun convolute(src: Array<FloatArray>, normalize: Boolean): Float{
+        var sum = 0f
+        var kernelSum = 0f
+        for (i in 0 until rows) {
+            for (j in 0 until cols) {
+                sum += src[i][j] * kernel[i][j]
+                kernelSum += kernel[i][j]
             }
         }
-        return newImage
+        return sum / (if (normalize && kernelSum != 0f) { kernelSum } else {1f})
     }
 }
 
@@ -105,38 +83,15 @@ class MedianKernel(rows: Int, cols: Int) : Kernel(rows, cols) {
         kernel = Array(rows) { FloatArray(cols) { 1f } }
     }
 
-    override fun execute(image: BufferedImage): BufferedImage {
-        val newImage = BufferedImage(image.width, image.height, image.type)
-
-        for (y in 0 until image.height) {
-            for (x in 0 until image.width) {
-                val rValues = mutableListOf<Int>()
-                val gValues = mutableListOf<Int>()
-                val bValues = mutableListOf<Int>()
-
-                for (i in 0 until rows) {
-                    for (j in 0 until cols) {
-                        val imageX = (x - cols / 2 + j).coerceIn(0, image.width - 1)
-                        val imageY = (y - rows / 2 + i).coerceIn(0, image.height - 1)
-                        val color = Color(image.getRGB(imageX, imageY))
-                        rValues.add(color.red)
-                        gValues.add(color.green)
-                        bValues.add(color.blue)
-                    }
-                }
-
-                rValues.sort()
-                gValues.sort()
-                bValues.sort()
-
-                val medianR = rValues[rValues.size / 2]
-                val medianG = gValues[gValues.size / 2]
-                val medianB = bValues[bValues.size / 2]
-
-                newImage.setRGB(x, y, Color(medianR, medianG, medianB).rgb)
+    override fun convolute(src: Array<FloatArray>, normalize: Boolean): Float{
+        var list = mutableListOf<Float>()
+        for (i in 0 until rows) {
+            for (j in 0 until cols) {
+                list.add(src[i][j])
             }
         }
-        return newImage
+        list.sort()
+        return list[list.size / 2]
     }
 }
 
