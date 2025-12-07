@@ -14,6 +14,14 @@ class FiltersPanel(private val state: AppState) : JPanel() {
     private var currentRows: Int = 3
     private var currentCols: Int = 3
     private var customKernel: Kernel? = null
+    private val laplacianProfilingKernel = LaplacianKernelProfiling()
+
+    private val profilingFactorAdjuster = ValueAdjuster(1f, 1f, 10f, 1f) { newValue ->
+        laplacianProfilingKernel.updateFactor(newValue.toInt())
+    }.apply {
+        border = BorderFactory.createTitledBorder("Profiling Factor")
+        isVisible = false // Initially hidden
+    }
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -35,24 +43,37 @@ class FiltersPanel(private val state: AppState) : JPanel() {
                 KernelType.LAPLACIAN -> {
                     kernelRowsField.text = "3"
                     kernelColsField.text = "3"
+                    profilingFactorAdjuster.isVisible = false
+                    true
+                }
+                KernelType.LAPLACIAN_PROFILING -> {
+                    kernelRowsField.text = "3"
+                    kernelColsField.text = "3"
+                    profilingFactorAdjuster.isVisible = true
                     true
                 }
                 KernelType.ROBERTS_X, KernelType.ROBERTS_Y -> {
                     kernelRowsField.text = "2"
                     kernelColsField.text = "2"
+                    profilingFactorAdjuster.isVisible = false
                     true
                 }
                 KernelType.PREWITT_X, KernelType.PREWITT_Y -> {
                     kernelRowsField.text = "3"
                     kernelColsField.text = "3"
+                    profilingFactorAdjuster.isVisible = false
                     true
                 }
                 KernelType.SOBEL_X, KernelType.SOBEL_Y -> {
                     kernelRowsField.text = "3"
                     kernelColsField.text = "3"
+                    profilingFactorAdjuster.isVisible = false
                     true
                 }
-                else -> false
+                else -> {
+                    profilingFactorAdjuster.isVisible = false
+                    false
+                }
             }
             kernelRowsField.isEditable = !isFixedSizeKernel
             kernelColsField.isEditable = !isFixedSizeKernel
@@ -81,6 +102,8 @@ class FiltersPanel(private val state: AppState) : JPanel() {
                 currentCols = kernelColsField.text.toIntOrNull() ?: 3
             }
         })
+
+        controlsPanel.add(profilingFactorAdjuster)
 
         val showKernelButton = JButton("Show Kernel")
         showKernelButton.addActionListener {
@@ -130,6 +153,12 @@ class FiltersPanel(private val state: AppState) : JPanel() {
             KernelType.MEDIAN -> MedianKernel(rows, cols)
             KernelType.GAUSSIAN -> GaussianKernel(rows, cols)
             KernelType.LAPLACIAN -> LaplacianKernel()
+            KernelType.LAPLACIAN_PROFILING -> {
+                laplacianProfilingKernel.rows = rows
+                laplacianProfilingKernel.cols = cols
+                laplacianProfilingKernel.generateKernel()
+                laplacianProfilingKernel
+            }
             KernelType.LAPLACIAN_GAUSSIAN -> LaplacianGaussianKernel(rows, cols)
             KernelType.SOBEL_X -> SobelXKernel(rows, cols)
             KernelType.SOBEL_Y -> SobelYKernel(rows, cols)

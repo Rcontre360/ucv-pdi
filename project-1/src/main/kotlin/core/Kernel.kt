@@ -6,6 +6,7 @@ enum class KernelType {
     GAUSSIAN,
     CUSTOM,
     LAPLACIAN,
+    LAPLACIAN_PROFILING,
     LAPLACIAN_GAUSSIAN,
     SOBEL_X,
     SOBEL_Y,
@@ -70,6 +71,6 @@ abstract class LinearKernel(rows: Int, cols: Int) : Kernel(rows, cols) {
                 kernelSum += kernel[i][j]
             }
         }
-        return sum / (if (normalize && kernelSum != 0f) { kernelSum } else {1f})
+        return sum / (if (normalize && (kernelSum !in 0f..0f)) { kernelSum } else {1f})
     }
 }
