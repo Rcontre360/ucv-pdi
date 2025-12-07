@@ -17,8 +17,8 @@ class BorderDetection(val kernelX:Kernel,val kernelY:Kernel) {
         val imageX = image.applyKernel(kernelX)
         val imageY = image.applyKernel(kernelY)
 
-        val width = image._metadata.width
-        val height = image._metadata.height
+        val width = image.metadata.width
+        val height = image.metadata.height
         val newImage = BufferedImage(width, height, image.image.type)
 
         for (x in 0 until width) {

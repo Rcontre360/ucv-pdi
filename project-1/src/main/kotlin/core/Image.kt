@@ -23,18 +23,15 @@ data class Metadata(
 
 class Image(val buff: BufferedImage) {
     val image: BufferedImage = buff
-    val _metadata = Metadata(
+    val metadata = Metadata(
         width = image.width,
         height = image.height,
         bitsPerPixel = image.colorModel.pixelSize,
         uniqueColors = image.colorModel.numComponents
     )
+
     val histogram: Histogram by lazy { Histogram(calculateHistogram()) }
     val isGrayscale = getIsGrayscale()
-
-    fun getMetadata(): Metadata{
-        return _metadata
-    }
 
     fun pow(pow: Float): Image {
         return applyPerPixel { i, j, color ->
@@ -49,7 +46,7 @@ class Image(val buff: BufferedImage) {
     }
 
     operator fun plus(other: Image): Image {
-        if (_metadata.width != other._metadata.width || _metadata.height != other._metadata.height)
+        if (metadata.width != other.metadata.width || metadata.height != other.metadata.height)
             throw IllegalArgumentException("different image sizes for plus operator")
 
         return applyPerPixel { x, y, color ->
@@ -65,8 +62,8 @@ class Image(val buff: BufferedImage) {
     }
 
     private fun getIsGrayscale(): Boolean{
-        for (y in 0 until _metadata.height) {
-            for (x in 0 until _metadata.width) {
+        for (y in 0 until metadata.height) {
+            for (x in 0 until metadata.width) {
                 val pixel = image.getRGB(x, y)
                 val color = Color(pixel)
                 if (color.red != color.green && color.green != color.blue) {
@@ -78,10 +75,10 @@ class Image(val buff: BufferedImage) {
     }
 
     private fun applyPerPixel(processor: PixelProcessor): Image {
-        val newImage = BufferedImage(_metadata.width, _metadata.height, BufferedImage.TYPE_INT_RGB)
+        val newImage = BufferedImage(metadata.width, metadata.height, BufferedImage.TYPE_INT_RGB)
 
-        for (y in 0 until _metadata.height) {
-            for (x in 0 until _metadata.width) {
+        for (y in 0 until metadata.height) {
+            for (x in 0 until metadata.width) {
                 val pixel = image.getRGB(x, y)
                 val color = Color(pixel)
                 val newRgbValue = processor(x, y, color)
@@ -93,10 +90,10 @@ class Image(val buff: BufferedImage) {
     }
 
     fun applyKernel(kernel:Kernel):Image{
-        val newImage = BufferedImage(_metadata.width, _metadata.height, BufferedImage.TYPE_INT_RGB)
+        val newImage = BufferedImage(metadata.width, metadata.height, BufferedImage.TYPE_INT_RGB)
 
-        for (y in 0 until _metadata.height) {
-            for (x in 0 until _metadata.width) {
+        for (y in 0 until metadata.height) {
+            for (x in 0 until metadata.width) {
                 val imgR = Array(kernel.rows) {FloatArray(kernel.cols)}
                 val imgG = Array(kernel.rows) {FloatArray(kernel.cols)}
                 val imgB = Array(kernel.rows) {FloatArray(kernel.cols)}
@@ -126,8 +123,8 @@ class Image(val buff: BufferedImage) {
     fun tonalCurve(resImg: Image): List<Pair<Color,Color>>{
         val res: MutableList<Pair<Color, Color>> = mutableListOf()
 
-        for (y in 0 until _metadata.height) {
-            for (x in 0 until _metadata.width) {
+        for (y in 0 until metadata.height) {
+            for (x in 0 until metadata.width) {
                 val src = Color(image.getRGB(x, y))
                 val dst = Color(resImg.image.getRGB(x, y))
                 res.add(src to dst)
@@ -217,8 +214,8 @@ class Image(val buff: BufferedImage) {
     fun rotateStraight(angle: Int): Image {
         if (angle % 90 != 0) return this
 
-        val w = _metadata.width
-        val h = _metadata.height
+        val w = metadata.width
+        val h = metadata.height
 
         val newWidth: Int
         val newHeight: Int
@@ -252,8 +249,8 @@ class Image(val buff: BufferedImage) {
     }
 
     fun zoom(factor: Float, algo: ZoomAlgorithm): Image {
-        val w = (_metadata.width * factor).toInt()
-        val h = (_metadata.height * factor).toInt()
+        val w = (metadata.width * factor).toInt()
+        val h = (metadata.height * factor).toInt()
         val newImg = BufferedImage(w, h, image.type)
 
         for (y in 0 until h) {
@@ -262,16 +259,16 @@ class Image(val buff: BufferedImage) {
                 when (algo) {
                     ZoomAlgorithm.CLOSEST_NEIGHTBOUR -> {
                         // when factor < 0 it acts as a multiplicationn. Sometimes it gets out of range
-                        val srcX = (x / factor).toInt().coerceIn(0,_metadata.width - 1)
-                        val srcY = (y / factor).toInt().coerceIn(0,_metadata.height - 1)
+                        val srcX = (x / factor).toInt().coerceIn(0,metadata.width - 1)
+                        val srcY = (y / factor).toInt().coerceIn(0,metadata.height - 1)
                         val pixel = image.getRGB(srcX, srcY)
                         newImg.setRGB(x, y, pixel)
                     }
                     ZoomAlgorithm.LINEAR_INTERPOLATION -> {
                         val a = (x/factor) - (x / factor).toInt()
                         val b = (y/factor) - (y / factor).toInt()
-                        val srcX = (x / factor).toInt().coerceIn(0,_metadata.width - 2)
-                        val srcY = (y / factor).toInt().coerceIn(0,_metadata.height - 2)
+                        val srcX = (x / factor).toInt().coerceIn(0,metadata.width - 2)
+                        val srcY = (y / factor).toInt().coerceIn(0,metadata.height - 2)
 
                         fun interpolateChannel(is_v:Int, ds:Int, ir:Int, dr:Int): Int{
                             return ((1-a) * (1-b) * is_v + a*(1-b) * ds + (1-a)*b*ir + a*b*dr).toInt();
@@ -302,8 +299,8 @@ class Image(val buff: BufferedImage) {
         val green = IntArray(256)
         val blue = IntArray(256)
 
-        for (y in 0 until _metadata.height) {
-            for (x in 0 until _metadata.width) {
+        for (y in 0 until metadata.height) {
+            for (x in 0 until metadata.width) {
                 val color = image.getRGB(x, y)
                 red[(color shr 16) and 0xFF]++
                 green[(color shr 8) and 0xFF]++
@@ -322,8 +319,8 @@ class Image(val buff: BufferedImage) {
         val profile = mutableListOf<Pair<Int, Int>>()
         when (axis) {
             'X' -> { // Horizontal line (row)
-                if (lineNumber !in 0 until _metadata.height) return emptyList()
-                for (x in 0 until _metadata.width) {
+                if (lineNumber !in 0 until metadata.height) return emptyList()
+                for (x in 0 until metadata.width) {
                     val color = Color(image.getRGB(x, lineNumber))
                     val value = when (channel) {
                         'R' -> color.red
@@ -336,8 +333,8 @@ class Image(val buff: BufferedImage) {
                 }
             }
             'Y' -> { // Vertical line (column)
-                if (lineNumber !in 0 until _metadata.width) return emptyList()
-                for (y in 0 until _metadata.height) {
+                if (lineNumber !in 0 until metadata.width) return emptyList()
+                for (y in 0 until metadata.height) {
                     val color = Color(image.getRGB(lineNumber, y))
                     val value = when (channel) {
                         'R' -> color.red

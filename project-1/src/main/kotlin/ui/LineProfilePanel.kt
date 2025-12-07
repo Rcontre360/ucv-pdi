@@ -82,7 +82,7 @@ class LineProfilePanel(private val appState: AppState) : JPanel() {
 
         val channel = (channelComboBox.selectedItem as String)[0]
 
-        val profileData = appState._current?.getLineProfile(axis, lineNumber, channel)
+        val profileData = appState.currentImage?.getLineProfile(axis, lineNumber, channel)
 
         if (profileData != null) {
             graphPanel.setProfileData(profileData)

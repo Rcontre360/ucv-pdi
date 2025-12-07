@@ -34,12 +34,12 @@ fun createAndShowGUI(state: AppState) {
 
     val infoPanel = InfoPanel()
 
-    state.setOnImageUpdateListener { image: BufferedImage? ->
-        imageLabel.icon = image?.let { ImageIcon(it) }
+    state.onImageUpdate = { image: Image? ->
+        if (image != null){
+            infoPanel.updateMetadata(image.metadata)
+            imageLabel.icon = image.image?.let { ImageIcon(it) }
+        }
         mainFrame.pack()
-    }
-    state.setOnMetadataUpdateListener { metadata: Metadata? ->
-        infoPanel.updateMetadata(metadata)
     }
 
     val mainButtonsPanel = MainButtonsPanel(state, infoPanel)

@@ -11,9 +11,9 @@ class LaplacianKernel : LinearKernel(3, 3) {
     override fun generateKernel() {
         this.type = KernelType.LAPLACIAN
         kernel = arrayOf(
-            floatArrayOf(0f, 1f, 0f),
-            floatArrayOf(1f, -4f, 1f),
-            floatArrayOf(0f, 1f, 0f)
+            floatArrayOf(-1f, -1f, -1f),
+            floatArrayOf(-1f, 8f, -1f),
+            floatArrayOf(-1f, -1f, -1f)
         )
     }
 }
