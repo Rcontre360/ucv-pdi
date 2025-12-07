@@ -12,3 +12,5 @@ Con el zoom in and out, deberiamos ser capaces de recuperar la imagen como era l
 https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm
 
 Cual es la manera correcta de generar el laplace gauss? explicar las formas encontradas
+
+The kernel that works for me to calculate derivative is -1,0,1. Is that ok?

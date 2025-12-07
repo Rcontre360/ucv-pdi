@@ -37,29 +37,22 @@ abstract class Kernel(var rows: Int, var cols: Int) {
             }
         }
 
-        val rowStartOut = other.rows / 2
-        val colStartOut = other.cols / 2
+        val rowPad = other.rows / 2
+        val colPad = other.cols / 2
 
-        // i, j for the output kernel (same size as this.kernel)
-        for (i in 0 until rows) {
-            for (j in 0 until cols) {
-
-                val iFull = i + rowStartOut
-                val jFull = j + colStartOut
-
+        for (i in 0 until cols) {
+            for (j in 0 until rows) {
                 var sum = 0f
-                // k, l for this.kernel
-                for (k in 0 until rows) {
-                    for (l in 0 until cols) {
-                        val otherK = iFull - k
-                        val otherL = jFull - l
-                        if (otherK >= 0 && otherK < other.rows && otherL >= 0 && otherL < other.cols) {
-                            println("HERE ($k,$l) AND ($otherK, $otherL)")
-                            sum += kernel[k][l] * other.kernel[otherK][otherL]
+                for (k in 0 until other.cols) {
+                    for (l in 0 until other.rows) {
+                        val thisI = i - colPad + k
+                        val thisJ = j - rowPad + l
+
+                        if (thisI >= 0 && thisJ >= 0 && thisI < cols && thisJ < rows) {
+                            sum += kernel[thisI][thisJ] * other.kernel[k][l]
                         }
                     }
                 }
-                println("ON ($i,$j)")
                 newKernel.kernel[i][j] = sum
             }
         }
@@ -200,7 +193,7 @@ class GaussianKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
     }
 }
 
-class DerivativeXKernel() : LinearKernel(1, 2) {
+class DerivativeXKernel() : LinearKernel(3, 1) {
     init {
         generateKernel()
     }
@@ -212,7 +205,7 @@ class DerivativeXKernel() : LinearKernel(1, 2) {
     }
 }
 
-class DerivativeYKernel() : LinearKernel(2, 1) {
+class DerivativeYKernel() : LinearKernel(1, 3) {
     init {
         generateKernel()
     }
