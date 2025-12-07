@@ -73,59 +73,45 @@ class Image(val buff: BufferedImage) {
     }
 
     fun applyKernel(kernel:Kernel):Image{
-        val newImage = BufferedImage(metadata.width, metadata.height, BufferedImage.TYPE_INT_RGB)
+        return applyPerPixel { x, y, color ->
+            val imgR = Array(kernel.rows) {FloatArray(kernel.cols)}
+            val imgG = Array(kernel.rows) {FloatArray(kernel.cols)}
+            val imgB = Array(kernel.rows) {FloatArray(kernel.cols)}
 
-        for (y in 0 until metadata.height) {
-            for (x in 0 until metadata.width) {
-                val imgR = Array(kernel.rows) {FloatArray(kernel.cols)}
-                val imgG = Array(kernel.rows) {FloatArray(kernel.cols)}
-                val imgB = Array(kernel.rows) {FloatArray(kernel.cols)}
+            for (i in 0 until kernel.rows) {
+                for (j in 0 until kernel.cols) {
+                    val imageX = (x - kernel.cols / 2 + j).coerceIn(0, image.width - 1)
+                    val imageY = (y - kernel.rows / 2 + i).coerceIn(0, image.height - 1)
+                    val color = Color(image.getRGB(imageX, imageY))
 
-                for (i in 0 until kernel.rows) {
-                    for (j in 0 until kernel.cols) {
-                        val imageX = (x - kernel.cols / 2 + j).coerceIn(0, image.width - 1)
-                        val imageY = (y - kernel.rows / 2 + i).coerceIn(0, image.height - 1)
-                        val color = Color(image.getRGB(imageX, imageY))
-
-                        imgR[i][j] = color.red.toFloat()
-                        imgG[i][j] = color.green.toFloat()
-                        imgB[i][j] = color.blue.toFloat()
-                    }
+                    imgR[i][j] = color.red.toFloat()
+                    imgG[i][j] = color.green.toFloat()
+                    imgB[i][j] = color.blue.toFloat()
                 }
-
-                val r = kernel.convolute(imgR, true).roundToInt().coerceIn(0, 255)
-                val g = kernel.convolute(imgG, true).roundToInt().coerceIn(0, 255)
-                val b = kernel.convolute(imgB, true).roundToInt().coerceIn(0, 255)
-
-                newImage.setRGB(x,y, Color(r,g,b).rgb)
             }
+
+            val r = kernel.convolute(imgR, true).roundToInt().coerceIn(0, 255)
+            val g = kernel.convolute(imgG, true).roundToInt().coerceIn(0, 255)
+            val b = kernel.convolute(imgB, true).roundToInt().coerceIn(0, 255)
+
+            Color(r,g,b).rgb
         }
-        return Image(newImage)
     }
 
     fun applyBorderOperator(kernelX:Kernel,kernelY:Kernel):Image{
         val imageX = applyKernel(kernelX)
         val imageY = applyKernel(kernelY)
 
-        val width = metadata.width
-        val height = metadata.height
-        val newImage = BufferedImage(width, height, image.type)
+        return applyPerPixel { x, y, color ->
+            val cx = Color(imageX.image.getRGB(x, y))
+            val cy = Color(imageY.image.getRGB(x, y))
 
-        for (x in 0 until width) {
-            for (y in 0 until height) {
-                val cx = Color(imageX.image.getRGB(x, y))
-                val cy = Color(imageY.image.getRGB(x, y))
+            val r = sqrt((cx.red*cx.red + cy.red * cy.red).toDouble()).toInt().coerceIn(0, 255)
+            val g = sqrt((cx.green * cx.green + cy.green * cy.green).toDouble()).toInt().coerceIn(0, 255)
+            val b = sqrt((cx.blue * cx.blue + cy.blue * cy.blue).toDouble()).toInt().coerceIn(0, 255)
 
-                val r = sqrt((cx.red*cx.red + cy.red * cy.red).toDouble()).toInt().coerceIn(0, 255)
-                val g = sqrt((cx.green * cx.green + cy.green * cy.green).toDouble()).toInt().coerceIn(0, 255)
-                val b = sqrt((cx.blue * cx.blue + cy.blue * cy.blue).toDouble()).toInt().coerceIn(0, 255)
-
-                val newRgb = Color(r,g,b).rgb
-                newImage.setRGB(x, y, newRgb)
-            }
+            Color(r,g,b).rgb
         }
-
-        return Image(newImage)
     }
 
     fun toGrayscale(tint: Color): Image {
