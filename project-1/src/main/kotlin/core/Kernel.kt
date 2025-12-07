@@ -8,7 +8,11 @@ enum class KernelType {
     LAPLACIAN,
     LAPLACIAN_GAUSSIAN,
     SOBEL_X,
-    SOBEL_Y
+    SOBEL_Y,
+    ROBERTS_X,
+    ROBERTS_Y,
+    PREWITT_X,
+    PREWITT_Y
 }
 
 abstract class Kernel(var rows: Int, var cols: Int) {

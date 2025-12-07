@@ -14,3 +14,5 @@ https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm
 Cual es la manera correcta de generar el laplace gauss? explicar las formas encontradas
 
 The kernel that works for me to calculate derivative is -1,0,1. Is that ok?
+
+luego de obtener el gradiente de una imagen, la magnitud y direccion. Que hacemos con este? Como mostramos esta funcionalidad?

@@ -31,9 +31,31 @@ class FiltersPanel(private val state: AppState) : JPanel() {
 
         filterTypeComboBox.addActionListener {
             selectedKernelType = filterTypeComboBox.selectedItem as KernelType
-            val isCustom = selectedKernelType == KernelType.CUSTOM
-            kernelRowsField.isEditable = isCustom
-            kernelColsField.isEditable = isCustom
+            val isFixedSizeKernel = when (selectedKernelType) {
+                KernelType.LAPLACIAN -> {
+                    kernelRowsField.text = "3"
+                    kernelColsField.text = "3"
+                    true
+                }
+                KernelType.ROBERTS_X, KernelType.ROBERTS_Y -> {
+                    kernelRowsField.text = "2"
+                    kernelColsField.text = "2"
+                    true
+                }
+                KernelType.PREWITT_X, KernelType.PREWITT_Y -> {
+                    kernelRowsField.text = "3"
+                    kernelColsField.text = "3"
+                    true
+                }
+                KernelType.SOBEL_X, KernelType.SOBEL_Y -> {
+                    kernelRowsField.text = "3"
+                    kernelColsField.text = "3"
+                    true
+                }
+                else -> false
+            }
+            kernelRowsField.isEditable = !isFixedSizeKernel
+            kernelColsField.isEditable = !isFixedSizeKernel
         }
 
         val kernelSizePanel = JPanel()
@@ -111,6 +133,10 @@ class FiltersPanel(private val state: AppState) : JPanel() {
             KernelType.LAPLACIAN_GAUSSIAN -> LaplacianGaussianKernel(rows, cols)
             KernelType.SOBEL_X -> SobelXKernel(rows, cols)
             KernelType.SOBEL_Y -> SobelYKernel(rows, cols)
+            KernelType.ROBERTS_X -> RobertsXKernel()
+            KernelType.ROBERTS_Y -> RobertsYKernel()
+            KernelType.PREWITT_X -> PrewittXKernel()
+            KernelType.PREWITT_Y -> PrewittYKernel()
             else -> {
                 object : LinearKernel(rows, cols) {
                     override fun generateKernel() {}
