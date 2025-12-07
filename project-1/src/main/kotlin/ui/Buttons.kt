@@ -57,7 +57,7 @@ fun createSelectColorButton(
             val newColor = JColorChooser.showDialog(
                 owner,
                 "Choose Tint Color",
-                state.color
+                state.context.color
             )
             if (newColor != null) {
                 state.setColor(newColor)

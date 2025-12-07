@@ -1,6 +1,7 @@
 package org.pdi.ui
 
 import org.pdi.core.AppState
+import org.pdi.core.StateContext
 import java.awt.FlowLayout
 import javax.swing.JButton
 import javax.swing.JLabel
@@ -17,8 +18,9 @@ class ZoomPanel(private val state: AppState) : JPanel(FlowLayout()) {
         add(zoomLabel)
         add(zoomInButton)
 
-        state.setOnZoomUpdateListener { factor: Float ->
-            zoomLabel.text = "x${"%.1f".format(factor)}"
+        state.addContextListener { stateContext: StateContext ->
+            val newFactor = state.zoomLevels[stateContext.currentZoomLevelIndex]
+            zoomLabel.text = "x${"%.1f".format(newFactor)}"
         }
 
         zoomInButton.addActionListener {

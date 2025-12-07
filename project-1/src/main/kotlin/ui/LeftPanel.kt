@@ -1,6 +1,7 @@
 package org.pdi.ui
 
 import org.pdi.core.AppState
+import org.pdi.core.StateContext
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
@@ -17,6 +18,8 @@ class LeftPanel(
 ) : JPanel() {
 
     private val colorDisplayPanel = JPanel()
+    private lateinit var brightnessAdjuster: ValueAdjuster
+    private lateinit var contrastAdjuster: ValueAdjuster
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -44,11 +47,8 @@ class LeftPanel(
             val brightnessLabel = JLabel("Brightness:")
             brightnessLabel.alignmentX = Component.LEFT_ALIGNMENT
             add(brightnessLabel)
-            val brightnessAdjuster = ValueAdjuster(state.brightness, -1.0f, 1.0f, 0.01f) { newValue ->
+            brightnessAdjuster = ValueAdjuster(state.context.brightness, -1.0f, 1.0f, 0.01f) { newValue ->
                 state.setBrightness(newValue)
-            }
-            state.setOnBrightnessUpdateListener { factor: Float ->
-                brightnessAdjuster.setValue(factor)
             }
             brightnessAdjuster.alignmentX = Component.LEFT_ALIGNMENT
             add(brightnessAdjuster)
@@ -57,11 +57,8 @@ class LeftPanel(
             val contrastLabel = JLabel("Contrast:")
             contrastLabel.alignmentX = Component.LEFT_ALIGNMENT
             add(contrastLabel)
-            val contrastAdjuster = ValueAdjuster(state.contrast, 0.0f, 2.0f, 0.01f) { newValue ->
+            contrastAdjuster = ValueAdjuster(state.context.contrast, 0.0f, 2.0f, 0.01f) { newValue ->
                 state.setContrast(newValue)
-            }
-            state.setOnContrastUpdateListener { factor: Float ->
-                contrastAdjuster.setValue(factor)
             }
             contrastAdjuster.alignmentX = Component.LEFT_ALIGNMENT
             add(contrastAdjuster)
@@ -75,10 +72,10 @@ class LeftPanel(
                 alignmentX = Component.LEFT_ALIGNMENT
             }
             val selectColorButton = createSelectColorButton(state, this) { newColor ->
-                colorDisplayPanel.background = newColor
+                state.setColor(newColor)
             }
 
-            colorDisplayPanel.background = state.color
+            colorDisplayPanel.background = state.context.color
             colorDisplayPanel.border = BorderFactory.createLineBorder(Color.BLACK)
             colorDisplayPanel.preferredSize = Dimension(20, 20)
 
@@ -95,5 +92,11 @@ class LeftPanel(
             add(Box.createVerticalGlue()) // Push everything to the top
         }
         add(transformationsPanel)
+
+        state.addContextListener { stateContext: StateContext ->
+            brightnessAdjuster.setValue(stateContext.brightness)
+            contrastAdjuster.setValue(stateContext.contrast)
+            colorDisplayPanel.background = stateContext.color
+        }
     }
 }

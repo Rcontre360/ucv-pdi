@@ -60,7 +60,7 @@ class LineProfilePanel(private val appState: AppState) : JPanel() {
     }
 
     private fun updateLineProfile() {
-        val image = appState.getImage()
+        val image = appState.context.currentImage
         if (image == null) {
             JOptionPane.showMessageDialog(this, "No image loaded.", "Error", JOptionPane.ERROR_MESSAGE)
             return
@@ -74,7 +74,7 @@ class LineProfilePanel(private val appState: AppState) : JPanel() {
             return
         }
 
-        val maxLineNumber = if (axis == 'X') image.height - 1 else image.width - 1
+        val maxLineNumber = if (axis == 'X') image.metadata.height - 1 else image.metadata.width - 1
         if (lineNumber < 0 || lineNumber > maxLineNumber) {
             JOptionPane.showMessageDialog(this, "Line number must be between 0 and $maxLineNumber.", "Invalid Input", JOptionPane.ERROR_MESSAGE)
             return
@@ -82,7 +82,7 @@ class LineProfilePanel(private val appState: AppState) : JPanel() {
 
         val channel = (channelComboBox.selectedItem as String)[0]
 
-        val profileData = appState.currentImage?.getLineProfile(axis, lineNumber, channel)
+        val profileData = appState.context.currentImage?.getLineProfile(axis, lineNumber, channel)
 
         if (profileData != null) {
             graphPanel.setProfileData(profileData)

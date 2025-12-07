@@ -153,6 +153,10 @@ class UmbralizationPanel(
         // Apply Button (South)
         val applyButton = JButton("Apply").apply {
             addActionListener {
+                if (!appState.context.isGrayscaleApplied) {
+                    JOptionPane.showMessageDialog(this@UmbralizationPanel, "Please apply grayscale filter first.", "Grayscale Required", JOptionPane.WARNING_MESSAGE)
+                    return@addActionListener
+                }
                 appState.applyThresholding(thresholds)
                 onApply()
             }

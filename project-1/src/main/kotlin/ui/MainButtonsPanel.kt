@@ -2,6 +2,7 @@ package org.pdi.ui
 
 import org.pdi.core.AppState
 import org.pdi.core.Histogram
+import org.pdi.core.StateContext
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -32,7 +33,7 @@ class MainButtonsPanel(
 
         val showTonalCurveButton = JButton("Show Tonal Curve").apply {
             addActionListener {
-                if (state.getImage() != null) {
+                if (state.getTonalCurve() != null) {
                     showTonalCurveWindow()
                 } else {
                     JOptionPane.showMessageDialog(this@MainButtonsPanel, "No image loaded or curve data unavailable.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
@@ -66,6 +67,14 @@ class MainButtonsPanel(
         add(showTonalCurveButton)
         add(showUmbralizationButton)
         add(showLineProfileButton)
+
+        state.addContextListener { stateContext: StateContext ->
+            // Update buttons based on stateContext
+            showHistogramButton.isEnabled = stateContext.currentImage != null
+            showTonalCurveButton.isEnabled = stateContext.currentImage != null
+            showUmbralizationButton.isEnabled = stateContext.isGrayscaleApplied
+            showLineProfileButton.isEnabled = stateContext.currentImage != null
+        }
     }
 
     private fun showLineProfileWindow() {

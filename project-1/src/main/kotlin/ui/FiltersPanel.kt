@@ -11,13 +11,12 @@ class FiltersPanel(private val state: AppState) : JPanel() {
     private val filterTypeComboBox = JComboBox<KernelType>(KernelType.values())
 
     private var selectedKernelType: KernelType = KernelType.GAUSSIAN
-    private var currentRows: Int = 3
-    private var currentCols: Int = 3
     private var customKernel: Kernel? = null
     private val laplacianProfilingKernel = LaplacianKernelProfiling()
 
     private val profilingFactorAdjuster = ValueAdjuster(1f, 1f, 10f, 1f) { newValue ->
         laplacianProfilingKernel.updateFactor(newValue.toInt())
+        state.applyConvolution(laplacianProfilingKernel)
     }.apply {
         border = BorderFactory.createTitledBorder("Profiling Factor")
         isVisible = false // Initially hidden
@@ -91,7 +90,7 @@ class FiltersPanel(private val state: AppState) : JPanel() {
             override fun removeUpdate(e: javax.swing.event.DocumentEvent?) { updateSize() }
             override fun changedUpdate(e: javax.swing.event.DocumentEvent?) { updateSize() }
             fun updateSize() {
-                currentRows = kernelRowsField.text.toIntOrNull() ?: 3
+                // currentRows = kernelRowsField.text.toIntOrNull() ?: 3 // Removed
             }
         })
         kernelColsField.document.addDocumentListener(object : javax.swing.event.DocumentListener {
@@ -99,7 +98,7 @@ class FiltersPanel(private val state: AppState) : JPanel() {
             override fun removeUpdate(e: javax.swing.event.DocumentEvent?) { updateSize() }
             override fun changedUpdate(e: javax.swing.event.DocumentEvent?) { updateSize() }
             fun updateSize() {
-                currentCols = kernelColsField.text.toIntOrNull() ?: 3
+                // currentCols = kernelColsField.text.toIntOrNull() ?: 3 // Removed
             }
         })
 
@@ -134,8 +133,8 @@ class FiltersPanel(private val state: AppState) : JPanel() {
         add(controlsPanel)
 
         filterTypeComboBox.selectedItem = selectedKernelType
-        kernelRowsField.text = currentRows.toString()
-        kernelColsField.text = currentCols.toString()
+        kernelRowsField.text = "3" // Initial value
+        kernelColsField.text = "3" // Initial value
     }
 
     private fun createKernel(): Kernel {

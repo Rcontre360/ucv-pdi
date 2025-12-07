@@ -8,178 +8,221 @@ import org.pdi.core.kernels.MedianKernel
 import org.pdi.core.kernels.SobelXKernel
 import org.pdi.core.kernels.SobelYKernel
 
+data class StateContext(
+    val currentImage: Image? = null,
+    val color: Color = Color.white,
+    val brightness: Float = 0.0f,
+    val contrast: Float = 0.0f,
+    val rotationApplied: Int = 0,
+    val isGrayscaleApplied: Boolean = false,
+    val currentZoomLevelIndex: Int = 9 // Default for 1.0f
+)
+
 class AppState {
     private var _initialImage: Image? = null
 
-    var currentImage: Image? = null
-        private set
-    var color: Color = Color.white
-        private set
-    var brightness: Float = 0.0f
-        private set
-    var contrast: Float = 0.0f
-        private set
-    var rotationApplied: Int = 0
-        private set
-    var isGrayscaleApplied: Boolean = false
+    var context: StateContext = StateContext()
         private set
 
-    // Listeners
-    var onImageUpdate: ((Image?) -> Unit)? = null
+    private val _contextListeners = mutableListOf<(StateContext) -> Unit>()
 
-    private var onBrightnessUpdate: ((Float) -> Unit)? = null
-    private var onContrastUpdate: ((Float) -> Unit)? = null
-    private var onZoomUpdate: ((Float) -> Unit)? = null
-
-    fun setOnBrightnessUpdateListener(listener: (Float) -> Unit) {
-        onBrightnessUpdate = listener
+    fun addContextListener(listener: (StateContext) -> Unit) {
+        _contextListeners.add(listener)
     }
 
-    fun setOnContrastUpdateListener(listener: (Float) -> Unit) {
-        onContrastUpdate = listener
+    var zoomAlgorithm: ZoomAlgorithm = ZoomAlgorithm.LINEAR_INTERPOLATION
+    val zoomLevels = listOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f)
+
+    fun update(updateType: UpdateType) {
+        var newStateContext = context.copy()
+
+        when (updateType) {
+            is UpdateType.BrightnessUpdate -> {
+                val oldFactor = newStateContext.brightness
+                val newFactor = updateType.newFactor
+                val adjustment = (1 + newFactor) / (1 + oldFactor) - 1
+                newStateContext = newStateContext.copy(
+                    brightness = newFactor,
+                    currentImage = newStateContext.currentImage?.changeBrightness(adjustment)
+                )
+            }
+            is UpdateType.ContrastUpdate -> {
+                val oldFactor = newStateContext.contrast
+                val newFactor = updateType.newFactor
+                val adjustment = (1 + newFactor) / (1 + oldFactor) - 1
+                newStateContext = newStateContext.copy(
+                    contrast = newFactor,
+                    currentImage = newStateContext.currentImage?.changeContrast(adjustment)
+                )
+            }
+            is UpdateType.GrayscaleUpdate -> {
+                newStateContext = newStateContext.copy(
+                    isGrayscaleApplied = true,
+                    currentImage = newStateContext.currentImage?.toGrayscale(updateType.tint)
+                )
+            }
+            UpdateType.NegativeUpdate -> {
+                newStateContext = newStateContext.copy(
+                    currentImage = newStateContext.currentImage?.negative()
+                )
+            }
+            is UpdateType.RotationUpdate -> {
+                newStateContext = newStateContext.copy(
+                    rotationApplied = (newStateContext.rotationApplied + updateType.angle) % 360,
+                    currentImage = newStateContext.currentImage?.rotateStraight(updateType.angle)
+                )
+            }
+            is UpdateType.ThresholdUpdate -> {
+                if (!newStateContext.isGrayscaleApplied) {
+                    return // Cannot apply thresholding to non-grayscale image
+                }
+                val imageToChange = newStateContext.currentImage ?: return
+                newStateContext = newStateContext.copy(
+                    currentImage = imageToChange.makeThreshold(updateType.thresholds.toTypedArray())
+                )
+            }
+            UpdateType.ZoomInUpdate -> {
+                if (newStateContext.currentZoomLevelIndex < zoomLevels.size - 1) {
+                    val oldFactor = zoomLevels[newStateContext.currentZoomLevelIndex]
+                    val newZoomIndex = newStateContext.currentZoomLevelIndex + 1
+                    val newFactor = zoomLevels[newZoomIndex]
+                    val adjustment = newFactor / oldFactor
+                    newStateContext = newStateContext.copy(
+                        currentZoomLevelIndex = newZoomIndex,
+                        currentImage = newStateContext.currentImage?.zoom(adjustment, zoomAlgorithm)
+                    )
+                }
+            }
+            UpdateType.ZoomOutUpdate -> {
+                if (newStateContext.currentZoomLevelIndex > 0) {
+                    val oldFactor = zoomLevels[newStateContext.currentZoomLevelIndex]
+                    val newZoomIndex = newStateContext.currentZoomLevelIndex - 1
+                    val newFactor = zoomLevels[newZoomIndex]
+                    val adjustment = newFactor / oldFactor
+                    newStateContext = newStateContext.copy(
+                        currentZoomLevelIndex = newZoomIndex,
+                        currentImage = newStateContext.currentImage?.zoom(adjustment, zoomAlgorithm)
+                    )
+                }
+            }
+            is UpdateType.LoadImageUpdate -> {
+                try {
+                    val loadedImage = Image(ImageIO.read(updateType.file))
+                    _initialImage = loadedImage
+                    newStateContext = StateContext(currentImage = loadedImage) 
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    _initialImage = null
+                    newStateContext = StateContext() // Reset all state on error
+                }
+            }
+            is UpdateType.ColorUpdate -> {
+                newStateContext = newStateContext.copy(color = updateType.color)
+            }
+            is UpdateType.ConvolutionUpdate -> {
+                newStateContext = newStateContext.copy(
+                    currentImage = newStateContext.currentImage?.applyKernel(updateType.kernel)
+                )
+            }
+            is UpdateType.OperationUpdate -> {
+                newStateContext = newStateContext.copy(
+                    currentImage = newStateContext.currentImage?.let { updateType.operation.apply(it) }
+                )
+            }
+        }
+
+        context = newStateContext
+        _contextListeners.forEach { it.invoke(context) }
     }
 
     fun clear() {
-        brightness = 0.0f
-        contrast = 0.0f
-        isGrayscaleApplied = false
-        rotationApplied = 0
-        currentImage = _initialImage
-        onBrightnessUpdate?.invoke(brightness)
-        onContrastUpdate?.invoke(contrast)
+        context = StateContext(currentImage = _initialImage)
+        _contextListeners.forEach { it.invoke(context) }
     }
 
     fun setColor(color: Color) {
-        this.color = color
+        update(UpdateType.ColorUpdate(context.color))
     }
 
     fun applyGrayscale() {
-        isGrayscaleApplied = true
-        currentImage = currentImage?.toGrayscale(color)
-        onImageUpdate?.invoke(currentImage)
+        update(UpdateType.GrayscaleUpdate(context.color))
     }
 
     fun applyNegative() {
-        currentImage = currentImage?.negative()
-        onImageUpdate?.invoke(currentImage)
+        update(UpdateType.NegativeUpdate)
     }
 
     fun setBrightness(newFactor: Float) {
-        val oldFactor = this.brightness
-        this.brightness = newFactor
-        val adjustment = (1 + newFactor) / (1 + oldFactor) - 1
-        currentImage = currentImage?.changeBrightness(adjustment)
-        onImageUpdate?.invoke(currentImage)
+        update(UpdateType.BrightnessUpdate(newFactor))
     }
 
     fun setContrast(newFactor: Float) {
-        val oldFactor = this.contrast
-        this.contrast = newFactor
-        val adjustment = (1 + newFactor) / (1 + oldFactor) - 1
-        currentImage = currentImage?.changeContrast(adjustment)
-        onImageUpdate?.invoke(currentImage)
+        update(UpdateType.ContrastUpdate(newFactor))
     }
 
     fun rotate(angle: Int) {
-        rotationApplied = (rotationApplied + angle) % 360
-        currentImage = currentImage?.rotateStraight(angle)
-        onImageUpdate?.invoke(currentImage)
+        update(UpdateType.RotationUpdate(angle))
     }
 
     fun isCurrentImageGrayscale(): Boolean {
-        return isGrayscaleApplied
+        return context.isGrayscaleApplied
     }
 
     fun applyThresholding(thresholds: List<Int>): Boolean {
         if (!isCurrentImageGrayscale()) {
             return false
         }
-        val imageToChange = currentImage ?: return false
-        currentImage = imageToChange.makeThreshold(thresholds.toTypedArray())
-        onImageUpdate?.invoke(currentImage)
+        update(UpdateType.ThresholdUpdate(thresholds))
         return true
     }
 
-    var zoomAlgorithm: ZoomAlgorithm = ZoomAlgorithm.LINEAR_INTERPOLATION
-    private val zoomLevels = listOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f)
-    private var currentZoomLevelIndex = 9 // index for 1.0f
-
     fun setOnZoomUpdateListener(listener: (Float) -> Unit) {
-        onZoomUpdate = listener
+        // This listener is deprecated. UI components should now listen to onStateContextUpdate
+        // and extract zoom level from StateContext.
     }
 
     fun zoomIn() {
-        if (currentZoomLevelIndex < zoomLevels.size - 1) {
-            val oldFactor = zoomLevels[currentZoomLevelIndex]
-            currentZoomLevelIndex++
-            val newFactor = zoomLevels[currentZoomLevelIndex]
-            val adjustment = newFactor / oldFactor
-            currentImage = currentImage?.zoom(adjustment, zoomAlgorithm)
-            onImageUpdate?.invoke(currentImage)
-            onZoomUpdate?.invoke(newFactor)
-        }
+        update(UpdateType.ZoomInUpdate)
     }
 
     fun zoomOut() {
-        if (currentZoomLevelIndex > 0) {
-            val oldFactor = zoomLevels[currentZoomLevelIndex]
-            currentZoomLevelIndex--
-            val newFactor = zoomLevels[currentZoomLevelIndex]
-            val adjustment = newFactor / oldFactor
-            currentImage = currentImage?.zoom(adjustment, zoomAlgorithm)
-            onImageUpdate?.invoke(currentImage)
-            onZoomUpdate?.invoke(newFactor)
-        }
+        update(UpdateType.ZoomOutUpdate)
     }
 
     fun loadImage(file: File) {
-        try {
-            val loadedImage = Image(ImageIO.read(file))
-            _initialImage = loadedImage
-            currentImage = loadedImage
-            clear()
-            currentZoomLevelIndex = 9
-            onZoomUpdate?.invoke(zoomLevels[currentZoomLevelIndex])
-            onImageUpdate?.invoke(currentImage)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            _initialImage = null
-            currentImage = null
-            onImageUpdate?.invoke(currentImage)
-        }
+        update(UpdateType.LoadImageUpdate(file))
     }
 
     fun getTonalCurve(): List<Pair<Color, Color>>? {
         return _initialImage?.let { initial ->
-            currentImage?.let { current ->
+            context.currentImage?.let { current ->
                 initial.tonalCurve(current)
             }
         }
     }
 
     fun getCurrentMetadata(): Metadata? {
-        return currentImage?.metadata
+        return context.currentImage?.metadata
     }
 
     fun getHistogram(): Histogram? {
-        return currentImage?.histogram
+        return context.currentImage?.histogram
     }
 
     fun getImage(): BufferedImage? {
-        return currentImage?.image
+        return context.currentImage?.image
     }
 
     fun applyConvolution(kernel: Kernel) {
-        currentImage = currentImage?.applyKernel(kernel)
-        onImageUpdate?.invoke(currentImage)
+        update(UpdateType.ConvolutionUpdate(kernel))
     }
 
     fun applyOperation(operation: BorderDetection) {
-        currentImage = currentImage?.let { operation.apply(it) }
-        onImageUpdate?.invoke(currentImage)
+        update(UpdateType.OperationUpdate(operation))
     }
 
     fun getLineProfile(axis: Char, lineNumber: Int, channel: Char): List<Pair<Int, Int>>? {
-        return currentImage?.getLineProfile(axis, lineNumber, channel)
+        return context.currentImage?.getLineProfile(axis, lineNumber, channel)
     }
 }
+
