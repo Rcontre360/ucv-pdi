@@ -16,7 +16,7 @@ class KernelMatrixPanel(private val kernel: Kernel) : JPanel() {
         layout = GridLayout(rows, cols, 5, 5)
         for (i in 0 until rows) {
             for (j in 0 until cols) {
-                val field = JTextField(kernel.kernel[i][j].toString())
+                val field = JTextField(kernel.kernel[i][j].toString(), 5)
                 field.horizontalAlignment = SwingConstants.CENTER
                 field.isEditable = true
                 field.document.addDocumentListener(object : DocumentListener {
