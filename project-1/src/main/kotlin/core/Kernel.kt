@@ -17,50 +17,53 @@ enum class KernelType {
 
 abstract class Kernel(var rows: Int, var cols: Int) {
     var kernel: Array<FloatArray> = Array(rows) { FloatArray(cols) }
-    var type: KernelType = KernelType.CUSTOM
 
     abstract fun convolute(src: Array<FloatArray>): Float
+    abstract fun generateKernel()
+    abstract fun isCustomizable():Pair<Boolean,Boolean>
+
+    constructor(matrix:Array<FloatArray>) : this(matrix[0].size, matrix.size) {
+        this.kernel = matrix
+    }
+
+    init {
+        generateKernel()
+    }
+
+    operator fun times(other: Kernel): Array<FloatArray> {
+        if (this.cols != other.rows) {
+            throw IllegalArgumentException(
+                "matmul dimensions mismatch: " + "this.cols(${this.cols}) and other.rows(${other.rows})."
+            )
+        }
+
+        val resRows = this.rows
+        val resCols = other.cols
+        val result = Array(resRows) { FloatArray(resCols) }
+
+        for (i in 0 until resRows) {
+            for (j in 0 until resCols) {
+                var sum = 0f
+                for (k in 0 until this.cols) {
+                    sum += this.kernel[i][k] * other.kernel[k][j]
+                }
+                result[i][j] = sum
+            }
+        }
+
+        return result
+    }
 
     fun setKernelValue(row: Int, col: Int, value: Float) {
         if (row < rows && col < cols) {
             kernel[row][col] = value
-            type = KernelType.CUSTOM
         }
-    }
-
-    abstract fun generateKernel()
-
-    fun applyKernel(other: Kernel): Kernel {
-        val newKernel = object : LinearKernel(rows, cols) {
-            override fun generateKernel() {
-                // Not needed for this anonymous class
-            }
-        }
-
-        val rowPad = other.rows / 2
-        val colPad = other.cols / 2
-
-        for (i in 0 until cols) {
-            for (j in 0 until rows) {
-                var sum = 0f
-                for (k in 0 until other.cols) {
-                    for (l in 0 until other.rows) {
-                        val thisI = i - colPad + k
-                        val thisJ = j - rowPad + l
-
-                        if (thisI >= 0 && thisJ >= 0 && thisI < cols && thisJ < rows) {
-                            sum += kernel[thisI][thisJ] * other.kernel[k][l]
-                        }
-                    }
-                }
-                newKernel.kernel[i][j] = sum
-            }
-        }
-        return newKernel
     }
 }
 
 abstract class LinearKernel(rows: Int, cols: Int) : Kernel(rows, cols) {
+    override fun isCustomizable():Pair<Boolean,Boolean> = Pair(true,true)
+
     override fun convolute(src: Array<FloatArray>): Float{
         var sum = 0f
         var kernelSum = 0f

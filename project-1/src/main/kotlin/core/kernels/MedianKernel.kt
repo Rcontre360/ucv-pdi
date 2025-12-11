@@ -5,8 +5,9 @@ import org.pdi.core.Kernel
 
 class MedianKernel(rows: Int, cols: Int) : Kernel(rows, cols) {
 
+    override fun isCustomizable():Pair<Boolean,Boolean> = Pair(true,true)
+
     override fun generateKernel() {
-        this.type = org.pdi.core.KernelType.MEDIAN
         kernel = Array(rows) { FloatArray(cols) { 1f } }
     }
 

@@ -4,12 +4,7 @@ import org.pdi.core.LinearKernel
 import kotlin.math.pow
 
 class AverageKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
-    init {
-        generateKernel()
-    }
-
     override fun generateKernel() {
-        this.type = org.pdi.core.KernelType.AVERAGE
         val centerX = cols / 2.0
         val centerY = rows / 2.0
         val radius = minOf(rows, cols) / 2.0

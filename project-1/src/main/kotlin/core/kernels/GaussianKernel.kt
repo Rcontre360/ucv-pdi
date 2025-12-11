@@ -17,7 +17,6 @@ class GaussianKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
     }
 
     override fun generateKernel() {
-        this.type = org.pdi.core.KernelType.GAUSSIAN
         val pascal1DRows = pascalRow(rows)
         val pascal1DCols = pascalRow(cols)
         var sum = 0.0f

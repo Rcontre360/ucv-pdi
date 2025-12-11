@@ -4,11 +4,9 @@ import org.pdi.core.LinearKernel
 import org.pdi.core.KernelType
 
 class PrewittYKernel : LinearKernel(3, 3) {
-    init {
-        generateKernel()
-    }
+    override fun isCustomizable():Pair<Boolean,Boolean> = Pair(false,false)
+
     override fun generateKernel() {
-        this.type = KernelType.CUSTOM
         kernel = arrayOf(
             floatArrayOf(-1f, -1f, -1f),
             floatArrayOf(0f, 0f, 0f),
