@@ -158,7 +158,6 @@ class FiltersPanel(private val state: AppState) : JPanel() {
                 laplacianProfilingKernel.generateKernel()
                 laplacianProfilingKernel
             }
-            KernelType.LAPLACIAN_GAUSSIAN -> LaplacianGaussianKernel(rows, cols)
             KernelType.SOBEL_X -> SobelXKernel(rows, cols)
             KernelType.SOBEL_Y -> SobelYKernel(rows, cols)
             KernelType.ROBERTS_X -> RobertsXKernel()

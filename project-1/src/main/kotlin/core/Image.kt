@@ -90,9 +90,9 @@ class Image(val buff: BufferedImage) {
                 }
             }
 
-            val r = kernel.convolute(imgR, true).roundToInt().coerceIn(0, 255)
-            val g = kernel.convolute(imgG, true).roundToInt().coerceIn(0, 255)
-            val b = kernel.convolute(imgB, true).roundToInt().coerceIn(0, 255)
+            val r = kernel.convolute(imgR).roundToInt().coerceIn(0, 255)
+            val g = kernel.convolute(imgG).roundToInt().coerceIn(0, 255)
+            val b = kernel.convolute(imgB).roundToInt().coerceIn(0, 255)
 
             Color(r,g,b).rgb
         }
@@ -176,8 +176,8 @@ class Image(val buff: BufferedImage) {
 
             for (i in sortedUmbrals.indices) {
                 if (v < sortedUmbrals[i]) {
-                    val intensity = (255.0 / (sortedUmbrals.size) * i).toInt()
-                    return intensity.coerceIn(0, 255)
+                    val intensity = if (i % 2 == 0) {0} else {255}
+                    return intensity
                 }
             }
             return 255

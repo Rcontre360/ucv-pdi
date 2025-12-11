@@ -9,22 +9,6 @@ import javax.swing.JColorChooser
 import javax.swing.JFileChooser
 import javax.swing.JOptionPane
 
-fun createSelectImageButton(
-    state: AppState,
-    owner: Component
-): JButton {
-    return JButton("Select Image").apply {
-        addActionListener {
-            val fileChooser = JFileChooser()
-            val result = fileChooser.showOpenDialog(owner)
-            if (result == JFileChooser.APPROVE_OPTION) {
-                val selectedFile: File = fileChooser.selectedFile
-                state.loadImage(selectedFile)
-            }
-        }
-    }
-}
-
 fun createApplyGrayscaleButton(
     state: AppState,
     owner: Component

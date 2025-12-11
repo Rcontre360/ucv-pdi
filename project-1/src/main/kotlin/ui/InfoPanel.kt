@@ -1,12 +1,14 @@
 package org.pdi.ui
 
+import org.pdi.core.AppState
 import org.pdi.core.Metadata
+import org.pdi.core.StateContext
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.JLabel
 import javax.swing.JPanel
 
-class InfoPanel : JPanel() {
+class InfoPanel(val state: AppState) : JPanel() {
     private val widthLabel = JLabel("Width: ")
     private val heightLabel = JLabel("Height: ")
     private val bppLabel = JLabel("Bits Per Pixel: ")
@@ -21,6 +23,14 @@ class InfoPanel : JPanel() {
         add(bppLabel)
         add(uniqueColorsLabel)
         add(formatLabel)
+
+        state.addContextListener { stateContext: StateContext ->
+            if (stateContext.currentImage != null){
+                updateMetadata(stateContext.currentImage.metadata)
+            } else {
+                updateMetadata(null)
+            }
+        }
     }
 
     fun updateMetadata(metadata: Metadata?) {

@@ -16,3 +16,5 @@ Cual es la manera correcta de generar el laplace gauss? explicar las formas enco
 The kernel that works for me to calculate derivative is -1,0,1. Is that ok?
 
 luego de obtener el gradiente de una imagen, la magnitud y direccion. Que hacemos con este? Como mostramos esta funcionalidad?
+
+El requerimiento de guardarlo con la menor perdida debe ir acorde con guardarlo con la mayor eficiencia? Ejemplo, umbralizado de 3 colores debe ser guardado con 2 bits?

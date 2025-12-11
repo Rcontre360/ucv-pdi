@@ -3,22 +3,34 @@ package org.pdi.ui
 import org.pdi.core.AppState
 import org.pdi.core.Histogram
 import org.pdi.core.StateContext
+import org.pdi.ui.panels.CurveChannel
+import org.pdi.ui.panels.HistogramPanel
+import org.pdi.ui.panels.LineProfilePanel
+import org.pdi.ui.panels.TonalCurvePanel
+import org.pdi.ui.panels.UmbralizationPanel
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.io.File
 import javax.swing.*
 
 class MainButtonsPanel(
     private val state: AppState,
-    private val infoPanel: InfoPanel
 ) : JPanel() {
-
-    private val colorDisplayPanel = JPanel()
 
     init {
         layout = FlowLayout(FlowLayout.LEFT)
 
-        val selectImageButton = createSelectImageButton(state, this)
+        val selectImageButton = JButton("Select Image").apply {
+            addActionListener {
+                val fileChooser = JFileChooser()
+                val result = fileChooser.showOpenDialog(this@MainButtonsPanel)
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    val selectedFile: File = fileChooser.selectedFile
+                    state.loadImage(selectedFile)
+                }
+            }
+        }
 
         val showHistogramButton = JButton("Show Histogram").apply {
             addActionListener {
@@ -69,7 +81,6 @@ class MainButtonsPanel(
         add(showLineProfileButton)
 
         state.addContextListener { stateContext: StateContext ->
-            // Update buttons based on stateContext
             showHistogramButton.isEnabled = stateContext.currentImage != null
             showTonalCurveButton.isEnabled = stateContext.currentImage != null
             showUmbralizationButton.isEnabled = stateContext.currentImage?.isGrayscale?:false

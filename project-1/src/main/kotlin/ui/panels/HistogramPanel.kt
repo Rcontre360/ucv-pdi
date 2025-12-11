@@ -1,4 +1,4 @@
-package org.pdi.ui
+package org.pdi.ui.panels
 
 import org.pdi.core.Histogram
 import java.awt.Color

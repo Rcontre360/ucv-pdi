@@ -10,7 +10,7 @@ class MedianKernel(rows: Int, cols: Int) : Kernel(rows, cols) {
         kernel = Array(rows) { FloatArray(cols) { 1f } }
     }
 
-    override fun convolute(src: Array<FloatArray>, normalize: Boolean): Float{
+    override fun convolute(src: Array<FloatArray>): Float{
         var list = mutableListOf<Float>()
         for (i in 0 until rows) {
             for (j in 0 until cols) {

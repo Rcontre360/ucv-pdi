@@ -7,7 +7,6 @@ enum class KernelType {
     CUSTOM,
     LAPLACIAN,
     LAPLACIAN_PROFILING,
-    LAPLACIAN_GAUSSIAN,
     SOBEL_X,
     SOBEL_Y,
     ROBERTS_X,
@@ -20,7 +19,7 @@ abstract class Kernel(var rows: Int, var cols: Int) {
     var kernel: Array<FloatArray> = Array(rows) { FloatArray(cols) }
     var type: KernelType = KernelType.CUSTOM
 
-    abstract fun convolute(src: Array<FloatArray>, normalize: Boolean = false): Float
+    abstract fun convolute(src: Array<FloatArray>): Float
 
     fun setKernelValue(row: Int, col: Int, value: Float) {
         if (row < rows && col < cols) {
@@ -62,7 +61,7 @@ abstract class Kernel(var rows: Int, var cols: Int) {
 }
 
 abstract class LinearKernel(rows: Int, cols: Int) : Kernel(rows, cols) {
-    override fun convolute(src: Array<FloatArray>, normalize: Boolean): Float{
+    override fun convolute(src: Array<FloatArray>): Float{
         var sum = 0f
         var kernelSum = 0f
         for (i in 0 until rows) {
@@ -71,6 +70,6 @@ abstract class LinearKernel(rows: Int, cols: Int) : Kernel(rows, cols) {
                 kernelSum += kernel[i][j]
             }
         }
-        return sum / (if (normalize && (kernelSum !in 0f..0f)) { kernelSum } else {1f})
+        return sum / (if (kernelSum !in 0f..0f) { kernelSum } else {1f})
     }
 }

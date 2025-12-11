@@ -14,7 +14,6 @@ import javax.swing.JPanel
 
 class LeftPanel(
     private val state: AppState,
-    private val infoPanel: InfoPanel
 ) : JPanel() {
 
     private val colorDisplayPanel = JPanel()
@@ -22,6 +21,7 @@ class LeftPanel(
     private lateinit var contrastAdjuster: ValueAdjuster
 
     init {
+        val infoPanel = InfoPanel(state)
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
         preferredSize = Dimension(250, 600) // Set a preferred width and height for the left panel

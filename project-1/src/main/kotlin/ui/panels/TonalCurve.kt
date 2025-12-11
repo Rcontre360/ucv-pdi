@@ -1,4 +1,4 @@
-package org.pdi.ui
+package org.pdi.ui.panels
 
 import java.awt.BasicStroke
 import java.awt.Color

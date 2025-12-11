@@ -22,31 +22,26 @@ private lateinit var mainFrame: JFrame
 fun main(args: Array<String>) {
     val state = AppState()
     SwingUtilities.invokeLater {
-        createAndShowGUI(state)
+        buildGUI(state)
     }
 }
 
-fun createAndShowGUI(state: AppState) {
+fun buildGUI(state: AppState) {
     mainFrame = JFrame("Image Viewer").apply {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         setSize(800, 600)
     }
 
-    val infoPanel = InfoPanel()
-
     state.addContextListener { stateContext: StateContext ->
         if (stateContext.currentImage != null){
-            infoPanel.updateMetadata(stateContext.currentImage.metadata)
             imageLabel.icon = stateContext.currentImage.image?.let { ImageIcon(it) }
         } else {
-            infoPanel.updateMetadata(null)
             imageLabel.icon = null
         }
-        mainFrame.pack()
     }
 
-    val mainButtonsPanel = MainButtonsPanel(state, infoPanel)
-    val leftPanel = LeftPanel(state, infoPanel)
+    val topPanel = MainButtonsPanel(state)
+    val leftPanel = LeftPanel(state)
     val bottomPanel = BottomPanel(state)
     val filtersPanel = FiltersPanel(state)
     val operationsPanel = OperationsPanel(state)
@@ -57,7 +52,7 @@ fun createAndShowGUI(state: AppState) {
     }
 
     val mainPanel = JPanel(BorderLayout()).apply {
-        add(mainButtonsPanel, BorderLayout.NORTH)
+        add(topPanel, BorderLayout.NORTH)
         add(leftPanel, BorderLayout.WEST)
         add(bottomPanel, BorderLayout.SOUTH)
         add(eastPanel, BorderLayout.EAST)
