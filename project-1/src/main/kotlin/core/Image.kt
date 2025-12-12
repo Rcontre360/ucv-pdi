@@ -2,7 +2,10 @@ package org.pdi.core
 
 import kotlin.math.pow
 import java.awt.Color
+import java.awt.Graphics2D
 import java.awt.image.BufferedImage
+import java.io.File
+import javax.imageio.ImageIO
 import kotlin.Int
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -33,6 +36,7 @@ class Image(val buff: BufferedImage) {
 
     val histogram: Histogram by lazy { Histogram(calculateHistogram()) }
     val isGrayscale = getIsGrayscale()
+    val isBinary = getIsBinary()
 
     fun getTonalCurve(resImg: Image): List<Pair<Color,Color>>{
         val res: MutableList<Pair<Color, Color>> = mutableListOf()
@@ -335,6 +339,20 @@ class Image(val buff: BufferedImage) {
                 val pixel = image.getRGB(x, y)
                 val color = Color(pixel)
                 if (color.red != color.green && color.green != color.blue) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    private fun getIsBinary(): Boolean{
+        val bin = listOf(0,255)
+        for (y in 0 until metadata.height) {
+            for (x in 0 until metadata.width) {
+                val pixel = image.getRGB(x, y)
+                val color = Color(pixel)
+                if (!(color.red in bin) || !(color.green in bin) || !(color.blue in bin)) {
                     return false
                 }
             }

@@ -20,4 +20,5 @@ class LaplacianKernelProfiling : LinearKernel(3, 3) {
             floatArrayOf(0f, profilingFactor, 0f)
         )
     }
+    
 }

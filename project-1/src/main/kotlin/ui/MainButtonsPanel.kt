@@ -8,6 +8,8 @@ import org.pdi.ui.panels.HistogramPanel
 import org.pdi.ui.panels.LineProfilePanel
 import org.pdi.ui.panels.TonalCurvePanel
 import org.pdi.ui.panels.UmbralizationPanel
+import org.pdi.io.saveImage
+import org.pdi.ui.panels.SaveImagePanel
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -20,6 +22,16 @@ class MainButtonsPanel(
 
     init {
         layout = FlowLayout(FlowLayout.LEFT)
+
+        val saveImageButton = JButton("Save Image").apply {
+            addActionListener {
+                if (state.getImage() != null) {
+                    showSaveImageDialog()
+                } else {
+                    JOptionPane.showMessageDialog(this@MainButtonsPanel, "No image loaded.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
+                }
+            }
+        }
 
         val selectImageButton = JButton("Select Image").apply {
             addActionListener {
@@ -74,6 +86,7 @@ class MainButtonsPanel(
             }
         }
 
+        add(saveImageButton)
         add(selectImageButton)
         add(showHistogramButton)
         add(showTonalCurveButton)
@@ -81,11 +94,28 @@ class MainButtonsPanel(
         add(showLineProfileButton)
 
         state.addContextListener { stateContext: StateContext ->
+            saveImageButton.isEnabled = stateContext.currentImage != null
             showHistogramButton.isEnabled = stateContext.currentImage != null
             showTonalCurveButton.isEnabled = stateContext.currentImage != null
             showUmbralizationButton.isEnabled = stateContext.currentImage?.isGrayscale?:false
             showLineProfileButton.isEnabled = stateContext.currentImage != null
         }
+    }
+
+    private fun showSaveImageDialog() {
+        val saveImageFrame = JFrame("Save Image").apply {
+            defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
+            setSize(600, 400)
+            setLocationRelativeTo(SwingUtilities.getWindowAncestor(this@MainButtonsPanel))
+        }
+
+        val saveImagePanel = SaveImagePanel(state) {
+            saveImageFrame.dispose()
+        }
+
+        saveImageFrame.contentPane.add(saveImagePanel)
+        saveImageFrame.pack()
+        saveImageFrame.isVisible = true
     }
 
     private fun showLineProfileWindow() {
