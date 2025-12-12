@@ -11,7 +11,7 @@ class SaveImagePanel(
     private val appState: AppState,
     private val onSave: () -> Unit
 ) : JPanel() {
-    private val formatComboBox = JComboBox(arrayOf("png", "bmp", "netpbm"))
+    private val formatComboBox = JComboBox(arrayOf("png", "bmp", "netpbm", "pdi"))
     private val saveButton = JButton("Save")
     private val fileNameField = JTextField(20)
     private val fileChooser = JFileChooser()

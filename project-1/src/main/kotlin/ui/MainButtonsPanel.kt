@@ -3,13 +3,13 @@ package org.pdi.ui
 import org.pdi.core.AppState
 import org.pdi.core.Histogram
 import org.pdi.core.StateContext
+import org.pdi.io.saveImage
 import org.pdi.ui.panels.CurveChannel
 import org.pdi.ui.panels.HistogramPanel
 import org.pdi.ui.panels.LineProfilePanel
+import org.pdi.ui.panels.SaveImagePanel
 import org.pdi.ui.panels.TonalCurvePanel
 import org.pdi.ui.panels.UmbralizationPanel
-import org.pdi.io.saveImage
-import org.pdi.ui.panels.SaveImagePanel
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
