@@ -40,7 +40,7 @@ class OperationsPanel(private val state: AppState) : JPanel() {
         applyButton.addActionListener {
             selectedOperation?.let {
                 val (kernelX,kernelY) = when (selectedOperation) {
-                    BorderDetectionType.SOBEL -> Pair(SobelXKernel(3,3), SobelYKernel(3,3))
+                    BorderDetectionType.SOBEL -> Pair(SobelXKernel(3), SobelYKernel(3))
                     BorderDetectionType.ROBERTS -> Pair(RobertsXKernel(), RobertsYKernel())
                     BorderDetectionType.PREWITT -> Pair(PrewittXKernel(), PrewittYKernel())
                 }

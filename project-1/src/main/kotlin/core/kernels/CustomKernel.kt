@@ -1,5 +1,6 @@
 package org.pdi.core.kernels
 
+import org.pdi.core.Kernel
 import org.pdi.core.LinearKernel
 
 class CustomKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {

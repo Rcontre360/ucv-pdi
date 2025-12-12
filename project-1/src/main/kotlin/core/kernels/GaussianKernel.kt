@@ -3,17 +3,20 @@ package org.pdi.core.kernels
 import org.pdi.core.LinearKernel
 
 class GaussianKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
-    private fun pascalRow(size: Int): FloatArray {
-        if (size <= 0) return floatArrayOf()
-        val n = size - 1
-        val row = FloatArray(size)
 
-        row[0] = 1.0f
+    companion object{
+         fun pascalRow(size: Int): FloatArray {
+            if (size <= 0) return floatArrayOf()
+            val n = size - 1
+            val row = FloatArray(size)
 
-        for (k in 1..n) {
-            row[k] = row[k - 1] * (n.toFloat() - k.toFloat() + 1.0f) / k.toFloat()
+            row[0] = 1.0f
+
+            for (k in 1..n) {
+                row[k] = row[k - 1] * (n.toFloat() - k.toFloat() + 1.0f) / k.toFloat()
+            }
+            return row
         }
-        return row
     }
 
     override fun generateKernel() {

@@ -22,13 +22,11 @@ abstract class Kernel(var rows: Int, var cols: Int) {
     abstract fun generateKernel()
     abstract fun isCustomizable():Pair<Boolean,Boolean>
 
-    constructor(matrix:Array<FloatArray>) : this(matrix[0].size, matrix.size) {
-        this.kernel = matrix
-    }
-
     init {
         generateKernel()
     }
+
+    fun get(row: Int, col:Int)  = kernel[row][col]
 
     operator fun times(other: Kernel): Array<FloatArray> {
         if (this.cols != other.rows) {

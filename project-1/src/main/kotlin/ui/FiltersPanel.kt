@@ -75,15 +75,15 @@ class FiltersPanel(private val state: AppState) : JPanel() {
             KernelType.AVERAGE -> AverageKernel(rows, cols)
             KernelType.MEDIAN -> MedianKernel(rows, cols)
             KernelType.GAUSSIAN -> GaussianKernel(rows, cols)
-            KernelType.LAPLACIAN -> LaplacianKernel()
+            KernelType.LAPLACIAN -> LaplacianKernel(rows)
             KernelType.LAPLACIAN_PROFILING -> {
                 laplacianProfilingKernel.rows = rows
                 laplacianProfilingKernel.cols = cols
                 laplacianProfilingKernel.generateKernel()
                 laplacianProfilingKernel
             }
-            KernelType.SOBEL_X -> SobelXKernel(rows, cols)
-            KernelType.SOBEL_Y -> SobelYKernel(rows, cols)
+            KernelType.SOBEL_X -> SobelXKernel(rows)
+            KernelType.SOBEL_Y -> SobelYKernel(rows)
             KernelType.ROBERTS_X -> RobertsXKernel()
             KernelType.ROBERTS_Y -> RobertsYKernel()
             KernelType.PREWITT_X -> PrewittXKernel()
