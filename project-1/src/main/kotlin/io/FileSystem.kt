@@ -2,7 +2,6 @@ package org.pdi.io
 
 import org.pdi.core.Image
 import java.awt.Color
-import java.awt.Graphics2D
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
@@ -19,78 +18,48 @@ fun saveImage(dir: String, format: String, image: Image) {
         else -> BufferedImage.TYPE_INT_RGB
     }
 
-    val newImage = BufferedImage(
-        image.metadata.width,
-        image.metadata.height,
-        targetType
-    )
-
-    val g2d: Graphics2D = newImage.createGraphics()
-    g2d.drawImage(image.image, 0, 0, null)
-
     when (format) {
-        "pdi" -> PdiWriter.write(newImage, targetType, output.absolutePath)
-        "netpbm" -> NetpbmCodec.write(newImage, targetType, output.absolutePath)
-        else -> ImageIO.write(newImage, format, output)
+        "pdi" -> PdiIO.write(image, targetType, output.absolutePath)
+        "netpbm" -> NetpbmIO.write(image, targetType, output.absolutePath)
+        else -> ImageIO.write(image.image, format, output)
     }
 }
 
 fun loadImage(file: File): BufferedImage {
     val extension = file.extension.lowercase(Locale.getDefault())
     return when {
-        extension in listOf("pbm", "pgm", "ppm", "netpbm") -> NetpbmCodec.read(file)
-        extension == "pdi" -> PdiReader.read(file)
+        extension in listOf("pbm", "pgm", "ppm", "netpbm") -> NetpbmIO.read(file)
+        extension == "pdi" -> PdiIO.read(file)
         else -> ImageIO.read(file) ?: throw IOException("Could not read image file: ${file.absolutePath}")
     }
 }
 
-object PdiReader {
+object PdiIO {
     fun read(file: File): BufferedImage {
         val scanner = Scanner(file)
-        val magicNumber = scanner.nextLine()
-        if (magicNumber != "PDI") throw IllegalArgumentException("Not a PDI file")
+        val filetype = scanner.nextLine()
 
-        val expectedChecksum = scanner.nextLine().toInt()
-        val dimensions = scanner.nextLine().split(" ")
-        val width = dimensions[0].toInt()
-        val height = dimensions[1].toInt()
-        val compressedData = scanner.useDelimiter("\\A").next()
-        val decompressedPixels = decompress(compressedData)
+        if (!filetype.matches("PDI[1-3]".toRegex())) throw IllegalArgumentException("Not a PDI file")
 
-        val type = when {
-            decompressedPixels.any { it.contains(" ") } -> {
-                "P3"
-            }
-            decompressedPixels.any { it == "0" || it == "1"} -> {
-                "P1"
-            }
-            else -> {
-                "P2"
-            }
+        val checksum = scanner.nextLine().toInt()
+        val dims = scanner.nextLine().split(" ")
+        val width = dims[0].toInt()
+        val height = dims[1].toInt()
+        val netpbmPixels = decompress(scanner.useDelimiter("\\A").next())
+        val header = when (filetype) {
+            "PDI3" -> "P3\n$width $height\n255\n"
+            "PDI1" -> "P1\n$width $height\n"
+            "PDI2" -> "P2\n$width $height\n255\n"
+            else -> throw IllegalArgumentException("Unknown PDI type: $filetype")
         }
 
-        val (header,image) = when(type) {
-            "P3" -> {
-                "P3\n$width $height\n255\n" to BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-            }
-           "P1" -> {
-                println("BIN")
-                "P1\n$width $height\n255\n" to BufferedImage(width, height, BufferedImage.TYPE_BYTE_BINARY)
-            }
-            else -> {
-                "P2\n$width $height\n" to BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY)
-            }
-        }
-
-        val reconstructedContent = header + decompressedPixels.joinToString(" ")
-        val actualChecksum = PdiWriter.checksum(reconstructedContent)
-        val strScan = Scanner(reconstructedContent)
-
-        if (actualChecksum != expectedChecksum) {
+        val fullContent = header + netpbmPixels.joinToString(" ")
+        val strScan = Scanner(fullContent)
+        if (checksum(fullContent) != checksum) {
             println("checksum wrong")
         }
 
-        return NetpbmCodec.read(strScan)
+        return NetpbmIO.read(strScan)
     }
 
     private fun decompress(data: String): List<String> {
@@ -104,18 +73,22 @@ object PdiReader {
         }
         return decompressed
     }
-}
 
-object PdiWriter {
-    fun write(image: BufferedImage, type: Int, filePath: String) {
-        val content = NetpbmCodec.getString(image, type)
+    fun write(image: Image, type: Int, filePath: String) {
+        val content = NetpbmIO.getString(image, type)
         val checksum = checksum(content)
-        val compressedContent = compress(NetpbmCodec.getPixelList(image, type))
+        val compressedContent = compress(NetpbmIO.getPixelList(image, type))
 
         PrintWriter(File(filePath).bufferedWriter()).use { writer ->
-            writer.println("PDI")
+            val formatType = when(type){
+                BufferedImage.TYPE_BYTE_BINARY -> "PDI1"
+                BufferedImage.TYPE_BYTE_GRAY -> "PDI2"
+                else -> "PDI3"
+            }
+
+            writer.println(formatType)
             writer.println(checksum)
-            writer.println("${image.width} ${image.height}")
+            writer.println("${image.metadata.width} ${image.metadata.height}")
             writer.print(compressedContent)
         }
     }
@@ -145,58 +118,34 @@ object PdiWriter {
     }
 }
 
-object NetpbmCodec {
+object NetpbmIO {
     fun read(file: File): BufferedImage {
         val fileScan = Scanner(file)
         return read(fileScan)
     }
 
     fun read(scanner: Scanner): BufferedImage {
-        val magicNumber = scanner.next()
-        while (scanner.hasNext() && scanner.hasNextInt().not()) {
-            scanner.nextLine()
-        }
-
+        val imgType = scanner.next()
         val width = scanner.nextInt()
         val height = scanner.nextInt()
-        val maxVal = if (magicNumber == "P1") 1 else scanner.nextInt()
+        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
 
-        val imageType = when (magicNumber) {
-            "P3" -> BufferedImage.TYPE_INT_RGB
-            "P2" -> BufferedImage.TYPE_BYTE_GRAY
-            "P1" -> BufferedImage.TYPE_BYTE_BINARY
-            else -> throw IllegalArgumentException("Unsupported Netpbm format: $magicNumber")
-        }
+        if (imgType == "P1") 1 else scanner.nextInt()
 
-        val image = BufferedImage(width, height, imageType)
-
-        // Pixel Reading Loop
-        when (magicNumber) {
-            "P1" -> { // PBM ASCII (1-bit Binary)
-                for (y in 0 until height) {
-                    for (x in 0 until width) {
-                        // We must convert 1/0 to Black/White RGB values
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                when (imgType) {
+                    "P1" -> {
                         val pbmValue = scanner.nextInt()
-                        // Netpbm convention: 1 is Black (Foreground), 0 is White (Background)
                         val color = if (pbmValue == 1) Color.BLACK.rgb else Color.WHITE.rgb
                         image.setRGB(x, y, color)
                     }
-                }
-            }
-            "P2" -> { // PGM ASCII (Grayscale)
-                for (y in 0 until height) {
-                    for (x in 0 until width) {
+                    "P2" -> {
                         val gray = scanner.nextInt()
-                        // Ensure bounds checking for color instantiation
-                        val safeGray = gray.coerceIn(0, 255)
-                        val color = Color(safeGray, safeGray, safeGray).rgb
+                        val color = Color(gray, gray, gray).rgb
                         image.setRGB(x, y, color)
                     }
-                }
-            }
-            "P3" -> { // PPM ASCII (Color)
-                for (y in 0 until height) {
-                    for (x in 0 until width) {
+                    "P3" -> {
                         val r = scanner.nextInt().coerceIn(0, 255)
                         val g = scanner.nextInt().coerceIn(0, 255)
                         val b = scanner.nextInt().coerceIn(0, 255)
@@ -205,70 +154,64 @@ object NetpbmCodec {
                     }
                 }
             }
-            // The else case is handled above
         }
+
         return image
     }
 
-    fun getPixelList(image: BufferedImage, type: Int): List<String> {
-        return when (type) {
-            BufferedImage.TYPE_BYTE_BINARY -> pbmPixelList(image)
-            BufferedImage.TYPE_BYTE_GRAY -> pgmPixelList(image)
-            BufferedImage.TYPE_INT_RGB -> ppmPixelList(image)
-            else -> emptyList()
-        }
-    }
-
-    fun getString(image: BufferedImage, type: Int): String {
-        val header = when (type) {
-            BufferedImage.TYPE_BYTE_BINARY -> "P1\n${image.width} ${image.height}\n"
-            BufferedImage.TYPE_BYTE_GRAY -> "P2\n${image.width} ${image.height}\n255\n"
-            BufferedImage.TYPE_INT_RGB -> "P3\n${image.width} ${image.height}\n255\n"
-            else -> ""
-        }
-        return header + getPixelList(image, type).joinToString(separator = " ")
-    }
-
-    fun write(image: BufferedImage, type: Int, filePath: String) {
+    fun write(image: Image, type: Int, filePath: String) {
         val file = File(filePath)
         PrintWriter(file.bufferedWriter()).use { writer ->
             writer.print(getString(image, type))
         }
     }
 
-    private fun pbmPixelList(image: BufferedImage): List<String> {
+    fun getPixelList(image: Image, type: Int): List<String> {
+        return when (type) {
+            BufferedImage.TYPE_BYTE_BINARY -> pbmPixelList(image)
+            BufferedImage.TYPE_BYTE_GRAY -> pgmPixelList(image)
+            else -> ppmPixelList(image)
+        }
+    }
+
+    fun getString(image: Image, type: Int): String {
+        val header = when (type) {
+            BufferedImage.TYPE_BYTE_BINARY -> "P1\n${image.metadata.width} ${image.metadata.height}\n"
+            BufferedImage.TYPE_BYTE_GRAY -> "P2\n${image.metadata.width} ${image.metadata.height}\n255\n"
+            else -> "P3\n${image.metadata.width} ${image.metadata.height}\n255\n"
+        }
+        return header + getPixelList(image, type).joinToString(separator = " ")
+    }
+
+    private fun pbmPixelList(image: Image): List<String> {
         val pixels = mutableListOf<String>()
-        for (y in 0 until image.height) {
-            for (x in 0 until image.width) {
-                val grayValue = Color(image.getRGB(x, y)).red
-                val pbmValue = if (grayValue > 127) 0 else 1
-                pixels.add(pbmValue.toString())
-            }
-            pixels.add("\n")
+        image.readAllPixels { x, _, color ->
+            val grayValue = color.red
+            val pbmValue = if (grayValue > 127) 0 else 1
+            pixels.add(pbmValue.toString())
+            if (x == image.metadata.width-1)
+                pixels.add("\n")
         }
         return pixels
     }
 
-    private fun pgmPixelList(image: BufferedImage): List<String> {
+    private fun pgmPixelList(image: Image): List<String> {
         val pixels = mutableListOf<String>()
-        for (y in 0 until image.height) {
-            for (x in 0 until image.width) {
-                val grayValue = Color(image.getRGB(x, y)).red
-                pixels.add(grayValue.toString())
-            }
-            pixels.add("\n")
+        image.readAllPixels { x, _, color ->
+            val grayValue = color.red
+            pixels.add(grayValue.toString())
+            if (x == image.metadata.width-1)
+                pixels.add("\n")
         }
         return pixels
     }
 
-    private fun ppmPixelList(image: BufferedImage): List<String> {
+    private fun ppmPixelList(image: Image): List<String> {
         val pixels = mutableListOf<String>()
-        for (y in 0 until image.height) {
-            for (x in 0 until image.width) {
-                val color = Color(image.getRGB(x, y))
-                pixels.add("${color.red} ${color.green} ${color.blue}")
-            }
-            pixels.add("\n")
+        image.readAllPixels { x, _, color ->
+            pixels.add("${color.red} ${color.green} ${color.blue}")
+            if (x == image.metadata.width-1)
+                pixels.add("\n")
         }
         return pixels
     }

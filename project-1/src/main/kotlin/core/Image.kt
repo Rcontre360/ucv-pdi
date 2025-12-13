@@ -1,11 +1,7 @@
 package org.pdi.core
 
-import kotlin.math.pow
 import java.awt.Color
-import java.awt.Graphics2D
 import java.awt.image.BufferedImage
-import java.io.File
-import javax.imageio.ImageIO
 import kotlin.Int
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -15,7 +11,7 @@ enum class ZoomAlgorithm {
     LINEAR_INTERPOLATION,
 }
 
-typealias PixelProcessor = (x: Int, y: Int, originalColor: Color) -> Int
+typealias PixelProcessor<T> = (x: Int, y: Int, originalColor: Color) -> T
 
 data class Metadata(
     val width: Int,
@@ -38,6 +34,16 @@ class Image(val buff: BufferedImage) {
     val isGrayscale = getIsGrayscale()
     val isBinary = getIsBinary()
 
+    fun readAllPixels(processor: PixelProcessor<Any>) {
+        for (y in 0 until metadata.height) {
+            for (x in 0 until metadata.width) {
+                val pixel = image.getRGB(x, y)
+                val color = Color(pixel)
+                processor(x, y, color)
+            }
+        }
+    }
+
     fun getTonalCurve(resImg: Image): List<Pair<Color,Color>>{
         val res: MutableList<Pair<Color, Color>> = mutableListOf()
 
@@ -50,30 +56,6 @@ class Image(val buff: BufferedImage) {
         }
 
         return res
-    }
-
-    operator fun plus(other: Image): Image {
-        if (metadata.width != other.metadata.width || metadata.height != other.metadata.height)
-            throw IllegalArgumentException("different image sizes for plus operator")
-
-        return applyPerPixel { x, y, color ->
-            val other = Color(other.image.getRGB(x, y))
-            Color(
-                (color.red + other.red).toInt().coerceIn(0, 255),
-                (color.green + other.green).toInt().coerceIn(0, 255),
-                (color.blue + other.blue).toInt().coerceIn(0, 255),
-            ).rgb
-        }
-    }
-
-    fun pow(pow: Float): Image {
-        return applyPerPixel { i, j, color ->
-            Color(
-                ((color.red).toFloat().pow(pow)).toInt().coerceIn(0, 255),
-                ((color.green).toFloat().pow(pow)).toInt().coerceIn(0, 255),
-                ((color.blue).toFloat().pow(pow)).toInt().coerceIn(0, 255),
-            ).rgb
-        }
     }
 
     fun applyKernel(kernel:Kernel):Image{
@@ -360,16 +342,14 @@ class Image(val buff: BufferedImage) {
         return true
     }
 
-    private fun applyPerPixel(processor: PixelProcessor): Image {
+    private fun applyPerPixel(processor: PixelProcessor<Int>): Image {
         val newImage = BufferedImage(metadata.width, metadata.height, BufferedImage.TYPE_INT_RGB)
 
-        for (y in 0 until metadata.height) {
-            for (x in 0 until metadata.width) {
-                val pixel = image.getRGB(x, y)
-                val color = Color(pixel)
-                val newRgbValue = processor(x, y, color)
-                newImage.setRGB(x, y, newRgbValue)
-            }
+        readAllPixels {x,y,color ->
+            val pixel = image.getRGB(x, y)
+            val color = Color(pixel)
+            val newRgbValue = processor(x, y, color)
+            newImage.setRGB(x, y, newRgbValue)
         }
 
         return Image(newImage)
