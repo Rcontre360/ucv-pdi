@@ -44,18 +44,84 @@ class Image(val buff: BufferedImage) {
         }
     }
 
-    fun getTonalCurve(resImg: Image): List<Pair<Color,Color>>{
-        val res: MutableList<Pair<Color, Color>> = mutableListOf()
+    fun getTonalCurve(resImg: Image): Map<Char, IntArray> {
+        val sums = Array(4) { LongArray(256) { 0L } } // 0:R, 1:G, 2:B, 3:L
+        val counts = Array(4) { IntArray(256) { 0 } }
 
         for (y in 0 until metadata.height) {
             for (x in 0 until metadata.width) {
-                val src = Color(image.getRGB(x, y))
-                val dst = Color(resImg.image.getRGB(x, y))
-                res.add(src to dst)
+                val srcColor = Color(image.getRGB(x, y))
+                val dstColor = Color(resImg.image.getRGB(x, y))
+
+                // R, G, B channels
+                sums[0][srcColor.red] += dstColor.red
+                counts[0][srcColor.red]++
+                sums[1][srcColor.green] += dstColor.green
+                counts[1][srcColor.green]++
+                sums[2][srcColor.blue] += dstColor.blue
+                counts[2][srcColor.blue]++
+
+                // Luminosity channel
+                val srcLum = (0.2126 * srcColor.red + 0.7152 * srcColor.green + 0.0722 * srcColor.blue).roundToInt()
+                val dstLum = (0.2126 * dstColor.red + 0.7152 * dstColor.green + 0.0722 * dstColor.blue).roundToInt()
+                sums[3][srcLum] += dstLum
+                counts[3][srcLum]++
             }
         }
 
-        return res
+        val luts = Array(4) { IntArray(256) { -1 } }
+        for (c in 0..3) {
+            for (i in 0..255) {
+                if (counts[c][i] > 0) {
+                    luts[c][i] = (sums[c][i] / counts[c][i]).toInt()
+                }
+            }
+            interpolate(luts[c])
+        }
+
+        return mapOf(
+            'R' to luts[0],
+            'G' to luts[1],
+            'B' to luts[2],
+            'L' to luts[3]
+        )
+    }
+
+    private fun interpolate(lut: IntArray) {
+        var i = 0
+        while (i < lut.size) {
+            if (lut[i] == -1) {
+                val prevX = i - 1
+                var nextX = i + 1
+                while (nextX < lut.size && lut[nextX] == -1) {
+                    nextX++
+                }
+
+                if (prevX < 0) { // Gap at the beginning
+                    val nextY = if (nextX < lut.size) lut[nextX] else i
+                    for (j in i until nextX) {
+                        lut[j] = nextY
+                    }
+                    i = nextX
+                } else if (nextX >= lut.size) { // Gap at the end
+                    val prevY = lut[prevX]
+                    for (j in i until lut.size) {
+                        lut[j] = prevY
+                    }
+                    i = lut.size
+                } else { // Gap in the middle
+                    val prevY = lut[prevX]
+                    val nextY = lut[nextX]
+                    for (j in i until nextX) {
+                        val t = (j - prevX).toFloat() / (nextX - prevX)
+                        lut[j] = (prevY * (1 - t) + nextY * t).roundToInt()
+                    }
+                    i = nextX
+                }
+            } else {
+                i++
+            }
+        }
     }
 
     fun applyKernel(kernel:Kernel):Image{

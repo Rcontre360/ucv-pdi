@@ -11,14 +11,17 @@ import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.JLabel
 import javax.swing.JPanel
+import javax.swing.JSlider
 
 class LeftPanel(
     private val state: AppState,
 ) : JPanel() {
 
     private val colorDisplayPanel = JPanel()
-    private lateinit var brightnessAdjuster: ValueAdjuster
-    private lateinit var contrastAdjuster: ValueAdjuster
+    private lateinit var brightnessSlider: JSlider
+    private lateinit var brightnessValueLabel: JLabel
+    private lateinit var contrastSlider: JSlider
+    private lateinit var contrastValueLabel: JLabel
 
     init {
         val infoPanel = InfoPanel(state)
@@ -47,21 +50,41 @@ class LeftPanel(
             val brightnessLabel = JLabel("Brightness:")
             brightnessLabel.alignmentX = Component.LEFT_ALIGNMENT
             add(brightnessLabel)
-            brightnessAdjuster = ValueAdjuster(state.context.brightness, -1.0f, 1.0f, 0.01f) { newValue ->
-                state.setBrightness(newValue)
+            val brightnessSlider = JSlider(JSlider.HORIZONTAL, 0, 200, 100).apply {
+                majorTickSpacing = 50
+                minorTickSpacing = 10
+                paintTicks = true
+                paintLabels = true
+                addChangeListener {
+                    val newValue = (value - 100) / 100.0f
+                    state.setBrightness(newValue)
+                }
             }
-            brightnessAdjuster.alignmentX = Component.LEFT_ALIGNMENT
-            add(brightnessAdjuster)
+            val brightnessValueLabel = JLabel("Brightness: 0.00").apply {
+                alignmentX = Component.LEFT_ALIGNMENT
+            }
+            add(brightnessValueLabel)
+            add(brightnessSlider)
 
             // Contrast
             val contrastLabel = JLabel("Contrast:")
             contrastLabel.alignmentX = Component.LEFT_ALIGNMENT
             add(contrastLabel)
-            contrastAdjuster = ValueAdjuster(state.context.contrast, 0.0f, 2.0f, 0.01f) { newValue ->
-                state.setContrast(newValue)
+            val contrastSlider = JSlider(JSlider.HORIZONTAL, 0, 200, 0).apply {
+                majorTickSpacing = 50
+                minorTickSpacing = 10
+                paintTicks = true
+                paintLabels = true
+                addChangeListener {
+                    val newValue = value / 100.0f
+                    state.setContrast(newValue)
+                }
             }
-            contrastAdjuster.alignmentX = Component.LEFT_ALIGNMENT
-            add(contrastAdjuster)
+            val contrastValueLabel = JLabel("Contrast: 0.00").apply {
+                alignmentX = Component.LEFT_ALIGNMENT
+            }
+            add(contrastValueLabel)
+            add(contrastSlider)
 
             // Buttons
             val applyGrayscaleButton = createApplyGrayscaleButton(state, this).apply {
@@ -94,8 +117,12 @@ class LeftPanel(
         add(transformationsPanel)
 
         state.addContextListener { stateContext: StateContext ->
-            brightnessAdjuster.setValue(stateContext.brightness)
-            contrastAdjuster.setValue(stateContext.contrast)
+            brightnessSlider.value = (stateContext.brightness * 100 + 100).toInt()
+            brightnessValueLabel.text = "Brightness: %.2f".format(stateContext.brightness)
+
+            contrastSlider.value = (stateContext.contrast * 100).toInt()
+            contrastValueLabel.text = "Contrast: %.2f".format(stateContext.contrast)
+
             colorDisplayPanel.background = stateContext.color
         }
     }

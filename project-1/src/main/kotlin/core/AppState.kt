@@ -30,7 +30,7 @@ class AppState {
         return context.currentImage?.isGrayscale?:false
     }
 
-    fun getTonalCurve(): List<Pair<Color, Color>>? {
+    fun getTonalCurve(): Map<Char, IntArray>? {
         return _initialImage?.let { initial ->
             context.currentImage?.let { current ->
                 initial.getTonalCurve(current)

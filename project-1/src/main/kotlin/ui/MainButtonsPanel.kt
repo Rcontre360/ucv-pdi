@@ -153,7 +153,7 @@ class MainButtonsPanel(
             layout = BorderLayout()
         }
 
-        val curvePanel = TonalCurvePanel(fullCurveData = curveData)
+        val curvePanel = TonalCurvePanel(curveLuts = curveData)
 
         val controlPanel = JPanel().apply {
             layout = FlowLayout(FlowLayout.CENTER)
