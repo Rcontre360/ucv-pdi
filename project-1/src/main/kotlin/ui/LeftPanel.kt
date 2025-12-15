@@ -22,6 +22,7 @@ class LeftPanel(
     private lateinit var brightnessValueLabel: JLabel
     private lateinit var contrastSlider: JSlider
     private lateinit var contrastValueLabel: JLabel
+    private var selectedColor: Color = Color.WHITE
 
     init {
         val infoPanel = InfoPanel(state)
@@ -87,7 +88,9 @@ class LeftPanel(
             add(contrastSlider)
 
             // Buttons
-            val applyGrayscaleButton = createApplyGrayscaleButton(state, this).apply {
+            val applyGrayscaleButton = createApplyGrayscaleButton(state, this) {
+                selectedColor
+            }.apply {
                 text = "Grayscale"
                 alignmentX = Component.LEFT_ALIGNMENT
             }
@@ -95,10 +98,11 @@ class LeftPanel(
                 alignmentX = Component.LEFT_ALIGNMENT
             }
             val selectColorButton = createSelectColorButton(state, this) { newColor ->
-                state.setColor(newColor)
+                selectedColor = newColor
+                colorDisplayPanel.background = newColor
             }
 
-            colorDisplayPanel.background = state.context.color
+            colorDisplayPanel.background = selectedColor
             colorDisplayPanel.border = BorderFactory.createLineBorder(Color.BLACK)
             colorDisplayPanel.preferredSize = Dimension(20, 20)
 
@@ -122,8 +126,6 @@ class LeftPanel(
 
             contrastSlider.value = (stateContext.contrast * 100).toInt()
             contrastValueLabel.text = "Contrast: %.2f".format(stateContext.contrast)
-
-            colorDisplayPanel.background = stateContext.color
         }
     }
 }

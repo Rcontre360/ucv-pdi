@@ -11,11 +11,12 @@ import javax.swing.JOptionPane
 
 fun createApplyGrayscaleButton(
     state: AppState,
-    owner: Component
+    owner: Component,
+    getColor: () -> Color
 ): JButton {
     return JButton("Apply Grayscale").apply {
         addActionListener {
-            state.applyGrayscale()
+            state.applyGrayscale(getColor())
         }
     }
 }
@@ -41,10 +42,9 @@ fun createSelectColorButton(
             val newColor = JColorChooser.showDialog(
                 owner,
                 "Choose Tint Color",
-                state.context.color
+                Color.WHITE
             )
             if (newColor != null) {
-                state.setColor(newColor)
                 onColorSelected(newColor)
             }
         }
