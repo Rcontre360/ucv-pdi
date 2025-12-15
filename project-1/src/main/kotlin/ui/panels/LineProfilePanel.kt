@@ -2,6 +2,7 @@ package org.pdi.ui.panels
 
 import org.pdi.core.AppState
 import java.awt.*
+import java.awt.Point
 import javax.swing.*
 import kotlin.math.roundToInt
 
@@ -10,10 +11,9 @@ class LineProfilePanel(private val appState: AppState) : JPanel() {
     private val xAxisRadioButton = JRadioButton("X Axis")
     private val yAxisRadioButton = JRadioButton("Y Axis")
     private val axisButtonGroup = ButtonGroup()
-    private val lineNumberField = JTextField("0", 5)
     private val channelComboBox = JComboBox(arrayOf("R", "G", "B", "Gray"))
-    private val applyButton = JButton("Show Profile")
     private val graphPanel = LineGraphPanel()
+    private val instructionLabel = JLabel("Click the image to select a line.")
 
     init {
         layout = BorderLayout(10, 10)
@@ -29,13 +29,6 @@ class LineProfilePanel(private val appState: AppState) : JPanel() {
             xAxisRadioButton.isSelected = true // Default selection
         }
 
-        // Line number input
-        val lineNumberPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            border = BorderFactory.createTitledBorder("Line Number")
-            add(JLabel("Line:"))
-            add(lineNumberField)
-        }
-
         // Channel selection
         val channelPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
             border = BorderFactory.createTitledBorder("Select Channel")
@@ -46,20 +39,27 @@ class LineProfilePanel(private val appState: AppState) : JPanel() {
         val controlsPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             add(axisPanel)
-            add(lineNumberPanel)
             add(channelPanel)
-            add(applyButton)
+            add(instructionLabel)
         }
 
         add(controlsPanel, BorderLayout.NORTH)
         add(graphPanel, BorderLayout.CENTER)
 
-        applyButton.addActionListener {
-            updateLineProfile()
+        appState.setImageClickListener { point ->
+            updateLineProfile(point)
         }
+
+        addAncestorListener(object : javax.swing.event.AncestorListener {
+            override fun ancestorAdded(event: javax.swing.event.AncestorEvent?) {}
+            override fun ancestorRemoved(event: javax.swing.event.AncestorEvent?) {
+                appState.setImageClickListener(null)
+            }
+            override fun ancestorMoved(event: javax.swing.event.AncestorEvent?) {}
+        })
     }
 
-    private fun updateLineProfile() {
+    private fun updateLineProfile(point: Point) {
         val image = appState.context.currentImage
         if (image == null) {
             JOptionPane.showMessageDialog(this, "No image loaded.", "Error", JOptionPane.ERROR_MESSAGE)
@@ -67,12 +67,7 @@ class LineProfilePanel(private val appState: AppState) : JPanel() {
         }
 
         val axis = if (xAxisRadioButton.isSelected) 'X' else 'Y'
-        val lineNumber = lineNumberField.text.toIntOrNull()
-
-        if (lineNumber == null) {
-            JOptionPane.showMessageDialog(this, "Please enter a valid line number.", "Invalid Input", JOptionPane.ERROR_MESSAGE)
-            return
-        }
+        val lineNumber = if (axis == 'X') point.y else point.x
 
         val maxLineNumber = if (axis == 'X') image.metadata.height - 1 else image.metadata.width - 1
         if (lineNumber < 0 || lineNumber > maxLineNumber) {

@@ -1,6 +1,7 @@
 package org.pdi.core
 
 import java.awt.Color
+import java.awt.Point
 import java.awt.image.BufferedImage
 import org.pdi.io.loadImage
 import java.io.File
@@ -56,6 +57,16 @@ class AppState {
 
     fun addContextListener(listener: (StateContext) -> Unit) {
         _contextListeners.add(listener)
+    }
+
+    private var imageClickListener: ((Point) -> Unit)? = null
+
+    fun setImageClickListener(listener: ((Point) -> Unit)?) {
+        this.imageClickListener = listener
+    }
+
+    fun onImageClick(point: Point) {
+        imageClickListener?.invoke(point)
     }
 
         fun applyConvolution(kernel: Kernel) {

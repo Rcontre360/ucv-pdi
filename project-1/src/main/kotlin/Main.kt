@@ -40,6 +40,12 @@ fun buildGUI(state: AppState) {
         }
     }
 
+    imageLabel.addMouseListener(object : java.awt.event.MouseAdapter() {
+        override fun mousePressed(e: java.awt.event.MouseEvent) {
+            state.onImageClick(e.point)
+        }
+    })
+
     val topPanel = MainButtonsPanel(state)
     val leftPanel = LeftPanel(state)
     val bottomPanel = BottomPanel(state)

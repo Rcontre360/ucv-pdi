@@ -128,7 +128,6 @@ class MainButtonsPanel(
         val lineProfilePanel = LineProfilePanel(state)
 
         lineProfileFrame.contentPane.add(lineProfilePanel)
-        lineProfileFrame.pack()
         lineProfileFrame.isVisible = true
     }
 
