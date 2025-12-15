@@ -14,7 +14,6 @@ import javax.swing.BorderFactory
 import javax.swing.ButtonGroup
 import javax.swing.JPanel
 import javax.swing.JRadioButton
-import kotlin.math.roundToInt
 
 enum class CurveChannel(val label: String, val color: Color) {
     LUMINOSITY("Luminosidad", Color.GRAY),

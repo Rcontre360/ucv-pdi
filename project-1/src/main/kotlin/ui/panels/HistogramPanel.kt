@@ -1,21 +1,27 @@
 package org.pdi.ui.panels
 
+import org.pdi.core.AppState
 import org.pdi.core.Histogram
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Graphics
 import javax.swing.JPanel
 
-class HistogramPanel(private val histogramData: Histogram) : JPanel() {
+class HistogramPanel(private val state: AppState) : JPanel() {
+    private var histogramData: Histogram? = state.getHistogram()
 
     init {
         preferredSize = Dimension(400, 300)
+        state.addContextListener {
+            histogramData = state.getHistogram()
+            repaint()
+        }
     }
 
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
 
-        if (histogramData.isEmpty()) {
+        if (histogramData == null || histogramData!!.isEmpty()) {
             return
         }
 
@@ -23,9 +29,9 @@ class HistogramPanel(private val histogramData: Histogram) : JPanel() {
         val height = height
         val barWidth = width / 256.0
 
-        val redData = histogramData[0] ?: IntArray(256)
-        val greenData = histogramData[1] ?: IntArray(256)
-        val blueData = histogramData[2] ?: IntArray(256)
+        val redData = histogramData!![0] ?: IntArray(256)
+        val greenData = histogramData!![1] ?: IntArray(256)
+        val blueData = histogramData!![2] ?: IntArray(256)
 
         val maxCount = (redData + greenData + blueData).maxOrNull() ?: 0
 

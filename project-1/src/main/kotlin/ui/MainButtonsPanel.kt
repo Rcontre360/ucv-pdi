@@ -1,10 +1,7 @@
 package org.pdi.ui
 
 import org.pdi.core.AppState
-import org.pdi.core.Histogram
 import org.pdi.core.StateContext
-import org.pdi.io.saveImage
-import org.pdi.ui.panels.CurveChannel
 import org.pdi.ui.panels.HistogramPanel
 import org.pdi.ui.panels.LineProfilePanel
 import org.pdi.ui.panels.SaveImagePanel
@@ -17,7 +14,7 @@ import java.io.File
 import javax.swing.*
 
 class MainButtonsPanel(
-    private val state: AppState,
+    val appState: AppState,
 ) : JPanel() {
 
     init {
@@ -25,7 +22,7 @@ class MainButtonsPanel(
 
         val saveImageButton = JButton("Save Image").apply {
             addActionListener {
-                if (state.getImage() != null) {
+                if (appState.getImage() != null) {
                     showSaveImageDialog()
                 } else {
                     JOptionPane.showMessageDialog(this@MainButtonsPanel, "No image loaded.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
@@ -39,16 +36,15 @@ class MainButtonsPanel(
                 val result = fileChooser.showOpenDialog(this@MainButtonsPanel)
                 if (result == JFileChooser.APPROVE_OPTION) {
                     val selectedFile: File = fileChooser.selectedFile
-                    state.loadImage(selectedFile)
+                    appState.loadImage(selectedFile)
                 }
             }
         }
 
         val showHistogramButton = JButton("Show Histogram").apply {
             addActionListener {
-                val histogramData = state.getHistogram()
-                if (histogramData != null) {
-                    showHistogramWindow(histogramData)
+                if (appState.getHistogram() != null) {
+                    showHistogramWindow()
                 } else {
                     JOptionPane.showMessageDialog(this@MainButtonsPanel, "No image loaded.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
                 }
@@ -57,7 +53,7 @@ class MainButtonsPanel(
 
         val showTonalCurveButton = JButton("Show Tonal Curve").apply {
             addActionListener {
-                if (state.getTonalCurve() != null) {
+                if (appState.getTonalCurve() != null) {
                     showTonalCurveWindow()
                 } else {
                     JOptionPane.showMessageDialog(this@MainButtonsPanel, "No image loaded or curve data unavailable.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
@@ -67,7 +63,7 @@ class MainButtonsPanel(
 
         val showUmbralizationButton = JButton("Umbralization").apply {
             addActionListener {
-                if (state.isCurrentImageGrayscale()) {
+                if (appState.isCurrentImageGrayscale()) {
                     showUmbralizationWindow()
                 }
                 else {
@@ -78,7 +74,7 @@ class MainButtonsPanel(
 
         val showLineProfileButton = JButton("Line Profile").apply {
             addActionListener {
-                if (state.getImage() != null) {
+                if (appState.getImage() != null) {
                     showLineProfileWindow()
                 } else {
                     JOptionPane.showMessageDialog(this@MainButtonsPanel, "No image loaded.", "No Image Selected", JOptionPane.WARNING_MESSAGE)
@@ -93,7 +89,7 @@ class MainButtonsPanel(
         add(showUmbralizationButton)
         add(showLineProfileButton)
 
-        state.addContextListener { stateContext: StateContext ->
+        appState.addContextListener { stateContext: StateContext ->
             saveImageButton.isEnabled = stateContext.currentImage != null
             showHistogramButton.isEnabled = stateContext.currentImage != null
             showTonalCurveButton.isEnabled = stateContext.currentImage != null
@@ -109,7 +105,7 @@ class MainButtonsPanel(
             setLocationRelativeTo(SwingUtilities.getWindowAncestor(this@MainButtonsPanel))
         }
 
-        val saveImagePanel = SaveImagePanel(state) {
+        val saveImagePanel = SaveImagePanel(appState) {
             saveImageFrame.dispose()
         }
 
@@ -121,20 +117,20 @@ class MainButtonsPanel(
     private fun showLineProfileWindow() {
         val lineProfileFrame = JFrame("Line Profile").apply {
             defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
-            setSize(600, 400)
+            setSize(1200, 800)
             setLocationRelativeTo(SwingUtilities.getWindowAncestor(this@MainButtonsPanel))
         }
 
-        val lineProfilePanel = LineProfilePanel(state)
+        val lineProfilePanel = LineProfilePanel(appState)
 
         lineProfileFrame.contentPane.add(lineProfilePanel)
         lineProfileFrame.isVisible = true
     }
 
-    private fun showHistogramWindow(histogramData: Histogram) {
+    private fun showHistogramWindow() {
         val histogramFrame = JFrame("Histogram").apply {
             setSize(400, 300)
-            add(HistogramPanel(histogramData))
+            add(HistogramPanel(appState))
             isVisible = true
         }
         setupWindowDrag(histogramFrame)
@@ -146,7 +142,7 @@ class MainButtonsPanel(
             layout = BorderLayout()
         }
 
-        val curvePanel = TonalCurvePanel(state)
+        val curvePanel = TonalCurvePanel(appState)
 
         curveFrame.add(curvePanel, BorderLayout.CENTER)
 
@@ -161,7 +157,7 @@ class MainButtonsPanel(
             setLocationRelativeTo(SwingUtilities.getWindowAncestor(this@MainButtonsPanel))
         }
 
-        val umbralizationPanel = UmbralizationPanel(state) {
+        val umbralizationPanel = UmbralizationPanel(appState) {
             umbralizationFrame.dispose()
         }
 
