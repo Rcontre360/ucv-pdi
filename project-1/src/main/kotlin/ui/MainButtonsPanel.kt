@@ -142,46 +142,14 @@ class MainButtonsPanel(
     }
 
     private fun showTonalCurveWindow() {
-        val curveData = state.getTonalCurve()
-        if (curveData == null) {
-            JOptionPane.showMessageDialog(this, "Curve data is not available.", "Error", JOptionPane.ERROR_MESSAGE)
-            return
-        }
-
         val curveFrame = JFrame("Tonal Curve Viewer").apply {
             setSize(450, 500)
             layout = BorderLayout()
         }
 
-        val curvePanel = TonalCurvePanel(curveLuts = curveData)
+        val curvePanel = TonalCurvePanel(state)
 
-        val controlPanel = JPanel().apply {
-            layout = FlowLayout(FlowLayout.CENTER)
-            border = BorderFactory.createTitledBorder("Seleccionar Canal")
-        }
-
-        val group = ButtonGroup()
-
-        fun updatePanel(channel: CurveChannel) {
-            curvePanel.updateCurve(curveData, channel)
-        }
-
-        CurveChannel.entries.forEach { channel ->
-            val button = JRadioButton(channel.label).apply {
-                addActionListener { updatePanel(channel) }
-            }
-            group.add(button)
-            controlPanel.add(button)
-
-            if (channel == CurveChannel.LUMINOSITY) {
-                button.isSelected = true
-            }
-        }
-
-        curveFrame.add(controlPanel, BorderLayout.NORTH)
         curveFrame.add(curvePanel, BorderLayout.CENTER)
-
-        updatePanel(CurveChannel.LUMINOSITY)
 
         curveFrame.isVisible = true
         setupWindowDrag(curveFrame)
