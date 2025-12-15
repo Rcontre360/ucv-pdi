@@ -12,7 +12,8 @@ data class StateContext(
     val brightness: Float = 0.0f,
     val contrast: Float = 0.0f,
     val rotationApplied: Int = 0,
-    val currentZoomLevelIndex: Int = 9 // Default for 1.0f
+    val currentZoomLevelIndex: Int = 9, // Default for 1.0f
+    val isNegative: Boolean = false
 )
 
 class AppState {
@@ -79,7 +80,7 @@ class AppState {
     }
 
     fun applyNegative() {
-        update(UpdateType.NegativeUpdate)
+        update(UpdateType.NegativeUpdate(!context.isNegative))
     }
 
     fun setBrightness(newFactor: Float) {
@@ -94,15 +95,6 @@ class AppState {
         update(UpdateType.RotationUpdate(angle))
     }
 
-
-    fun applyThresholding(thresholds: List<Int>): Boolean {
-        if (!isCurrentImageGrayscale()) {
-            return false
-        }
-        update(UpdateType.ThresholdUpdate(thresholds))
-        return true
-    }
-
     fun zoomIn() {
         update(UpdateType.ZoomInUpdate)
     }
@@ -111,111 +103,128 @@ class AppState {
         update(UpdateType.ZoomOutUpdate)
     }
 
-            fun loadImage(file: File) {
-                update(UpdateType.LoadImageUpdate(file))
-            }
-        
-            private fun update(updateType: UpdateType) {
-                var newStateContext = context.copy()
-        
-                when (updateType) {
-                    is UpdateType.Clear -> {
-                        context = StateContext(currentImage = _initialImage)
-                    }
-                    is UpdateType.BrightnessUpdate -> {
-                        val oldFactor = newStateContext.brightness
-                        val newFactor = updateType.newFactor
-                        val adjustment = (1 + newFactor) / (1 + oldFactor) - 1
-                        newStateContext = newStateContext.copy(
-                            brightness = newFactor,
-                            currentImage = newStateContext.currentImage?.changeBrightness(adjustment)
-                        )
-                    }
-                    is UpdateType.ContrastUpdate -> {
-                        val oldFactor = newStateContext.contrast
-                        val newFactor = updateType.newFactor
-                        val adjustment = (1 + newFactor) / (1 + oldFactor) - 1
-                        newStateContext = newStateContext.copy(
-                            contrast = newFactor,
-                            currentImage = newStateContext.currentImage?.changeContrast(adjustment)
-                        )
-                    }
-                    is UpdateType.GrayscaleUpdate -> {
-                        newStateContext = newStateContext.copy(
-                            currentImage = newStateContext.currentImage?.toGrayscale(updateType.tint)
-                        )
-                    }
-                    UpdateType.NegativeUpdate -> {
-                        newStateContext = newStateContext.copy(
-                            currentImage = newStateContext.currentImage?.negative()
-                        )
-                    }
-                    is UpdateType.RotationUpdate -> {
-                        newStateContext = newStateContext.copy(
-                            rotationApplied = (newStateContext.rotationApplied + updateType.angle) % 360,
-                            currentImage = newStateContext.currentImage?.rotateStraight(updateType.angle)
-                        )
-                    }
-                    is UpdateType.ThresholdUpdate -> {
-                        if (!isCurrentImageGrayscale()) {
-                            return
-                        }
-                        val imageToChange = newStateContext.currentImage ?: return
-                        newStateContext = newStateContext.copy(
-                            currentImage = imageToChange.makeThreshold(updateType.thresholds.toTypedArray())
-                        )
-                    }
-                    UpdateType.ZoomInUpdate -> {
-                        if (newStateContext.currentZoomLevelIndex < zoomLevels.size - 1) {
-                            val oldFactor = zoomLevels[newStateContext.currentZoomLevelIndex]
-                            val newZoomIndex = newStateContext.currentZoomLevelIndex + 1
-                            val newFactor = zoomLevels[newZoomIndex]
-                            val adjustment = newFactor / oldFactor
-                            newStateContext = newStateContext.copy(
-                                currentZoomLevelIndex = newZoomIndex,
-                                currentImage = newStateContext.currentImage?.zoom(adjustment, zoomAlgorithm)
-                            )
-                        }
-                    }
-                    UpdateType.ZoomOutUpdate -> {
-                        if (newStateContext.currentZoomLevelIndex > 0) {
-                            val oldFactor = zoomLevels[newStateContext.currentZoomLevelIndex]
-                            val newZoomIndex = newStateContext.currentZoomLevelIndex - 1
-                            val newFactor = zoomLevels[newZoomIndex]
-                            val adjustment = newFactor / oldFactor
-                            newStateContext = newStateContext.copy(
-                                currentZoomLevelIndex = newZoomIndex,
-                                currentImage = newStateContext.currentImage?.zoom(adjustment, zoomAlgorithm)
-                            )
-                        }
-                    }
-                    is UpdateType.LoadImageUpdate -> {
-                        try {
-                            val loadedImage = Image(org.pdi.io.loadImage(updateType.file))
-                            _initialImage = loadedImage
-                            newStateContext = StateContext(currentImage = loadedImage)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            _initialImage = null
-                            newStateContext = StateContext() // Reset all state on error
-                        }
-                    }
-                    is UpdateType.ColorUpdate -> {
-                        newStateContext = newStateContext.copy(color = updateType.color)
-                    }
-                    is UpdateType.ConvolutionUpdate -> {
-                        newStateContext = newStateContext.copy(
-                            currentImage = newStateContext.currentImage?.applyKernel(updateType.kernel)
-                        )
-                    }
-                    is UpdateType.BorderOperation -> {
-                        newStateContext = newStateContext.copy(
-                            currentImage = newStateContext.currentImage?.applyBorderOperator(updateType.kernelX,updateType.kernelY)
-                        )
-                    }
-                }
-        
-                context = newStateContext
-                _contextListeners.forEach { it.invoke(context) }
-            }}
+    fun loadImage(file: File) {
+        update(UpdateType.LoadImageUpdate(file))
+    }
 
+    fun applyThresholding(thresholds: List<Int>) {
+        update(UpdateType.ThresholdUpdate(thresholds))
+    }
+
+    
+    private fun isContextDefault(context: StateContext): Boolean {
+        val default = StateContext()
+        return context.brightness == default.brightness &&
+                context.contrast == default.contrast &&
+                context.color == default.color &&
+                context.rotationApplied == default.rotationApplied &&
+                context.currentZoomLevelIndex == default.currentZoomLevelIndex &&
+                context.isNegative == default.isNegative
+    }
+
+    private fun updateContextChanges(context: StateContext): Image? {
+        if (_initialImage == null) return null
+
+        var image = _initialImage!!
+
+        if (context.rotationApplied != 0) {
+            image = image.rotateStraight(context.rotationApplied)
+        }
+        if (context.currentZoomLevelIndex != 9) {
+            val factor = zoomLevels[context.currentZoomLevelIndex]
+            image = image.zoom(factor, zoomAlgorithm)
+        }
+        if (context.color != Color.white) {
+            image = image.toGrayscale(context.color)
+        }
+        if (context.brightness != 0.0f) {
+            image = image.changeBrightness(context.brightness)
+        }
+        if (context.contrast != 0.0f) {
+            image = image.changeContrast(context.contrast)
+        }
+        if (context.isNegative) {
+            image = image.negative()
+        }
+
+        return image
+    }
+
+    private fun update(updateType: UpdateType) {
+        var newStateContext = context.copy()
+
+        when (updateType) {
+            is UpdateType.Clear -> {
+                newStateContext = StateContext(currentImage = _initialImage)
+            }
+            is UpdateType.BrightnessUpdate -> {
+                newStateContext = newStateContext.copy(brightness = updateType.newFactor)
+            }
+            is UpdateType.ContrastUpdate -> {
+                newStateContext = newStateContext.copy(contrast = updateType.newFactor)
+            }
+            is UpdateType.GrayscaleUpdate -> {
+                _initialImage = _initialImage?.toGrayscale(updateType.tint)
+                newStateContext = StateContext(currentImage = _initialImage)
+            }
+            is UpdateType.NegativeUpdate -> {
+                newStateContext = newStateContext.copy(isNegative = updateType.isNegative)
+            }
+            is UpdateType.RotationUpdate -> {
+                newStateContext = newStateContext.copy(
+                    rotationApplied = (newStateContext.rotationApplied + updateType.angle) % 360
+                )
+            }
+            is UpdateType.ThresholdUpdate -> {
+                if (!isCurrentImageGrayscale()) {
+                    return
+                }
+                _initialImage = _initialImage?.makeThreshold(updateType.thresholds.toTypedArray())
+                newStateContext = StateContext(currentImage = _initialImage)
+            }
+            UpdateType.ZoomInUpdate -> {
+                if (newStateContext.currentZoomLevelIndex < zoomLevels.size - 1) {
+                    newStateContext = newStateContext.copy(
+                        currentZoomLevelIndex = newStateContext.currentZoomLevelIndex + 1
+                    )
+                }
+            }
+            UpdateType.ZoomOutUpdate -> {
+                if (newStateContext.currentZoomLevelIndex > 0) {
+                    newStateContext = newStateContext.copy(
+                        currentZoomLevelIndex = newStateContext.currentZoomLevelIndex - 1
+                    )
+                }
+            }
+            is UpdateType.LoadImageUpdate -> {
+                try {
+                    val loadedImage = Image(org.pdi.io.loadImage(updateType.file))
+                    _initialImage = loadedImage
+                    newStateContext = StateContext(currentImage = loadedImage)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    _initialImage = null
+                    newStateContext = StateContext() // Reset all state on error
+                }
+            }
+            is UpdateType.ColorUpdate -> {
+                newStateContext = newStateContext.copy(color = updateType.color)
+            }
+            is UpdateType.ConvolutionUpdate -> {
+                _initialImage = _initialImage?.applyKernel(updateType.kernel)
+                newStateContext = StateContext(currentImage = _initialImage)
+            }
+            is UpdateType.BorderOperation -> {
+                _initialImage = _initialImage?.applyBorderOperator(updateType.kernelX,updateType.kernelY)
+                newStateContext = StateContext(currentImage = _initialImage)
+            }
+        }
+
+        if (!isContextDefault(newStateContext)) {
+            newStateContext = newStateContext.copy(currentImage = updateContextChanges(newStateContext))
+        }
+
+        context = newStateContext
+        _contextListeners.forEach { it.invoke(context) }
+    }
+}

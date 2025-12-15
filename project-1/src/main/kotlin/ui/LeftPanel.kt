@@ -50,17 +50,17 @@ class LeftPanel(
             val brightnessLabel = JLabel("Brightness:")
             brightnessLabel.alignmentX = Component.LEFT_ALIGNMENT
             add(brightnessLabel)
-            val brightnessSlider = JSlider(JSlider.HORIZONTAL, 0, 200, 100).apply {
+            brightnessSlider = JSlider(JSlider.HORIZONTAL, -100, 100, 0).apply {
                 majorTickSpacing = 50
                 minorTickSpacing = 10
                 paintTicks = true
                 paintLabels = true
                 addChangeListener {
-                    val newValue = (value - 100) / 100.0f
+                    val newValue = value / 100.0f
                     state.setBrightness(newValue)
                 }
             }
-            val brightnessValueLabel = JLabel("Brightness: 0.00").apply {
+            brightnessValueLabel = JLabel("Brightness: 0.00").apply {
                 alignmentX = Component.LEFT_ALIGNMENT
             }
             add(brightnessValueLabel)
@@ -70,7 +70,7 @@ class LeftPanel(
             val contrastLabel = JLabel("Contrast:")
             contrastLabel.alignmentX = Component.LEFT_ALIGNMENT
             add(contrastLabel)
-            val contrastSlider = JSlider(JSlider.HORIZONTAL, 0, 200, 0).apply {
+            contrastSlider = JSlider(JSlider.HORIZONTAL, 0, 100, 0).apply {
                 majorTickSpacing = 50
                 minorTickSpacing = 10
                 paintTicks = true
@@ -80,7 +80,7 @@ class LeftPanel(
                     state.setContrast(newValue)
                 }
             }
-            val contrastValueLabel = JLabel("Contrast: 0.00").apply {
+            contrastValueLabel = JLabel("Contrast: 0.00").apply {
                 alignmentX = Component.LEFT_ALIGNMENT
             }
             add(contrastValueLabel)
@@ -117,7 +117,7 @@ class LeftPanel(
         add(transformationsPanel)
 
         state.addContextListener { stateContext: StateContext ->
-            brightnessSlider.value = (stateContext.brightness * 100 + 100).toInt()
+            brightnessSlider.value = (stateContext.brightness * 100).toInt()
             brightnessValueLabel.text = "Brightness: %.2f".format(stateContext.brightness)
 
             contrastSlider.value = (stateContext.contrast * 100).toInt()

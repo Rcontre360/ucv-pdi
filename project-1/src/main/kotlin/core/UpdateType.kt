@@ -8,7 +8,7 @@ sealed class UpdateType {
     data class BrightnessUpdate(val newFactor: Float) : UpdateType()
     data class ContrastUpdate(val newFactor: Float) : UpdateType()
     data class GrayscaleUpdate(val tint: Color) : UpdateType()
-    object NegativeUpdate : UpdateType()
+    data class NegativeUpdate(val isNegative: Boolean) : UpdateType()
     data class RotationUpdate(val angle: Int) : UpdateType()
     data class ThresholdUpdate(val thresholds: List<Int>) : UpdateType()
     object ZoomInUpdate : UpdateType()
