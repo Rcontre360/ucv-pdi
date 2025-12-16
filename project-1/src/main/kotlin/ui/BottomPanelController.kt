@@ -4,15 +4,30 @@ import javafx.fxml.FXML
 import javafx.scene.control.Label
 import org.pdi.core.AppState
 
+import javafx.collections.FXCollections
+import javafx.scene.control.ComboBox
+import org.pdi.core.ZoomAlgorithm
+
 class BottomPanelController {
 
     @FXML
     private lateinit var zoomLabel: Label
 
+    @FXML
+    private lateinit var zoomAlgorithmComboBox: ComboBox<ZoomAlgorithm>
+
     private lateinit var appState: AppState
 
     fun setAppState(appState: AppState) {
         this.appState = appState
+
+        zoomAlgorithmComboBox.items.addAll(FXCollections.observableArrayList(ZoomAlgorithm.values().toList()))
+        zoomAlgorithmComboBox.selectionModel.select(appState.zoomAlgorithm)
+        zoomAlgorithmComboBox.selectionModel.selectedItemProperty().addListener { _, _, newValue ->
+            if (newValue != null) {
+                appState.zoomAlgorithm = newValue
+            }
+        }
 
         appState.addContextListener { context ->
             val newFactor = appState.zoomLevels[context.currentZoomLevelIndex]
