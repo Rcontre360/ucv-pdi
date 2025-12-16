@@ -11,6 +11,8 @@ class Main : Application() {
     override fun start(primaryStage: Stage) {
         val state = AppState()
         val loader = FXMLLoader(javaClass.getResource("/main.fxml"))
+        val mainController = MainController(primaryStage) // Pass primaryStage to MainController
+        loader.setController(mainController)
         val root = loader.load<Parent>()
         primaryStage.title = "Image Viewer"
         val scene = Scene(root, 800.0, 600.0)

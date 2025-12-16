@@ -15,7 +15,6 @@
     <top>
         <HBox spacing="10" alignment="CENTER">
             <Label text="Seleccionar Canal"/>
-            <ToggleGroup fx:id="channelToggleGroup"/>
             <RadioButton text="Luminosidad" userData="L" toggleGroup="$channelToggleGroup" selected="true"/>
             <RadioButton text="Rojo" userData="R" toggleGroup="$channelToggleGroup"/>
             <RadioButton text="Verde" userData="G" toggleGroup="$channelToggleGroup"/>

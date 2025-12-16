@@ -3,6 +3,7 @@ package org.pdi
 import javafx.embed.swing.SwingFXUtils
 import javafx.fxml.FXML
 import javafx.scene.image.ImageView
+import javafx.stage.Stage
 import org.pdi.core.AppState
 import org.pdi.ui.BottomPanelController
 import org.pdi.ui.FiltersPanelController
@@ -10,7 +11,7 @@ import org.pdi.ui.LeftPanelController
 import org.pdi.ui.OperationsPanelController
 import org.pdi.ui.TopPanelController
 
-class MainController {
+class MainController(private val primaryStage: Stage) { // Add primaryStage to constructor
 
     @FXML
     private lateinit var topPanelController: TopPanelController
@@ -34,7 +35,7 @@ class MainController {
 
     @FXML
     fun initialize() {
-        topPanelController.setAppState(appState)
+        topPanelController.setAppState(appState, primaryStage) // Pass primaryStage
         leftPanelController.setAppState(appState)
         filtersPanelController.setAppState(appState)
         operationsPanelController.setAppState(appState)

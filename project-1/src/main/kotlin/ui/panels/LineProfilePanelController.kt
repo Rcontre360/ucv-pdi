@@ -17,9 +17,6 @@ import kotlin.math.roundToInt
 class LineProfilePanelController {
 
     @FXML
-    private lateinit var axisToggleGroup: ToggleGroup
-
-    @FXML
     private lateinit var channelComboBox: ComboBox<String>
 
     @FXML
@@ -36,7 +33,11 @@ class LineProfilePanelController {
         channelComboBox.items.addAll(FXCollections.observableArrayList("R", "G", "B", "Gray"))
         channelComboBox.selectionModel.selectFirst()
 
-        axisToggleGroup.selectedToggleProperty().addListener { _, _, _ ->
+        // Get the ToggleGroup from one of the RadioButtons
+        val toggleGroup = (lineGraphCanvas.scene?.lookup("#xAxisRadioButton") as? RadioButton)?.toggleGroup
+            ?: (lineGraphCanvas.scene?.lookup("#yAxisRadioButton") as? RadioButton)?.toggleGroup
+
+        toggleGroup?.selectedToggleProperty()?.addListener { _, _, _ ->
             drawGraph()
         }
         channelComboBox.selectionModel.selectedItemProperty().addListener { _, _, _ ->
@@ -60,7 +61,11 @@ class LineProfilePanelController {
             return
         }
 
-        val axis = (axisToggleGroup.selectedToggle as RadioButton).userData as Char
+        // Get the ToggleGroup from one of the RadioButtons
+        val toggleGroup = (lineGraphCanvas.scene?.lookup("#xAxisRadioButton") as? RadioButton)?.toggleGroup
+            ?: (lineGraphCanvas.scene?.lookup("#yAxisRadioButton") as? RadioButton)?.toggleGroup
+
+        val axis = (toggleGroup?.selectedToggle as RadioButton).userData as Char
         val lineNumber = if (axis == 'X') point.y else point.x
 
         val maxLineNumber = if (axis == 'X') image.metadata.height - 1 else image.metadata.width - 1

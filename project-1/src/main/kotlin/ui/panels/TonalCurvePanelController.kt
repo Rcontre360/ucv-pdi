@@ -3,7 +3,6 @@ package org.pdi.ui.panels
 import javafx.fxml.FXML
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
-import javafx.scene.control.Label
 import javafx.scene.control.RadioButton
 import javafx.scene.control.ToggleGroup
 import javafx.scene.paint.Color
@@ -15,9 +14,6 @@ class TonalCurvePanelController {
 
     @FXML
     private lateinit var tonalCurveCanvas: Canvas
-
-    @FXML
-    private lateinit var channelToggleGroup: ToggleGroup
 
     private lateinit var appState: AppState
     private var curveLuts: Map<Char, IntArray>? = null
@@ -33,7 +29,11 @@ class TonalCurvePanelController {
 
     @FXML
     fun initialize() {
-        channelToggleGroup.selectedToggleProperty().addListener { _, _, newToggle ->
+        // Get the ToggleGroup from one of the RadioButtons
+        val toggleGroup = (tonalCurveCanvas.scene?.lookup("#luminosityRadioButton") as? RadioButton)?.toggleGroup
+            ?: (tonalCurveCanvas.scene?.lookup("#redRadioButton") as? RadioButton)?.toggleGroup
+
+        toggleGroup?.selectedToggleProperty()?.addListener { _, _, newToggle ->
             selectedChannel = (newToggle as RadioButton).userData as Char
             drawTonalCurve()
         }

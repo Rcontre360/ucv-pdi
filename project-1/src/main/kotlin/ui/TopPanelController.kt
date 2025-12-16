@@ -5,6 +5,7 @@ import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
+import javafx.stage.Modality
 import javafx.stage.Stage
 import org.pdi.core.AppState
 import org.pdi.ui.panels.HistogramPanelController
@@ -16,9 +17,11 @@ import org.pdi.ui.panels.UmbralizationPanelController
 class TopPanelController {
 
     private lateinit var appState: AppState
+    private lateinit var primaryStage: Stage
 
-    fun setAppState(appState: AppState) {
+    fun setAppState(appState: AppState, primaryStage: Stage) {
         this.appState = appState
+        this.primaryStage = primaryStage
     }
 
     fun saveImage() {
@@ -30,6 +33,8 @@ class TopPanelController {
         }
 
         val stage = Stage()
+        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.initOwner(primaryStage) // Use primaryStage as owner
         stage.title = "Save Image"
         stage.scene = Scene(root)
         stage.show()
@@ -38,7 +43,7 @@ class TopPanelController {
     fun selectImage() {
         val fileChooser = javafx.stage.FileChooser()
         fileChooser.title = "Select Image"
-        val file = fileChooser.showOpenDialog(null)
+        val file = fileChooser.showOpenDialog(primaryStage) // Use primaryStage as owner
         if (file != null) {
             appState.loadImage(file)
         }
@@ -55,6 +60,8 @@ class TopPanelController {
         histogramPanelController.setAppState(appState)
 
         val stage = Stage()
+        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.initOwner(primaryStage) // Use primaryStage as owner
         stage.title = "Histogram"
         stage.scene = Scene(root)
         stage.show()
@@ -71,6 +78,8 @@ class TopPanelController {
         tonalCurvePanelController.setAppState(appState)
 
         val stage = Stage()
+        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.initOwner(primaryStage) // Use primaryStage as owner
         stage.title = "Tonal Curve Viewer"
         stage.scene = Scene(root)
         stage.show()
@@ -89,6 +98,8 @@ class TopPanelController {
         }
 
         val stage = Stage()
+        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.initOwner(primaryStage) // Use primaryStage as owner
         stage.title = "Umbralization"
         stage.scene = Scene(root)
         stage.show()
@@ -105,6 +116,8 @@ class TopPanelController {
         lineProfilePanelController.setAppState(appState)
 
         val stage = Stage()
+        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.initOwner(primaryStage) // Use primaryStage as owner
         stage.title = "Line Profile"
         stage.scene = Scene(root)
         stage.show()
