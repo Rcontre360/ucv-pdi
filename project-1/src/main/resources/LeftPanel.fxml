@@ -7,7 +7,11 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 
-<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.LeftPanelController" spacing="10">
+<?import javafx.geometry.Insets?>
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.LeftPanelController" spacing="10" style="-fx-background-color: #CCCCCC;">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
     <fx:include fx:id="infoPanel" source="InfoPanel.fxml"/>
     <Label fx:id="brightnessValueLabel" text="Brightness: 0.00"/>
     <Slider fx:id="brightnessSlider" min="-100" max="100" value="0"/>

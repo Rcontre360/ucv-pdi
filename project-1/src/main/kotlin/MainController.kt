@@ -6,9 +6,8 @@ import javafx.scene.image.ImageView
 import javafx.stage.Stage
 import org.pdi.core.AppState
 import org.pdi.ui.BottomPanelController
-import org.pdi.ui.FiltersPanelController
 import org.pdi.ui.LeftPanelController
-import org.pdi.ui.OperationsPanelController
+import org.pdi.ui.RightPanelController
 import org.pdi.ui.TopPanelController
 
 class MainController(private val primaryStage: Stage) { // Add primaryStage to constructor
@@ -20,10 +19,7 @@ class MainController(private val primaryStage: Stage) { // Add primaryStage to c
     private lateinit var leftPanelController: LeftPanelController
 
     @FXML
-    private lateinit var filtersPanelController: FiltersPanelController
-
-    @FXML
-    private lateinit var operationsPanelController: OperationsPanelController
+    private lateinit var rightPanelController: RightPanelController
 
     @FXML
     private lateinit var bottomPanelController: BottomPanelController
@@ -37,8 +33,7 @@ class MainController(private val primaryStage: Stage) { // Add primaryStage to c
     fun initialize() {
         topPanelController.setAppState(appState, primaryStage) // Pass primaryStage
         leftPanelController.setAppState(appState)
-        filtersPanelController.setAppState(appState, primaryStage)
-        operationsPanelController.setAppState(appState)
+        rightPanelController.setAppState(appState, primaryStage)
         bottomPanelController.setAppState(appState)
 
         appState.addContextListener { stateContext ->

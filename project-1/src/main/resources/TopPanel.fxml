@@ -3,7 +3,11 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.control.Button?>
 
-<HBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.TopPanelController" spacing="10">
+<?import javafx.geometry.Insets?>
+<HBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.TopPanelController" spacing="10" style="-fx-background-color: #333333;">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
     <Button text="Save Image" onAction="#saveImage"/>
     <Button text="Select Image" onAction="#selectImage"/>
     <Button text="Show Histogram" onAction="#showHistogram"/>

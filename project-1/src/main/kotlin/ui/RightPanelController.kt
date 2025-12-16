@@ -12,9 +12,17 @@ import org.pdi.core.AppState
 import org.pdi.core.Kernel
 import org.pdi.core.KernelType
 import org.pdi.core.kernels.*
+import org.pdi.ui.BorderDetectionType
 
-class FiltersPanelController {
+enum class BorderDetectionType {
+    SOBEL,
+    ROBERTS,
+    PREWITT
+}
 
+class RightPanelController {
+
+    // From FiltersPanelController
     @FXML
     private lateinit var typeComboBox: ComboBox<KernelType>
 
@@ -27,6 +35,10 @@ class FiltersPanelController {
     @FXML
     private lateinit var profilingFactorAdjusterController: ValueAdjusterController
 
+    // From OperationsPanelController
+    @FXML
+    private lateinit var operationsComboBox: ComboBox<BorderDetectionType>
+
     private lateinit var appState: AppState
     private lateinit var primaryStage: Stage
     private val laplacianProfilingKernel = LaplacianKernelProfiling()
@@ -34,7 +46,9 @@ class FiltersPanelController {
     fun setAppState(appState: AppState, primaryStage: Stage) {
         this.appState = appState
         this.primaryStage = primaryStage
-        typeComboBox.items.addAll(KernelType.values())
+
+        // FiltersPanelController logic
+        typeComboBox.items.addAll(KernelType.values().toList())
         typeComboBox.selectionModel.selectFirst()
 
         profilingFactorAdjusterController.setup(1f, 1f, 10f, 1f) { newValue ->
@@ -48,6 +62,10 @@ class FiltersPanelController {
             rowsField.isEditable = customRows
             colsField.isEditable = customCols
         }
+
+        // OperationsPanelController logic
+        operationsComboBox.items.addAll(BorderDetectionType.values().toList())
+        operationsComboBox.selectionModel.selectFirst()
     }
 
     @FXML
@@ -60,7 +78,7 @@ class FiltersPanelController {
 
         val stage = Stage()
         stage.initModality(Modality.APPLICATION_MODAL)
-        stage.initOwner(primaryStage) // Use primaryStage as owner
+        stage.initOwner(primaryStage)
         stage.title = "Kernel Matrix"
         stage.scene = Scene(root)
         stage.show()
@@ -97,5 +115,17 @@ class FiltersPanelController {
         }
         kernel.generateKernel()
         return kernel
+    }
+
+    @FXML
+    fun applyOperation() {
+        val selectedOperation = operationsComboBox.selectionModel.selectedItem as BorderDetectionType
+        val (kernelX, kernelY) = when (selectedOperation) {
+            BorderDetectionType.SOBEL -> Pair(SobelXKernel(3), SobelYKernel(3))
+            BorderDetectionType.ROBERTS -> Pair(RobertsXKernel(), RobertsYKernel())
+            BorderDetectionType.PREWITT -> Pair(PrewittXKernel(), PrewittYKernel())
+            else -> Pair(SobelXKernel(3), SobelYKernel(3))
+        }
+        appState.applyBorderOperator(kernelX, kernelY)
     }
 }
