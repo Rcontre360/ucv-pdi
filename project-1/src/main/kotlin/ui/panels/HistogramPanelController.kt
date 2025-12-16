@@ -11,27 +11,23 @@ class HistogramPanelController {
 
     @FXML
     private lateinit var histogramCanvas: Canvas
-
     private lateinit var appState: AppState
-    private var histogramData: Histogram? = null
 
     fun setAppState(appState: AppState) {
         this.appState = appState
-        appState.addContextListener {
-            histogramData = appState.getHistogram()
-            drawHistogram()
-        }
+        drawHistogram()
     }
 
     @FXML
     fun initialize() {
-        // drawHistogram() // Draw initial empty histogram
     }
 
     private fun drawHistogram() {
+        val histogramData = appState.getHistogram()
         val gc: GraphicsContext = histogramCanvas.graphicsContext2D
         gc.clearRect(0.0, 0.0, histogramCanvas.width, histogramCanvas.height)
 
+        println("HISTOGRAM DATA ${histogramData == null || histogramData!!.isEmpty()}")
         if (histogramData == null || histogramData!!.isEmpty()) {
             return
         }

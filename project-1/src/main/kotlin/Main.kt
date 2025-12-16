@@ -9,7 +9,6 @@ import org.pdi.core.AppState
 
 class Main : Application() {
     override fun start(primaryStage: Stage) {
-        val state = AppState()
         val loader = FXMLLoader(javaClass.getResource("/main.fxml"))
         val mainController = MainController(primaryStage) // Pass primaryStage to MainController
         loader.setController(mainController)

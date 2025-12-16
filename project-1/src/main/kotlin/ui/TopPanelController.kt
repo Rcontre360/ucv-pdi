@@ -56,6 +56,7 @@ class TopPanelController {
         }
         val loader = FXMLLoader(javaClass.getResource("/HistogramPanel.fxml"))
         val root = loader.load<Parent>()
+        println("show histogram section")
         val histogramPanelController: HistogramPanelController = loader.getController()
         histogramPanelController.setAppState(appState)
 
