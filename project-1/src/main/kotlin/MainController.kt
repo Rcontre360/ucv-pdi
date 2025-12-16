@@ -37,7 +37,7 @@ class MainController(private val primaryStage: Stage) { // Add primaryStage to c
     fun initialize() {
         topPanelController.setAppState(appState, primaryStage) // Pass primaryStage
         leftPanelController.setAppState(appState)
-        filtersPanelController.setAppState(appState)
+        filtersPanelController.setAppState(appState, primaryStage)
         operationsPanelController.setAppState(appState)
         bottomPanelController.setAppState(appState)
 

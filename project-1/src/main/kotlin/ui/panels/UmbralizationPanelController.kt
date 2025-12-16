@@ -178,6 +178,10 @@ class UmbralizationPanelController {
         val width = gradientCanvas.width
         val height = gradientCanvas.height
 
+        if (width <= 0 || height <= 0) {
+            return
+        }
+
         // Draw grayscale gradient
         for (i in 0 until width.toInt()) {
             val gray = (i.toFloat() / (width - 1) * 255).toInt()

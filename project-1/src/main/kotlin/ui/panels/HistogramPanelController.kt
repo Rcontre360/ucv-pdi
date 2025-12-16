@@ -25,7 +25,7 @@ class HistogramPanelController {
 
     @FXML
     fun initialize() {
-        drawHistogram() // Draw initial empty histogram
+        // drawHistogram() // Draw initial empty histogram
     }
 
     private fun drawHistogram() {
@@ -45,6 +45,10 @@ class HistogramPanelController {
         val blueData = histogramData!![2] ?: IntArray(256)
 
         val maxCount = (redData + greenData + blueData).maxOrNull() ?: 0
+
+        if (maxCount == 0) {
+            return
+        }
 
         // Draw Red Histogram
         gc.fill = Color.RED

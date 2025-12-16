@@ -6,6 +6,7 @@ import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.control.ComboBox
 import javafx.scene.control.TextField
+import javafx.stage.Modality
 import javafx.stage.Stage
 import org.pdi.core.AppState
 import org.pdi.core.Kernel
@@ -27,10 +28,12 @@ class FiltersPanelController {
     private lateinit var profilingFactorAdjusterController: ValueAdjusterController
 
     private lateinit var appState: AppState
+    private lateinit var primaryStage: Stage
     private val laplacianProfilingKernel = LaplacianKernelProfiling()
 
-    fun setAppState(appState: AppState) {
+    fun setAppState(appState: AppState, primaryStage: Stage) {
         this.appState = appState
+        this.primaryStage = primaryStage
         typeComboBox.items.addAll(KernelType.values())
         typeComboBox.selectionModel.selectFirst()
 
@@ -56,6 +59,8 @@ class FiltersPanelController {
         kernelMatrixPanelController.setKernel(kernel)
 
         val stage = Stage()
+        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.initOwner(primaryStage) // Use primaryStage as owner
         stage.title = "Kernel Matrix"
         stage.scene = Scene(root)
         stage.show()
