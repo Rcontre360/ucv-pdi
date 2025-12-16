@@ -24,7 +24,7 @@
             <Label text="Values"/>
             <ListView fx:id="thresholdListView" prefHeight="150"/>
             <Button text="Add" onAction="#addThreshold"/>
-            <Button text="Remove" onAction="#removeThreshold"/>
+            <Button fx:id="removeThresholdButton" text="Remove" onAction="#removeThreshold"/>
         </VBox>
     </right>
     <bottom>

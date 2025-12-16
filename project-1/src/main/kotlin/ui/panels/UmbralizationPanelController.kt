@@ -48,14 +48,14 @@ class UmbralizationPanelController {
         gradientCanvas.addEventHandler(MouseEvent.MOUSE_RELEASED) { event ->
             handleMouseReleased(event)
         }
-
-        drawGradient()
     }
 
     fun setup(appState: AppState, onApply: () -> Unit) {
         this.appState = appState
         this.onApply = onApply
         refreshUI()
+        addThreshold()
+        drawGradient()
     }
 
     private fun handleMousePressed(event: MouseEvent) {
@@ -109,7 +109,6 @@ class UmbralizationPanelController {
 
     private fun handleMouseReleased(event: MouseEvent) {
         draggedThresholdIndex = -1
-        // Reset cursor if changed
     }
 
     private fun findNearbyThreshold(x: Int): Int {
