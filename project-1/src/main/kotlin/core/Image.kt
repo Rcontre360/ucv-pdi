@@ -23,20 +23,19 @@ data class Metadata(
 
 class Image(val buff: BufferedImage) {
     val image: BufferedImage = buff
-    val metadata = Metadata(
-        width = image.width,
-        height = image.height,
-        bitsPerPixel = image.colorModel.pixelSize,
-        uniqueColors = image.colorModel.numComponents
-    )
-
     val histogram: Histogram by lazy { Histogram(calculateHistogram()) }
     val isGrayscale = getIsGrayscale()
     val isBinary = getIsBinary()
+    val metadata = Metadata(
+        width = image.width,
+        height = image.height,
+        uniqueColors = getUniqueColors() ,
+        bitsPerPixel = if (isBinary) {1} else{ if (isGrayscale){8} else {24} },
+    )
 
     fun readAllPixels(processor: PixelProcessor<Any>) {
-        for (y in 0 until metadata.height) {
-            for (x in 0 until metadata.width) {
+        for (y in 0 until image.height) {
+            for (x in 0 until image.width) {
                 val pixel = image.getRGB(x, y)
                 val color = Color(pixel)
                 processor(x, y, color)
@@ -379,39 +378,38 @@ class Image(val buff: BufferedImage) {
         return profile
     }
 
-    private fun getIsGrayscale(): Boolean{
-        for (y in 0 until metadata.height) {
-            for (x in 0 until metadata.width) {
-                val pixel = image.getRGB(x, y)
-                val color = Color(pixel)
-                if (color.red != color.green && color.green != color.blue) {
-                    return false
-                }
-            }
+    private fun getUniqueColors(): Int{
+        val all: MutableSet<Int> = mutableSetOf()
+        readAllPixels {x,y,_ ->
+            val pixel = image.getRGB(x, y)
+            all.add(pixel)
         }
-        return true
+        return all.size
+    }
+
+    private fun getIsGrayscale(): Boolean{
+        var res = true
+        readAllPixels {x,y,color ->
+            res = res && (color.red == color.green && color.green == color.blue)
+            0
+        }
+        return res
     }
 
     private fun getIsBinary(): Boolean{
         val bin = listOf(0,255)
-        for (y in 0 until metadata.height) {
-            for (x in 0 until metadata.width) {
-                val pixel = image.getRGB(x, y)
-                val color = Color(pixel)
-                if (!(color.red in bin) || !(color.green in bin) || !(color.blue in bin)) {
-                    return false
-                }
-            }
+        var res = true
+        readAllPixels {x,y,color ->
+            res = res && ((color.red in bin) && (color.green in bin) && (color.blue in bin))
+            0
         }
-        return true
+        return res
     }
 
     private fun applyPerPixel(processor: PixelProcessor<Int>): Image {
         val newImage = BufferedImage(metadata.width, metadata.height, BufferedImage.TYPE_INT_RGB)
 
         readAllPixels {x,y,color ->
-            val pixel = image.getRGB(x, y)
-            val color = Color(pixel)
             val newRgbValue = processor(x, y, color)
             newImage.setRGB(x, y, newRgbValue)
         }
