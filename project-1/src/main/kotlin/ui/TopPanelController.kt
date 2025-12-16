@@ -8,8 +8,10 @@ import javafx.scene.control.Alert.AlertType
 import javafx.stage.Stage
 import org.pdi.core.AppState
 import org.pdi.ui.panels.HistogramPanelController
+import org.pdi.ui.panels.LineProfilePanelController
 import org.pdi.ui.panels.SaveImagePanelController
 import org.pdi.ui.panels.TonalCurvePanelController
+import org.pdi.ui.panels.UmbralizationPanelController
 
 class TopPanelController {
 
@@ -75,11 +77,37 @@ class TopPanelController {
     }
 
     fun showUmbralization() {
-        println("Show Umbralization clicked")
+        if (!appState.isCurrentImageGrayscale()) {
+            showAlert("Grayscale Required", "Please apply grayscale filter first.")
+            return
+        }
+        val loader = FXMLLoader(javaClass.getResource("/UmbralizationPanel.fxml"))
+        val root = loader.load<Parent>()
+        val umbralizationPanelController: UmbralizationPanelController = loader.getController()
+        umbralizationPanelController.setup(appState) {
+            (root.scene.window as Stage).close()
+        }
+
+        val stage = Stage()
+        stage.title = "Umbralization"
+        stage.scene = Scene(root)
+        stage.show()
     }
 
     fun showLineProfile() {
-        println("Line Profile clicked")
+        if (appState.getImage() == null) {
+            showAlert("No Image Selected", "No image loaded.")
+            return
+        }
+        val loader = FXMLLoader(javaClass.getResource("/LineProfilePanel.fxml"))
+        val root = loader.load<Parent>()
+        val lineProfilePanelController: LineProfilePanelController = loader.getController()
+        lineProfilePanelController.setAppState(appState)
+
+        val stage = Stage()
+        stage.title = "Line Profile"
+        stage.scene = Scene(root)
+        stage.show()
     }
 
     private fun showAlert(title: String, message: String) {

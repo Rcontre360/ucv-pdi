@@ -13,7 +13,6 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("org.openjfx:javafx-controls")
 }
 
 tasks.test {
