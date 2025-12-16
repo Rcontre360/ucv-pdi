@@ -15,11 +15,6 @@ import javax.swing.BorderFactory
 import javax.swing.JButton
 import javax.swing.JPanel
 
-enum class BorderDetectionType {
-    SOBEL,
-    ROBERTS,
-    PREWITT
-}
 
 class OperationsPanel(private val state: AppState) : JPanel() {
     private val operationsComboBox = JComboBox<BorderDetectionType>(BorderDetectionType.values())

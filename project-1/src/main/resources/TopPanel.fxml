@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Button?>
+
+<HBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.TopPanelController" spacing="10">
+    <Button text="Save Image" onAction="#saveImage"/>
+    <Button text="Select Image" onAction="#selectImage"/>
+    <Button text="Show Histogram" onAction="#showHistogram"/>
+    <Button text="Show Tonal Curve" onAction="#showTonalCurve"/>
+    <Button text="Umbralization" onAction="#showUmbralization"/>
+    <Button text="Line Profile" onAction="#showLineProfile"/>
+</HBox>

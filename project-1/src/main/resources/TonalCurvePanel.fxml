@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Label?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.panels.TonalCurvePanelController">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+    <top>
+        <HBox spacing="10" alignment="CENTER">
+            <Label text="Seleccionar Canal"/>
+            <ToggleGroup fx:id="channelToggleGroup"/>
+            <RadioButton text="Luminosidad" userData="L" toggleGroup="$channelToggleGroup" selected="true"/>
+            <RadioButton text="Rojo" userData="R" toggleGroup="$channelToggleGroup"/>
+            <RadioButton text="Verde" userData="G" toggleGroup="$channelToggleGroup"/>
+            <RadioButton text="Azul" userData="B" toggleGroup="$channelToggleGroup"/>
+        </HBox>
+    </top>
+    <center>
+        <Canvas fx:id="tonalCurveCanvas" width="400" height="400"/>
+    </center>
+</BorderPane>

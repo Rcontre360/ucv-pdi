@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Button?>
+
+<HBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.BottomPanelController" spacing="10">
+    <Button text="-" onAction="#zoomOut"/>
+    <Label fx:id="zoomLabel" text="x1.0"/>
+    <Button text="+" onAction="#zoomIn"/>
+    <Button text="Rotate 90°" onAction="#rotate90"/>
+    <Button text="Rotate 180°" onAction="#rotate180"/>
+    <Button text="Rotate 270°" onAction="#rotate270"/>
+</HBox>

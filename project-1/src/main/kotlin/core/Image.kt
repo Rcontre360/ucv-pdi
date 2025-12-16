@@ -54,17 +54,17 @@ class Image(val buff: BufferedImage) {
                 val dstColor = Color(resImg.image.getRGB(x, y))
 
                 // R, G, B channels
-                sums[0][srcColor.red] += dstColor.red
+                sums[0][srcColor.red] = sums[0][srcColor.red] + dstColor.red
                 counts[0][srcColor.red]++
-                sums[1][srcColor.green] += dstColor.green
+                sums[1][srcColor.green] = sums[1][srcColor.green] + dstColor.green
                 counts[1][srcColor.green]++
-                sums[2][srcColor.blue] += dstColor.blue
+                sums[2][srcColor.blue] = sums[2][srcColor.blue] + dstColor.blue
                 counts[2][srcColor.blue]++
 
                 // Luminosity channel
                 val srcLum = (0.2126 * srcColor.red + 0.7152 * srcColor.green + 0.0722 * srcColor.blue).roundToInt()
                 val dstLum = (0.2126 * dstColor.red + 0.7152 * dstColor.green + 0.0722 * dstColor.blue).roundToInt()
-                sums[3][srcLum] += dstLum
+                sums[3][srcLum] = sums[3][srcLum] + dstLum
                 counts[3][srcLum]++
             }
         }

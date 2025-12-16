@@ -1,0 +1,24 @@
+<?import javafx.scene.image.ImageView?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.MainController">
+    <top>
+        <fx:include fx:id="topPanel" source="TopPanel.fxml"/>
+    </top>
+    <left>
+        <fx:include fx:id="leftPanel" source="LeftPanel.fxml"/>
+    </left>
+    <right>
+        <VBox>
+            <fx:include fx:id="filtersPanel" source="FiltersPanel.fxml"/>
+            <fx:include fx:id="operationsPanel" source="OperationsPanel.fxml"/>
+        </VBox>
+    </right>
+    <bottom>
+        <fx:include fx:id="bottomPanel" source="BottomPanel.fxml"/>
+    </bottom>
+    <center>
+        <ImageView fx:id="imageView" fitWidth="600" fitHeight="400" preserveRatio="true"/>
+    </center>
+</BorderPane>

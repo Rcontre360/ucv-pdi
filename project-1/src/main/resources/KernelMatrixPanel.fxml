@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.geometry.Insets?>
+
+<GridPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.KernelMatrixPanelController" hgap="5" vgap="5">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+</GridPane>
