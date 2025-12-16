@@ -3,8 +3,13 @@ package org.pdi.ui
 import javafx.fxml.FXML
 import javafx.scene.control.ComboBox
 import org.pdi.core.AppState
-import org.pdi.ui.BorderDetectionType
 import org.pdi.core.kernels.*
+
+enum class BorderDetectionType {
+    SOBEL,
+    ROBERTS,
+    PREWITT
+}
 
 class OperationsPanelController {
 
