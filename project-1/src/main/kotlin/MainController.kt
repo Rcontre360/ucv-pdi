@@ -44,5 +44,6 @@ class MainController(private val primaryStage: Stage) { // Add primaryStage to c
                 imageView.image = null
             }
         }
+
     }
 }

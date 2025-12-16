@@ -20,10 +20,13 @@ class LineProfilePanelController {
     private lateinit var channelComboBox: ComboBox<String>
 
     @FXML
-    private lateinit var instructionLabel: Label
+    private lateinit var lineGraphCanvas: Canvas
 
     @FXML
-    private lateinit var lineGraphCanvas: Canvas
+    private lateinit var lineProfileImageView: javafx.scene.image.ImageView
+
+    @FXML
+    private lateinit var axisToggleGroup: ToggleGroup
 
     private lateinit var appState: AppState
     private var profileData: List<Pair<Int, Int>> = emptyList()
@@ -33,25 +36,32 @@ class LineProfilePanelController {
         channelComboBox.items.addAll(FXCollections.observableArrayList("R", "G", "B", "Gray"))
         channelComboBox.selectionModel.selectFirst()
 
-        // Get the ToggleGroup from one of the RadioButtons
-        val toggleGroup = (lineGraphCanvas.scene?.lookup("#xAxisRadioButton") as? RadioButton)?.toggleGroup
-            ?: (lineGraphCanvas.scene?.lookup("#yAxisRadioButton") as? RadioButton)?.toggleGroup
-
-        toggleGroup?.selectedToggleProperty()?.addListener { _, _, _ ->
+        axisToggleGroup.selectedToggleProperty()?.addListener { _, _, _ ->
             drawGraph()
         }
         channelComboBox.selectionModel.selectedItemProperty().addListener { _, _, _ ->
             drawGraph()
         }
 
-        appState.setImageClickListener { point ->
-            updateLineProfile(point)
-        }
-    }
+        val fxImage = javafx.embed.swing.SwingFXUtils.toFXImage(appState.getImage(), null)
+        lineProfileImageView.image = fxImage
+        lineProfileImageView.setOnMouseClicked { event ->
+            val img = appState.getImage()
+            if (img != null) {
+                val imageViewWidth = lineProfileImageView.fitWidth
+                val imageViewHeight = lineProfileImageView.fitHeight
+                val imageWidth = img.width
+                val imageHeight = img.height
 
-    @FXML
-    fun initialize() {
-        drawGraph() // Draw initial empty graph
+                val clickX = event.x
+                val clickY = event.y
+
+                val imageX = (clickX / imageViewWidth * imageWidth).toInt()
+                val imageY = (clickY / imageViewHeight * imageHeight).toInt()
+
+                updateLineProfile(java.awt.Point(imageX, imageY))
+            }
+        }
     }
 
     private fun updateLineProfile(point: Point) {
@@ -61,14 +71,10 @@ class LineProfilePanelController {
             return
         }
 
-        // Get the ToggleGroup from one of the RadioButtons
-        val toggleGroup = (lineGraphCanvas.scene?.lookup("#xAxisRadioButton") as? RadioButton)?.toggleGroup
-            ?: (lineGraphCanvas.scene?.lookup("#yAxisRadioButton") as? RadioButton)?.toggleGroup
+        val axis = axisToggleGroup.selectedToggle.userData as String
+        val lineNumber = if (axis == "X") point.y else point.x
 
-        val axis = (toggleGroup?.selectedToggle as RadioButton).userData as Char
-        val lineNumber = if (axis == 'X') point.y else point.x
-
-        val maxLineNumber = if (axis == 'X') image.metadata.height - 1 else image.metadata.width - 1
+        val maxLineNumber = if (axis == "X") image.metadata.height - 1 else image.metadata.width - 1
         if (lineNumber < 0 || lineNumber > maxLineNumber) {
             showAlert("Invalid Input", "Line number must be between 0 and $maxLineNumber.")
             return
@@ -76,7 +82,7 @@ class LineProfilePanelController {
 
         val channel = channelComboBox.selectionModel.selectedItem[0]
 
-        val data = appState.context.currentImage?.getLineProfile(axis, lineNumber, channel)
+        val data = appState.context.currentImage?.getLineProfile(axis[0], lineNumber, channel)
 
         if (data != null) {
             profileData = data
