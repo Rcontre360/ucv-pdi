@@ -1,5 +1,6 @@
 package org.pdi.ui
 
+import javafx.fxml.FXML
 import javafx.fxml.FXMLLoader
 import javafx.scene.Parent
 import javafx.scene.Scene
@@ -130,5 +131,10 @@ class TopPanelController {
         alert.headerText = null
         alert.contentText = message
         alert.showAndWait()
+    }
+
+    @FXML
+    fun clearImage() {
+        appState.clear()
     }
 }

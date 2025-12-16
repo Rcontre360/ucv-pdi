@@ -1,10 +1,9 @@
 package org.pdi.ui
 
 import javafx.fxml.FXML
+import javafx.scene.control.ColorPicker
 import javafx.scene.control.Label
 import javafx.scene.control.Slider
-import javafx.scene.layout.Region
-import javafx.scene.paint.Color
 import org.pdi.core.AppState
 import org.pdi.ui.panels.InfoPanelController
 
@@ -23,13 +22,12 @@ class LeftPanelController {
     private lateinit var contrastSlider: Slider
 
     @FXML
-    private lateinit var colorDisplay: Region
-
-    @FXML
     private lateinit var infoPanelController: InfoPanelController
 
+    @FXML
+    private lateinit var colorPicker: ColorPicker
+
     private lateinit var appState: AppState
-    private var selectedColor: Color = Color.WHITE
 
     fun setAppState(appState: AppState) {
         this.appState = appState
@@ -57,6 +55,7 @@ class LeftPanelController {
 
     @FXML
     fun applyGrayscale() {
+        val selectedColor = colorPicker.value
         val awtColor = java.awt.Color(
             selectedColor.red.toFloat(),
             selectedColor.green.toFloat(),
@@ -69,20 +68,5 @@ class LeftPanelController {
     @FXML
     fun applyNegative() {
         appState.applyNegative()
-    }
-
-    @FXML
-    fun selectColor() {
-        selectedColor = when (selectedColor) {
-            Color.WHITE -> Color.RED
-            Color.RED -> Color.GREEN
-            Color.GREEN -> Color.BLUE
-            else -> Color.WHITE
-        }
-        colorDisplay.style = "-fx-background-color: ${toHex(selectedColor)}; -fx-border-color: black;"
-    }
-
-    private fun toHex(color: Color): String {
-        return "#${color.red.toString().substring(2, 4)}${color.green.toString().substring(2, 4)}${color.blue.toString().substring(2, 4)}"
     }
 }

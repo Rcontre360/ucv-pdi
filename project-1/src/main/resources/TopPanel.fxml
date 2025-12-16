@@ -14,4 +14,5 @@
     <Button text="Show Tonal Curve" onAction="#showTonalCurve"/>
     <Button text="Umbralization" onAction="#showUmbralization"/>
     <Button text="Line Profile" onAction="#showLineProfile"/>
+    <Button text="Clear" onAction="#clearImage"/>
 </HBox>
