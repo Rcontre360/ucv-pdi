@@ -18,6 +18,9 @@ class BottomPanelController {
             val newFactor = appState.zoomLevels[context.currentZoomLevelIndex]
             zoomLabel.text = "x${"%.1f".format(newFactor)}"
         }
+        // Initialize zoom label with current value
+        val initialFactor = appState.zoomLevels[appState.context.currentZoomLevelIndex]
+        zoomLabel.text = "x${"%.1f".format(initialFactor)}"
     }
 
     @FXML
@@ -36,12 +39,7 @@ class BottomPanelController {
     }
 
     @FXML
-    fun rotate180() {
-        appState.rotate(180)
-    }
-
-    @FXML
-    fun rotate270() {
-        appState.rotate(270)
+    fun rotateNeg90() {
+        appState.rotate(-90)
     }
 }

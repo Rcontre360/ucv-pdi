@@ -51,16 +51,6 @@ class AppState {
         _contextListeners.add(listener)
     }
 
-    private var imageClickListener: ((Point) -> Unit)? = null
-
-    fun setImageClickListener(listener: ((Point) -> Unit)?) {
-        this.imageClickListener = listener
-    }
-
-    fun onImageClick(point: Point) {
-        imageClickListener?.invoke(point)
-    }
-
         fun applyConvolution(kernel: Kernel) {
 
             update(UpdateType.ConvolutionUpdate(kernel))
@@ -126,25 +116,19 @@ class AppState {
     
 
         fun zoomIn() {
-
             update(UpdateType.ZoomInUpdate)
-
         }
 
     
 
         fun zoomOut() {
-
             update(UpdateType.ZoomOutUpdate)
-
         }
 
     
 
         fun loadImage(file: File) {
-
             update(UpdateType.LoadImageUpdate(file))
-
         }
 
     
@@ -191,13 +175,6 @@ class AppState {
 
             }
 
-            if (context.currentZoomLevelIndex != 9) {
-
-                val factor = zoomLevels[context.currentZoomLevelIndex]
-
-                image = image.zoom(factor, zoomAlgorithm)
-
-            }
 
             if (context.brightness != 0.0f) {
 
@@ -217,10 +194,14 @@ class AppState {
 
             }
 
+            if (context.currentZoomLevelIndex != 9) {
+                val factor = zoomLevels[context.currentZoomLevelIndex]
+                println("ZOOM IN ${factor}")
+                image = image.zoom(factor, zoomAlgorithm)
+            }
     
 
             return image
-
         }
 
     
@@ -228,8 +209,6 @@ class AppState {
         private fun update(updateType: UpdateType) {
 
             var newStateContext = context.copy()
-
-    
 
             when (updateType) {
 
@@ -292,29 +271,19 @@ class AppState {
                 UpdateType.ZoomInUpdate -> {
 
                     if (newStateContext.currentZoomLevelIndex < zoomLevels.size - 1) {
-
                         newStateContext = newStateContext.copy(
-
                             currentZoomLevelIndex = newStateContext.currentZoomLevelIndex + 1
-
                         )
-
                     }
 
                 }
 
                 UpdateType.ZoomOutUpdate -> {
-
                     if (newStateContext.currentZoomLevelIndex > 0) {
-
                         newStateContext = newStateContext.copy(
-
                             currentZoomLevelIndex = newStateContext.currentZoomLevelIndex - 1
-
                         )
-
                     }
-
                 }
 
                 is UpdateType.LoadImageUpdate -> {
@@ -359,11 +328,9 @@ class AppState {
 
     
 
-            if (!isContextDefault(newStateContext)) {
-
-                newStateContext = newStateContext.copy(currentImage = updateContextChanges(newStateContext))
-
-            }
+                        if (_initialImage != null && !isContextDefault(newStateContext)) {
+                            newStateContext = newStateContext.copy(currentImage = updateContextChanges(newStateContext))
+                        }
 
     
 

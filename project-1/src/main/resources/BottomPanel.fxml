@@ -12,7 +12,6 @@
     <Button text="-" onAction="#zoomOut"/>
     <Label fx:id="zoomLabel" text="x1.0"/>
     <Button text="+" onAction="#zoomIn"/>
+    <Button text="Rotate -90°" onAction="#rotateNeg90"/>
     <Button text="Rotate 90°" onAction="#rotate90"/>
-    <Button text="Rotate 180°" onAction="#rotate180"/>
-    <Button text="Rotate 270°" onAction="#rotate270"/>
 </HBox>
