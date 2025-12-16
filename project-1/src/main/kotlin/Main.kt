@@ -10,7 +10,7 @@ import javax.swing.SwingUtilities
 import org.pdi.core.*
 import org.pdi.ui.BottomPanel
 import org.pdi.ui.FiltersPanel
-import org.pdi.ui.InfoPanel
+import org.pdi.ui.panels.InfoPanel
 import org.pdi.ui.LeftPanel
 import org.pdi.ui.MainButtonsPanel
 import org.pdi.ui.OperationsPanel

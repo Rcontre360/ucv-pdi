@@ -9,31 +9,8 @@ import javax.swing.JColorChooser
 import javax.swing.JFileChooser
 import javax.swing.JOptionPane
 
-fun createApplyGrayscaleButton(
-    state: AppState,
-    owner: Component,
-    getColor: () -> Color
-): JButton {
-    return JButton("Apply Grayscale").apply {
-        addActionListener {
-            state.applyGrayscale(getColor())
-        }
-    }
-}
-
-fun createApplyNegativeButton(
-    state: AppState,
-    owner: Component
-): JButton {
-    return JButton("Negative").apply {
-        addActionListener {
-            state.applyNegative()
-        }
-    }
-}
 
 fun createSelectColorButton(
-    state: AppState,
     owner: Component,
     onColorSelected: (Color) -> Unit
 ): JButton {

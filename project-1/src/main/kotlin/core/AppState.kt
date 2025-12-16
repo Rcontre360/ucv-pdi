@@ -39,20 +39,12 @@ class AppState {
         }
     }
 
-    fun getCurrentMetadata(): Metadata? {
-        return context.currentImage?.metadata
-    }
-
     fun getHistogram(): Histogram? {
         return context.currentImage?.histogram
     }
 
     fun getImage(): BufferedImage? {
         return context.currentImage?.image
-    }
-
-    fun getLineProfile(axis: Char, lineNumber: Int, channel: Char): List<Pair<Int, Int>>? {
-        return context.currentImage?.getLineProfile(axis, lineNumber, channel)
     }
 
     fun addContextListener(listener: (StateContext) -> Unit) {
