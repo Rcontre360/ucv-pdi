@@ -25,7 +25,7 @@ class TopPanelController {
     }
 
     fun saveImage() {
-        val loader = FXMLLoader(javaClass.getResource("/SaveImagePanel.fxml"))
+        val loader = FXMLLoader(javaClass.getResource("/panels/SaveImagePanel.fxml"))
         val root = loader.load<Parent>()
         val saveImagePanelController: SaveImagePanelController = loader.getController()
         saveImagePanelController.setup(appState) {
@@ -54,7 +54,7 @@ class TopPanelController {
             showAlert("No Image Selected", "No image loaded.")
             return
         }
-        val loader = FXMLLoader(javaClass.getResource("/HistogramPanel.fxml"))
+        val loader = FXMLLoader(javaClass.getResource("/panels/HistogramPanel.fxml"))
         val root = loader.load<Parent>()
         println("show histogram section")
         val histogramPanelController: HistogramPanelController = loader.getController()
@@ -73,7 +73,7 @@ class TopPanelController {
             showAlert("No Image Selected", "No image loaded or curve data unavailable.")
             return
         }
-        val loader = FXMLLoader(javaClass.getResource("/TonalCurvePanel.fxml"))
+        val loader = FXMLLoader(javaClass.getResource("/panels/TonalCurvePanel.fxml"))
         val root = loader.load<Parent>()
         val tonalCurvePanelController: TonalCurvePanelController = loader.getController()
         tonalCurvePanelController.setAppState(appState)
@@ -91,7 +91,7 @@ class TopPanelController {
             showAlert("Grayscale Required", "Please apply grayscale filter first.")
             return
         }
-        val loader = FXMLLoader(javaClass.getResource("/UmbralizationPanel.fxml"))
+        val loader = FXMLLoader(javaClass.getResource("/panels/UmbralizationPanel.fxml"))
         val root = loader.load<Parent>()
         val umbralizationPanelController: UmbralizationPanelController = loader.getController()
         umbralizationPanelController.setup(appState) {
@@ -111,7 +111,7 @@ class TopPanelController {
             showAlert("No Image Selected", "No image loaded.")
             return
         }
-        val loader = FXMLLoader(javaClass.getResource("/LineProfilePanel.fxml"))
+        val loader = FXMLLoader(javaClass.getResource("/panels/LineProfilePanel.fxml"))
         val root = loader.load<Parent>()
         val lineProfilePanelController: LineProfilePanelController = loader.getController()
         lineProfilePanelController.setAppState(appState)

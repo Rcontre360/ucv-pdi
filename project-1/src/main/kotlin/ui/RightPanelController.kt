@@ -13,6 +13,7 @@ import org.pdi.core.Kernel
 import org.pdi.core.KernelType
 import org.pdi.core.kernels.*
 import org.pdi.ui.BorderDetectionType
+import org.pdi.ui.panels.KernelMatrixPanelController
 
 enum class BorderDetectionType {
     SOBEL,
@@ -71,7 +72,7 @@ class RightPanelController {
     @FXML
     fun showKernel() {
         val kernel = createKernel()
-        val loader = FXMLLoader(javaClass.getResource("/KernelMatrixPanel.fxml"))
+        val loader = FXMLLoader(javaClass.getResource("/panels/KernelMatrixPanel.fxml"))
         val root = loader.load<Parent>()
         val kernelMatrixPanelController: KernelMatrixPanelController = loader.getController()
         kernelMatrixPanelController.setKernel(kernel)

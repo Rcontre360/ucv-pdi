@@ -1,4 +1,4 @@
-package org.pdi.ui
+package org.pdi.ui.panels
 
 import javafx.fxml.FXML
 import javafx.scene.control.TextField
