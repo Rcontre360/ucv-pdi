@@ -2,6 +2,7 @@ package org.pdi.core.kernels
 
 import org.pdi.core.LinearKernel
 
+// src: https://en.wikipedia.org/wiki/Roberts_cross
 class RobertsXKernel : LinearKernel(2, 2) {
     override fun isCustomizable():Pair<Boolean,Boolean> = Pair(false,false)
 
