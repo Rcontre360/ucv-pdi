@@ -73,9 +73,6 @@ class LeftPanelController {
 
     @FXML
     fun selectColor() {
-        // There is no direct equivalent of JColorChooser in JavaFX standard library.
-        // A custom dialog or a third-party library would be needed.
-        // For now, we will just cycle through a few colors.
         selectedColor = when (selectedColor) {
             Color.WHITE -> Color.RED
             Color.RED -> Color.GREEN
