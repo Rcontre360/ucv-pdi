@@ -44,6 +44,7 @@ class RightPanelController {
     private lateinit var appState: AppState
     private lateinit var primaryStage: Stage
     private val laplacianProfilingKernel = LaplacianKernelProfiling()
+    private var currentKernel: Kernel = CustomKernel(3, 3) // Initialize with a default kernel
 
     fun setAppState(appState: AppState, primaryStage: Stage) {
         this.appState = appState
@@ -53,29 +54,34 @@ class RightPanelController {
         typeComboBox.items.addAll(KernelType.values().toList())
         typeComboBox.selectionModel.selectFirst()
 
+        rowsField.text = "3"
+        colsField.text = "3"
+
+        // Add listeners to rowsField and colsField to update currentKernel
+        rowsField.textProperty().addListener { _, _, _ -> updateCurrentKernel() }
+        colsField.textProperty().addListener { _, _, _ -> updateCurrentKernel() }
+
         profilingFactorAdjusterController.setup(1f, 1f, 10f, 1f) { newValue ->
             laplacianProfilingKernel.updateFactor(newValue.toInt())
         }
 
         typeComboBox.selectionModel.selectedItemProperty().addListener { _, _, newValue ->
-            val kernel = createKernel()
-            val (customRows, customCols) = kernel.isCustomizable()
-            rowsField.isEditable = customRows
-            colsField.isEditable = customCols
+            updateCurrentKernel() // Update currentKernel when type changes
         }
 
         // OperationsPanelController logic
         operationsComboBox.items.addAll(BorderDetectionType.values().toList())
         operationsComboBox.selectionModel.selectFirst()
+
+        updateCurrentKernel() // Initial update of currentKernel
     }
 
     @FXML
     fun showKernel() {
-        val kernel = createKernel()
         val loader = FXMLLoader(javaClass.getResource("/panels/KernelMatrixPanel.fxml"))
         val root = loader.load<Parent>()
         val kernelMatrixPanelController: KernelMatrixPanelController = loader.getController()
-        kernelMatrixPanelController.setKernel(kernel)
+        kernelMatrixPanelController.setKernel(currentKernel)
 
         val stage = Stage()
         stage.initModality(Modality.APPLICATION_MODAL)
@@ -87,14 +93,22 @@ class RightPanelController {
 
     @FXML
     fun applyFilter() {
-        appState.applyConvolution(createKernel())
+        appState.applyConvolution(currentKernel)
     }
 
-    private fun createKernel(): Kernel {
+    private fun updateCurrentKernel() {
         val rows = rowsField.text.toIntOrNull() ?: 3
         val cols = colsField.text.toIntOrNull() ?: 3
-        val selected = typeComboBox.selectionModel.selectedItem
-        val kernel = when (selected) {
+        val selected = typeComboBox.selectionModel.selectedItem ?: KernelType.CUSTOM // Default if nothing selected
+        
+        currentKernel = createKernelInstance(rows, cols, selected)
+        val (customRows, customCols) = currentKernel.isCustomizable()
+        rowsField.isEditable = customRows
+        colsField.isEditable = customCols
+    }
+
+    private fun createKernelInstance(rows: Int, cols: Int, selectedType: KernelType): Kernel {
+        val kernel = when (selectedType) {
             KernelType.CUSTOM -> CustomKernel(rows, cols)
             KernelType.AVERAGE -> AverageKernel(rows, cols)
             KernelType.MEDIAN -> MedianKernel(rows, cols)
@@ -112,7 +126,6 @@ class RightPanelController {
             KernelType.ROBERTS_Y -> RobertsYKernel()
             KernelType.PREWITT_X -> PrewittXKernel()
             KernelType.PREWITT_Y -> PrewittYKernel()
-            else -> CustomKernel(rows, cols)
         }
         kernel.generateKernel()
         return kernel
@@ -125,7 +138,6 @@ class RightPanelController {
             BorderDetectionType.SOBEL -> Pair(SobelXKernel(3), SobelYKernel(3))
             BorderDetectionType.ROBERTS -> Pair(RobertsXKernel(), RobertsYKernel())
             BorderDetectionType.PREWITT -> Pair(PrewittXKernel(), PrewittYKernel())
-            else -> Pair(SobelXKernel(3), SobelYKernel(3))
         }
         appState.applyBorderOperator(kernelX, kernelY)
     }

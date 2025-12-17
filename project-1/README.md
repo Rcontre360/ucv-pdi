@@ -35,7 +35,7 @@ El Panel Superior proporciona acciones globales relacionadas con la gestión de 
 
 *   **Seleccionar Imagen**: Haga clic en este botón para abrir un cuadro de diálogo de archivo y cargar una imagen desde su sistema de archivos local en la aplicación.
 *   **Guardar Imagen**: Esto abre una nueva ventana que le permite guardar la imagen actualmente mostrada. Puede especificar el nombre del archivo, elegir el formato de salida (PNG, BMP, Netpbm o PDI) y seleccionar un directorio para guardar la imagen. El formato PDI personalizado incluye compresión y una suma de verificación para la integridad de los datos.
-*   **Mostrar Histograma**: Muestra una ventana emergente con el histograma de la imagen actual. Puede seleccionar ver el histograma para los canales Rojo, Verde, Azul o Gris.
+*   **Mostrar Histograma**: Muestra una ventana emergente con el histograma de la imagen actual. Puede seleccionar ver el histograma para los canales Rojo, Verde, Azul.
 *   **Mostrar Curva Tonal**: Abre una ventana que visualiza la curva tonal, que muestra cómo los valores de intensidad de píxeles de entrada se mapean a los valores de salida. Puede ver las curvas para los canales Rojo, Verde, Azul o Luminosidad.
 *   **Mostrar Umbralización**: Esta función le permite aplicar umbralización binaria a la imagen.
     *   **Importante**: La imagen **debe estar en escala de grises** antes de aplicar la umbralización. Si no lo está, una alerta le pedirá que aplique primero un filtro de escala de grises.
@@ -63,8 +63,12 @@ El Panel Derecho está dedicado a las operaciones avanzadas de filtrado de imág
 **Nota Importante:** Al aplicar filtros (convolución) u operaciones de detección de bordes, los ajustes de brillo, contraste, rotación, zoom y el estado negativo de la imagen se restablecerán a sus valores predeterminados. Esto se debe a que estas operaciones modifican la imagen base de forma irreversible, y los ajustes mencionados se aplican sobre esa imagen base.
 
 *   **Filtros (Convolución)**:
+    *   **Nota sobre el tamaño del Kernel**: No se han impuesto límites explícitos al tamaño de los kernels para ofrecer mayor flexibilidad. Esto es particularmente útil para kernels como los de Laplaciano o Sobel, que pueden beneficiarse de tamaños variables para diferentes aplicaciones.
     *   **Selección de Tipo de Kernel**: Elija entre una variedad de kernels predefinidos, incluyendo `Custom`, `Average`, `Median`, `Gaussian`, `Laplacian`, `Laplacian Profiling`, `Sobel X/Y`, `Roberts X/Y` y `Prewitt X/Y`.
-    *   **Filas/Columnas**: Para kernels personalizables (como `Custom`, `Average`, `Median`, `Gaussian`, `Laplacian`), puede ajustar las dimensiones (filas y columnas) del kernel. Algunos kernels tienen dimensiones fijas y no se pueden editar.
+    *   **Filas/Columnas**: La capacidad de ajustar las dimensiones (filas y columnas) del kernel varía según el tipo:
+        *   **Personalizables (Filas y Columnas)**: `Custom`, `Average`, `Median`, `Gaussian`. Para estos, puede especificar libremente el número de filas y columnas.
+        *   **Personalizables (Solo Filas/Tamaño)**: `Laplacian`, `Sobel X/Y`. Para estos kernels, solo se puede ajustar el número de filas (que define el tamaño del kernel, ya que son cuadrados o tienen una relación fija).
+        *   **Estáticos (No modificables)**: `Laplacian Profiling`, `Roberts X/Y`, `Prewitt X/Y`. Estos kernels tienen dimensiones fijas y no se pueden modificar.
     *   **Mostrar Kernel**: Abre una ventana emergente que muestra la matriz del kernel actualmente seleccionado. Para kernels personalizables, puede editar manualmente los valores en esta matriz.
     *   **Aplicar Filtro**: Aplica el kernel seleccionado a la imagen utilizando la convolución.
 *   **Operaciones (Detección de Bordes)**:
