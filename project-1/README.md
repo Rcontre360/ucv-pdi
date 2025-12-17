@@ -1,7 +1,5 @@
 # Visor y Procesador de Imágenes
 
-Este proyecto es una aplicación JavaFX desarrollada en Kotlin para la visualización y procesamiento de imágenes. Proporciona una interfaz fácil de usar para realizar diversas manipulaciones de imágenes, desde ajustes básicos como brillo y contraste hasta operaciones avanzadas como la convolución con kernels personalizados y la detección de bordes.
-
 **Nota sobre los comentarios:** Los comentarios dentro del código del proyecto están en inglés para mantener la consistencia con el lenguaje de programación y las convenciones de desarrollo.
 
 ## Estructura del Proyecto
@@ -61,6 +59,8 @@ El Panel Izquierdo se centra en la información básica de la imagen y los ajust
 ### Panel Derecho
 
 El Panel Derecho está dedicado a las operaciones avanzadas de filtrado de imágenes y detección de bordes.
+
+**Nota Importante:** Al aplicar filtros (convolución) u operaciones de detección de bordes, los ajustes de brillo, contraste, rotación, zoom y el estado negativo de la imagen se restablecerán a sus valores predeterminados. Esto se debe a que estas operaciones modifican la imagen base de forma irreversible, y los ajustes mencionados se aplican sobre esa imagen base.
 
 *   **Filtros (Convolución)**:
     *   **Selección de Tipo de Kernel**: Elija entre una variedad de kernels predefinidos, incluyendo `Custom`, `Average`, `Median`, `Gaussian`, `Laplacian`, `Laplacian Profiling`, `Sobel X/Y`, `Roberts X/Y` y `Prewitt X/Y`.

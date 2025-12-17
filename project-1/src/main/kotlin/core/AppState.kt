@@ -19,7 +19,8 @@ data class StateContext(
 
 class AppState {
     // initial image. It changes if we apply one way functions
-    private var _initialImage: Image? = null
+    private var _originalLoadedImage: Image? = null
+    private var _currentProcessedBaseImage: Image? = null
 
     // context listeners. Used on some parts of the UI. Helps listen for image changes
     private val _contextListeners = mutableListOf<(StateContext) -> Unit>()
@@ -40,7 +41,7 @@ class AppState {
     // it breaks when we apply geometrical transformations since the current image
     // will not have a 1-1 relationship on x,y from the initial image to the current one
     fun getTonalCurve(): Map<Char, IntArray>? {
-        return _initialImage?.let { initial ->
+        return _currentProcessedBaseImage?.let { initial ->
             context.currentImage?.let { current ->
                 initial.getTonalCurve(current)
             }
@@ -124,13 +125,13 @@ class AppState {
     // this is debatible since an increase in brightness can be one way (loss of info)
     // so lets say I choose arbitrarily which functions I want to apply here.
     private fun updateContextChanges(context: StateContext): Image? {
-        if (_initialImage == null) return null
+        if (_currentProcessedBaseImage == null) return null
         // we apply each operation in an order that makes sense
         // for example makes sense to first apply negative, if we apply negative after brightness
         // an image that is negative will appear darker with a brightness increase
         // we dont know the effects of the order between contrast and brightness so we leave it arbitrarily
         // geometric transformations go later since these dont affect the previous ones
-        var image = _initialImage!!
+        var image = _currentProcessedBaseImage!!
         if (context.isNegative) {
             image = image.negative()
         }
@@ -159,7 +160,8 @@ class AppState {
         var newStateContext = context.copy()
         when (updateType) {
             is UpdateType.Clear -> {
-                newStateContext = StateContext(currentImage = _initialImage)
+                _currentProcessedBaseImage = _originalLoadedImage
+                newStateContext = StateContext(currentImage = _originalLoadedImage)
             }
             // START ---------------
             // from here we dont update the image, we just update the variables of the context object
@@ -198,42 +200,46 @@ class AppState {
             // thats why we decided to just change the initial image, to show the tonal
             // curve as it is f(x) = x
             is UpdateType.GrayscaleUpdate -> {
-                _initialImage = context.currentImage?.toGrayscale(updateType.tint)
-                newStateContext = StateContext(currentImage = _initialImage)
+                _currentProcessedBaseImage = context.currentImage?.toGrayscale(updateType.tint)
+                newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             // thresholding (umbralizacion)
             is UpdateType.ThresholdUpdate -> {
                 if (!isCurrentImageGrayscale()) {
                     return
                 }
-                _initialImage = context.currentImage?.makeThreshold(updateType.thresholds.toTypedArray())
-                newStateContext = StateContext(currentImage = _initialImage)
+                _currentProcessedBaseImage = context.currentImage?.makeThreshold(updateType.thresholds.toTypedArray())
+                newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             // load an image
             is UpdateType.LoadImageUpdate -> {
                 try {
                     val loadedImage = Image(org.pdi.io.loadImage(updateType.file))
-                    _initialImage = loadedImage
+                    _originalLoadedImage = loadedImage
+                    _currentProcessedBaseImage = loadedImage
                     newStateContext = StateContext(currentImage = loadedImage)
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    _initialImage = null
+                    _originalLoadedImage = null
+                    _currentProcessedBaseImage = null
                     newStateContext = StateContext() // Reset all state on error
                 }
             }
             is UpdateType.ConvolutionUpdate -> {
-                _initialImage = context.currentImage?.applyKernel(updateType.kernel)
-                newStateContext = StateContext(currentImage = _initialImage)
+                _currentProcessedBaseImage = context.currentImage?.applyKernel(updateType.kernel)
+                newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.BorderOperation -> {
-                _initialImage = context.currentImage?.applyBorderOperator(updateType.kernelX,updateType.kernelY)
-                newStateContext = StateContext(currentImage = _initialImage)
+                _currentProcessedBaseImage = context.currentImage?.applyBorderOperator(updateType.kernelX,updateType.kernelY)
+                newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
         }
 
         // if the context has changed we apply the context changes
-        if (_initialImage != null && !isContextDefault(newStateContext)) {
+        if (_currentProcessedBaseImage != null && !isContextDefault(newStateContext)) {
             newStateContext = newStateContext.copy(currentImage = updateContextChanges(newStateContext))
+        } else if (_currentProcessedBaseImage != null && isContextDefault(newStateContext)) {
+            newStateContext = newStateContext.copy(currentImage = _currentProcessedBaseImage)
         }
 
         context = newStateContext

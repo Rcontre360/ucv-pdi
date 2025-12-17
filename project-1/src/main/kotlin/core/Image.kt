@@ -282,9 +282,12 @@ class Image(val buff: BufferedImage) {
 
     // we rotate the image on a straight angle
     fun rotateStraight(_angle: Int): Image {
-        // this fix came from the UI, what happens if we use negative angles?
-        val angle = if (_angle < 0) {270 - _angle} else {_angle}
-        if (angle % 90 != 0) return this
+        var normalizedAngle = _angle % 360
+        if (normalizedAngle < 0) {
+            normalizedAngle += 360
+        }
+
+        if (normalizedAngle % 90 != 0) return this
 
         val w = metadata.width
         val h = metadata.height
@@ -292,8 +295,7 @@ class Image(val buff: BufferedImage) {
         val newWidth: Int
         val newHeight: Int
 
-        // we swap sizes depending on the angle
-        when (angle) {
+        when (normalizedAngle) {
             90, 270 -> {
                 newWidth = h
                 newHeight = w
@@ -301,6 +303,9 @@ class Image(val buff: BufferedImage) {
             180 -> {
                 newWidth = w
                 newHeight = h
+            }
+            0 -> {
+                return this
             }
             else -> return this
         }
@@ -310,8 +315,7 @@ class Image(val buff: BufferedImage) {
         for (y in 0 until h) {
             for (x in 0 until w) {
                 val pixel = image.getRGB(x, y)
-                // depending on the angle, we set different positions of the new matrix
-                when (angle) {
+                when (normalizedAngle) {
                     90 -> newImage.setRGB(h - 1 - y, x, pixel)
                     180 -> newImage.setRGB(w - 1 - x, h - 1 - y, pixel)
                     270 -> newImage.setRGB(y, w - 1 - x, pixel)
