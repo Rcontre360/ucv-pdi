@@ -25,7 +25,7 @@ fun saveImage(dir: String, format: String, image: Image) {
     // the format is given by the UI
     when (format) {
         // we have 2 customs ways to save. PDI (compressed stuff) and Netpbm
-        "pdi" -> PdiIO.write(image, targetType, output.absolutePath)
+        "rle" -> PdiIO.write(image, targetType, output.absolutePath)
         "netpbm" -> NetpbmIO.write(image, targetType, output.absolutePath)
         else -> ImageIO.write(image.image, format, output)
     }
@@ -37,7 +37,7 @@ fun loadImage(file: File): BufferedImage {
     return when {
         // usually we should check the HEADER to ensure the file is correct
         extension in listOf("pbm", "pgm", "ppm", "netpbm") -> NetpbmIO.read(file)
-        extension == "pdi" -> PdiIO.read(file)
+        extension == "rle" -> PdiIO.read(file)
         else -> ImageIO.read(file) ?: throw IOException("Could not read image file: ${file.absolutePath}")
     }
 }

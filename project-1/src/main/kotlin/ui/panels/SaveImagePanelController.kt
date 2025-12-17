@@ -28,7 +28,7 @@ class SaveImagePanelController {
 
     @FXML
     fun initialize() {
-        formatComboBox.items.addAll("png", "bmp", "netpbm", "pdi")
+        formatComboBox.items.addAll("png", "bmp", "netpbm", "rle")
         formatComboBox.selectionModel.selectFirst()
     }
 
