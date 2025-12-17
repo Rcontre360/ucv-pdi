@@ -310,7 +310,7 @@ class Image(val buff: BufferedImage) {
             else -> return this
         }
 
-        val newImage = BufferedImage(newWidth, newHeight, image.type)
+        val newImage = BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB)
 
         for (y in 0 until h) {
             for (x in 0 until w) {
@@ -330,7 +330,7 @@ class Image(val buff: BufferedImage) {
     fun zoom(factor: Float, algo: ZoomAlgorithm): Image {
         val w = (metadata.width * factor).toInt()
         val h = (metadata.height * factor).toInt()
-        val newImg = BufferedImage(w, h, image.type)
+        val newImg = BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
 
         for (y in 0 until h) {
             for (x in 0 until w) {

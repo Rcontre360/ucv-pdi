@@ -23,7 +23,7 @@ class HistogramPanelController {
 
     fun setAppState(appState: AppState) {
         this.appState = appState
-        channelComboBox.items.addAll(FXCollections.observableArrayList("Red", "Green", "Blue", "Gray"))
+        channelComboBox.items.addAll(FXCollections.observableArrayList("Red", "Green", "Blue"))
         channelComboBox.selectionModel.selectFirst()
 
         channelComboBox.selectionModel.selectedItemProperty().addListener { _, _, newValue ->
@@ -64,13 +64,6 @@ class HistogramPanelController {
             "Blue" -> {
                 dataToDraw = histogramData[2] ?: IntArray(256)
                 colorToDraw = Color.BLUE
-            }
-            "Gray" -> {
-                val redData = histogramData[0] ?: IntArray(256)
-                val greenData = histogramData[1] ?: IntArray(256)
-                val blueData = histogramData[2] ?: IntArray(256)
-                dataToDraw = IntArray(256) { i -> luminosity(java.awt.Color(redData[i],greenData[i],blueData[i])) }
-                colorToDraw = Color.GRAY
             }
             else -> {
                 dataToDraw = IntArray(256)

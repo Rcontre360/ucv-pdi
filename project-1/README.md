@@ -50,7 +50,7 @@ El Panel Superior proporciona acciones globales relacionadas con la gestión de 
 
 El Panel Izquierdo se centra en la información básica de la imagen y los ajustes fundamentales.
 
-*   **Información de la Imagen**: Muestra metadatos esenciales sobre la imagen actualmente cargada, incluyendo su ancho, alto, bits por píxel (BPP), número de colores únicos y formato.
+*   **Información de la Imagen**: Muestra metadatos esenciales sobre la imagen actualmente cargada, incluyendo su ancho, alto, bits por píxel (BPP), número de colores únicos y formato. Tenga en cuenta que el ancho y el alto reflejan las dimensiones actuales de la imagen, que pueden cambiar al aplicar el zoom.
 *   **Brillo**: Utilice el deslizador para ajustar el brillo de la imagen. El ajuste se aplica como un factor (entre 0 y 2), permitiendo cambios sutiles o significativos.
 *   **Contraste**: Ajuste el contraste de la imagen utilizando el deslizador proporcionado. Esta operación se implementa estirando el histograma de la imagen.
 *   **Escala de Grises**: Convierte la imagen a una representación en escala de grises. Hay un selector de color disponible para aplicar un "tinte" a la imagen en escala de grises; seleccionar blanco resultará en una imagen estándar en escala de grises.
