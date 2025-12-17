@@ -3,18 +3,25 @@ package org.pdi.core
 import java.awt.Color
 import java.io.File
 
+// this is a utility object using by the app state controller.
+// it defines the different updates we can perform on the state app.
+// each update has its own fields, thats why we used a sealed class with different
+// objects definitions
 sealed class UpdateType {
+    // returns to the current original image
     object Clear : UpdateType()
     data class BrightnessUpdate(val newFactor: Float) : UpdateType()
     data class ContrastUpdate(val newFactor: Float) : UpdateType()
+    // for grayscale we might be paiting the image with the given color
     data class GrayscaleUpdate(val tint: Color) : UpdateType()
-    object NegativeUpdate : UpdateType()
+    data class NegativeUpdate(val isNegative: Boolean) : UpdateType()
     data class RotationUpdate(val angle: Int) : UpdateType()
+    // this is for binary thresholding (umbralization in the code, typo for mixing spanish/english)
     data class ThresholdUpdate(val thresholds: List<Int>) : UpdateType()
     object ZoomInUpdate : UpdateType()
     object ZoomOutUpdate : UpdateType()
     data class LoadImageUpdate(val file: File) : UpdateType()
-    data class ColorUpdate(val color: Color) : UpdateType()
     data class ConvolutionUpdate(val kernel: Kernel) : UpdateType()
+    // border operations are different from convolution because we calculate the gradient
     data class BorderOperation(val kernelX: Kernel,val kernelY: Kernel) : UpdateType()
 }

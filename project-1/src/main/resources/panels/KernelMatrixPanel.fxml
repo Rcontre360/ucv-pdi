@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.panels.KernelMatrixPanelController">
+    <GridPane xmlns:fx="http://javafx.com/fxml/1" fx:id="gridPane" hgap="5" vgap="5">
+        <padding>
+            <Insets top="10" right="10" bottom="10" left="10"/>
+        </padding>
+    </GridPane>
+</VBox>

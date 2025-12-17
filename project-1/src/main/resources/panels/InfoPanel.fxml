@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Label?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.panels.InfoPanelController" spacing="5">
+    <Label text="Image Information"/>
+    <Label fx:id="widthLabel" text="Width: "/>
+    <Label fx:id="heightLabel" text="Height: "/>
+    <Label fx:id="bppLabel" text="Bits Per Pixel: "/>
+    <Label fx:id="uniqueColorsLabel" text="Unique Colors: "/>
+    <Label fx:id="formatLabel" text="Format: "/>
+</VBox>

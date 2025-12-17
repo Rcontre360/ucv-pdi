@@ -1,0 +1,29 @@
+<?import javafx.scene.image.ImageView?>
+
+<?import javafx.scene.layout.BorderPane?>
+
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.StackPane?>
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" >
+    <top>
+        <fx:include fx:id="topPanel" source="TopPanel.fxml"/>
+    </top>
+    <left>
+        <fx:include fx:id="leftPanel" source="LeftPanel.fxml" prefWidth="200"/>
+    </left>
+    <right>
+        <fx:include fx:id="rightPanel" source="RightPanel.fxml" prefWidth="200"/>
+    </right>
+    <bottom>
+        <fx:include fx:id="bottomPanel" source="BottomPanel.fxml"/>
+    </bottom>
+    <center>
+        <ScrollPane fitToWidth="true" fitToHeight="true" style="-fx-background-color: #222222;">
+
+            <StackPane style="-fx-background-color: #222222;">
+                <ImageView fx:id="imageView" preserveRatio="true" style="-fx-background-color: #222222;"/>
+            </StackPane>
+
+        </ScrollPane>
+    </center>
+</BorderPane>

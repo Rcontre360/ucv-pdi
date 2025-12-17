@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TextField?>
+
+<HBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.ValueAdjusterController" spacing="2">
+    <Button text="-" onAction="#minus"/>
+    <TextField fx:id="valueField" prefWidth="50" alignment="CENTER"/>
+    <Button text="+" onAction="#plus"/>
+</HBox>

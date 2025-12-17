@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.panels.SaveImagePanelController" spacing="10">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+    <HBox spacing="10">
+        <Label text="File Name:"/>
+        <TextField fx:id="fileNameField" prefWidth="200"/>
+    </HBox>
+    <HBox spacing="10">
+        <Label text="Format:"/>
+        <ComboBox fx:id="formatComboBox"/>
+    </HBox>
+    <HBox spacing="10">
+        <Label fx:id="directoryLabel" text="Selected Directory: None"/>
+        <Button text="Select Directory" onAction="#selectDirectory"/>
+    </HBox>
+    <Button text="Save" onAction="#saveImage"/>
+</VBox>

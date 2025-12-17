@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.image.ImageView?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.panels.LineProfilePanelController">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+
+    <fx:define>
+        <ToggleGroup fx:id="axisToggleGroup" />
+    </fx:define>
+
+    <top>
+        <VBox spacing="10">
+            <HBox spacing="10">
+                <Label text="Select Axis:"/>
+                <RadioButton text="X Axis" userData="X" toggleGroup="$axisToggleGroup" selected="true"/>
+                <RadioButton text="Y Axis" userData="Y" toggleGroup="$axisToggleGroup"/>
+            </HBox>
+            <HBox spacing="10">
+                <Label text="Select Channel:"/>
+                <ComboBox fx:id="channelComboBox"/>
+            </HBox>
+            <Label text="Click the image to select a line."/>
+        </VBox>
+    </top>
+    <center>
+        <ImageView fx:id="lineProfileImageView" preserveRatio="true"/>
+    </center>
+    <bottom>
+        <Canvas fx:id="lineGraphCanvas" width="400" height="200"/>
+    </bottom>
+</BorderPane>

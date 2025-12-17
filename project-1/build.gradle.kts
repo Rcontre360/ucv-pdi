@@ -1,6 +1,7 @@
 plugins {
-    kotlin("jvm") version "2.2.21"
+    kotlin("jvm") version "1.9.0"
     application
+    id("org.openjfx.javafxplugin") version "0.1.0"
 }
 
 group = "com.andmal"
@@ -19,11 +20,16 @@ tasks.test {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(17)
 }
 
 application {
     mainClass.set("org.pdi.MainKt")
+}
+
+javafx {
+    version = "17.0.2"
+    modules("javafx.controls", "javafx.fxml", "javafx.swing")
 }
 
 tasks.jar {

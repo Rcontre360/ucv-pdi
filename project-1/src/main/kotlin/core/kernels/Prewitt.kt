@@ -2,6 +2,11 @@ package org.pdi.core.kernels
 
 import org.pdi.core.LinearKernel
 
+// we use static prewitt kernels since the prewitt operator for border detection is defined with these kernels
+// see https://en.wikipedia.org/wiki/Prewitt_operator
+// in general all kernels used for border detection using the image gradient are static. Except for Sobel since
+// we found its dynamic implementation
+
 class PrewittXKernel : LinearKernel(3, 3) {
     init {
         generateKernel()
