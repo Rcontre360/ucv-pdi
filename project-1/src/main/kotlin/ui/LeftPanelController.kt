@@ -7,6 +7,8 @@ import javafx.scene.control.Slider
 import org.pdi.core.AppState
 import org.pdi.ui.panels.InfoPanelController
 
+// left panel has the basic functionality we worked first
+// has info about the image, brightness/contrast change and grayscale. Also coloring
 class LeftPanelController {
 
     @FXML
@@ -28,7 +30,7 @@ class LeftPanelController {
     private lateinit var colorPicker: ColorPicker
 
     private lateinit var appState: AppState
-
+    
     fun setAppState(appState: AppState) {
         this.appState = appState
 

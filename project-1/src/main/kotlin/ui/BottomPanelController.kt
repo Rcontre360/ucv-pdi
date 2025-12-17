@@ -8,6 +8,7 @@ import javafx.collections.FXCollections
 import javafx.scene.control.ComboBox
 import org.pdi.core.ZoomAlgorithm
 
+// here in the bottom panel we put all the geometric transformations
 class BottomPanelController {
 
     @FXML
@@ -21,6 +22,7 @@ class BottomPanelController {
     fun setAppState(appState: AppState) {
         this.appState = appState
 
+        // zoom selectors
         zoomAlgorithmComboBox.items.addAll(FXCollections.observableArrayList(ZoomAlgorithm.values().toList()))
         zoomAlgorithmComboBox.selectionModel.select(appState.zoomAlgorithm)
         zoomAlgorithmComboBox.selectionModel.selectedItemProperty().addListener { _, _, newValue ->
@@ -29,6 +31,7 @@ class BottomPanelController {
             }
         }
 
+        // change the zoom label live
         appState.addContextListener { context ->
             val newFactor = appState.zoomLevels[context.currentZoomLevelIndex]
             zoomLabel.text = "x${"%.1f".format(newFactor)}"

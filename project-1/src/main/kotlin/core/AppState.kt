@@ -235,6 +235,7 @@ class AppState {
         }
 
         context = newStateContext
+        // we update anything we need to update on the UI with the calllbacks
         _contextListeners.forEach { it.invoke(context) }
     }
 }

@@ -15,6 +15,8 @@ import org.pdi.ui.panels.SaveImagePanelController
 import org.pdi.ui.panels.TonalCurvePanelController
 import org.pdi.ui.panels.UmbralizationPanelController
 
+// top panel. We added here the buttons that create windows.
+// each function here creates a given window performing x functionality. The names are self explanatory
 class TopPanelController {
 
     private lateinit var appState: AppState
@@ -125,6 +127,7 @@ class TopPanelController {
         stage.show()
     }
 
+    // utility alert
     private fun showAlert(title: String, message: String) {
         val alert = Alert(AlertType.INFORMATION)
         alert.title = title

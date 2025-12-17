@@ -7,6 +7,7 @@ import javafx.scene.Scene
 import javafx.stage.Stage
 import org.pdi.core.AppState
 
+// app start. a template I found out there
 class Main : Application() {
     override fun start(primaryStage: Stage) {
         val loader = FXMLLoader(javaClass.getResource("/main.fxml"))

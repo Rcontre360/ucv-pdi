@@ -10,7 +10,9 @@ import org.pdi.ui.LeftPanelController
 import org.pdi.ui.RightPanelController
 import org.pdi.ui.TopPanelController
 
-class MainController(private val primaryStage: Stage) { // Add primaryStage to constructor
+
+// main controller. Just has a context listener and the 4 panels (top, bottom, left, right)
+class MainController(private val primaryStage: Stage) {
 
     @FXML
     private lateinit var topPanelController: TopPanelController
@@ -31,7 +33,7 @@ class MainController(private val primaryStage: Stage) { // Add primaryStage to c
 
     @FXML
     fun initialize() {
-        topPanelController.setAppState(appState, primaryStage) // Pass primaryStage
+        topPanelController.setAppState(appState, primaryStage) 
         leftPanelController.setAppState(appState)
         rightPanelController.setAppState(appState, primaryStage)
         bottomPanelController.setAppState(appState)

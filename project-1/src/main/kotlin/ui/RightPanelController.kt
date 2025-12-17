@@ -21,6 +21,7 @@ enum class BorderDetectionType {
     PREWITT
 }
 
+// right panel has the border detection algorithms and kernel related stuff
 class RightPanelController {
 
     // From FiltersPanelController
