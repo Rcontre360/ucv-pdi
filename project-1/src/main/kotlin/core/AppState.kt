@@ -134,11 +134,13 @@ class AppState {
         if (context.isNegative) {
             image = image.negative()
         }
-        if (context.brightness != 0.0f) {
-            image = image.changeBrightness(context.brightness)
-        }
+        // I noticed that is also important to change contrast first and THEN change brightness.
+        // if its not done in this order it starts changing colors in a wrong way
         if (context.contrast != 0.0f) {
             image = image.changeContrast(context.contrast)
+        }
+        if (context.brightness != 0.0f) {
+            image = image.changeBrightness(context.brightness)
         }
         if (context.currentZoomLevelIndex != 9) {
             val factor = zoomLevels[context.currentZoomLevelIndex]

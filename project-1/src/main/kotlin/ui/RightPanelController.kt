@@ -55,7 +55,6 @@ class RightPanelController {
 
         profilingFactorAdjusterController.setup(1f, 1f, 10f, 1f) { newValue ->
             laplacianProfilingKernel.updateFactor(newValue.toInt())
-            appState.applyConvolution(laplacianProfilingKernel)
         }
 
         typeComboBox.selectionModel.selectedItemProperty().addListener { _, _, newValue ->

@@ -1,9 +1,12 @@
 package org.pdi.ui
 
+import javafx.animation.KeyFrame
+import javafx.animation.Timeline
 import javafx.fxml.FXML
 import javafx.scene.control.ColorPicker
 import javafx.scene.control.Label
 import javafx.scene.control.Slider
+import javafx.util.Duration
 import org.pdi.core.AppState
 import org.pdi.ui.panels.InfoPanelController
 
@@ -30,6 +33,9 @@ class LeftPanelController {
     private lateinit var colorPicker: ColorPicker
 
     private lateinit var appState: AppState
+
+    private var brightnessTimeline: Timeline? = null
+    private var contrastTimeline: Timeline? = null
     
     fun setAppState(appState: AppState) {
         this.appState = appState
@@ -38,20 +44,37 @@ class LeftPanelController {
 
         brightnessSlider.valueProperty().addListener { _, _, newValue ->
             val brightness = newValue.toFloat() / 100.0f
-            appState.setBrightness(brightness)
+            brightnessValueLabel.text = "Brightness: %.2f".format(brightness) // Update label immediately
+
+            brightnessTimeline?.stop()
+            brightnessTimeline = Timeline(KeyFrame(Duration.millis(200.0), { // Debounce for 200ms
+                appState.setBrightness(brightness)
+            }))
+            brightnessTimeline?.play()
         }
 
         contrastSlider.valueProperty().addListener { _, _, newValue ->
             val contrast = newValue.toFloat() / 100.0f
-            appState.setContrast(contrast)
+            contrastValueLabel.text = "Contrast: %.2f".format(contrast) // Update label immediately
+
+            contrastTimeline?.stop()
+            contrastTimeline = Timeline(KeyFrame(Duration.millis(200.0), { // Debounce for 200ms
+                appState.setContrast(contrast)
+            }))
+            contrastTimeline?.play()
         }
 
         appState.addContextListener { context ->
-            brightnessSlider.value = context.brightness * 100.0
-            brightnessValueLabel.text = "Brightness: %.2f".format(context.brightness)
+            // Only update sliders if they are not currently being dragged to avoid conflicts
+            if (!brightnessSlider.isPressed) {
+                brightnessSlider.value = context.brightness * 100.0
+                brightnessValueLabel.text = "Brightness: %.2f".format(context.brightness)
+            }
 
-            contrastSlider.value = context.contrast * 100.0
-            contrastValueLabel.text = "Contrast: %.2f".format(context.contrast)
+            if (!contrastSlider.isPressed) {
+                contrastSlider.value = context.contrast * 100.0
+                contrastValueLabel.text = "Contrast: %.2f".format(context.contrast)
+            }
         }
     }
 
