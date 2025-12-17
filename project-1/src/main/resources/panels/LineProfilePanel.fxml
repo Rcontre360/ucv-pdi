@@ -35,7 +35,7 @@
         </VBox>
     </top>
     <center>
-        <ImageView fx:id="lineProfileImageView" fitWidth="400" fitHeight="300" preserveRatio="true"/>
+        <ImageView fx:id="lineProfileImageView" preserveRatio="true"/>
     </center>
     <bottom>
         <Canvas fx:id="lineGraphCanvas" width="400" height="200"/>

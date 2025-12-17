@@ -45,21 +45,12 @@ class LineProfilePanelController {
 
         val fxImage = javafx.embed.swing.SwingFXUtils.toFXImage(appState.getImage(), null)
         lineProfileImageView.image = fxImage
+
+        // for this to work the conatiner MUST be the exact same size of the image on the UI fxml definition
         lineProfileImageView.setOnMouseClicked { event ->
             val img = appState.getImage()
             if (img != null) {
-                val imageViewWidth = lineProfileImageView.fitWidth
-                val imageViewHeight = lineProfileImageView.fitHeight
-                val imageWidth = img.width
-                val imageHeight = img.height
-
-                val clickX = event.x
-                val clickY = event.y
-
-                val imageX = (clickX / imageViewWidth * imageWidth).toInt()
-                val imageY = (clickY / imageViewHeight * imageHeight).toInt()
-
-                updateLineProfile(java.awt.Point(imageX, imageY))
+                updateLineProfile(Point(event.x.toInt(), event.y.toInt()))
             }
         }
     }
@@ -73,14 +64,8 @@ class LineProfilePanelController {
 
         val axis = axisToggleGroup.selectedToggle.userData as String
         val lineNumber = if (axis == "X") point.y else point.x
-
-        val maxLineNumber = if (axis == "X") image.metadata.height - 1 else image.metadata.width - 1
-        if (lineNumber < 0 || lineNumber > maxLineNumber) {
-            showAlert("Invalid Input", "Line number must be between 0 and $maxLineNumber.")
-            return
-        }
-
         val channel = channelComboBox.selectionModel.selectedItem[0]
+        println("LINE NUMBER ${lineNumber}")
 
         val data = appState.context.currentImage?.getLineProfile(axis[0], lineNumber, channel)
 

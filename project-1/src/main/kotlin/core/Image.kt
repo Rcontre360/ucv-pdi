@@ -374,12 +374,13 @@ class Image(val buff: BufferedImage) {
         val green = IntArray(256)
         val blue = IntArray(256)
 
+        // we just count the frequency of each color
         for (y in 0 until metadata.height) {
             for (x in 0 until metadata.width) {
-                val color = image.getRGB(x, y)
-                red[(color shr 16) and 0xFF]++
-                green[(color shr 8) and 0xFF]++
-                blue[color and 0xFF]++
+                val color = Color(image.getRGB(x, y))
+                red[color.red]++
+                green[color.green]++
+                blue[color.blue]++
             }
         }
 
@@ -390,41 +391,30 @@ class Image(val buff: BufferedImage) {
         return histogram
     }
 
+    // given an axis, line and channel. We get the profile of the linne which is just a list of pairs (x,f(x))
     fun getLineProfile(axis: Char, lineNumber: Int, channel: Char): List<Pair<Int, Int>> {
         val profile = mutableListOf<Pair<Int, Int>>()
-        when (axis) {
-            'X' -> { // Horizontal line (row)
-                if (lineNumber !in 0 until metadata.height) return emptyList()
-                for (x in 0 until metadata.width) {
-                    val color = Color(image.getRGB(x, lineNumber))
-                    val value = when (channel) {
-                        'R' -> color.red
-                        'G' -> color.green
-                        'B' -> color.blue
-                        'L' -> (color.red + color.green + color.blue) / 3 // Grayscale approximation
-                        else -> 0
-                    }
-                    profile.add(x to value)
-                }
+        val limit = if (axis == 'X') {image.width} else {image.height}
+
+        for (i in 0 until limit){
+            val color = if (axis == 'X')
+                {Color(image.getRGB(i, lineNumber))} else
+                {Color(image.getRGB(lineNumber,i))}
+
+            val value = when (channel) {
+                'R' -> color.red
+                'G' -> color.green
+                'B' -> color.blue
+                'L' -> luminosity(color) // Grayscale approximation
+                else -> 0
             }
-            'Y' -> { // Vertical line (column)
-                if (lineNumber !in 0 until metadata.width) return emptyList()
-                for (y in 0 until metadata.height) {
-                    val color = Color(image.getRGB(lineNumber, y))
-                    val value = when (channel) {
-                        'R' -> color.red
-                        'G' -> color.green
-                        'B' -> color.blue
-                        'L' -> (color.red + color.green + color.blue) / 3 // Grayscale approximation
-                        else -> 0
-                    }
-                    profile.add(y to value)
-                }
-            }
+            profile.add(i to value)
         }
+
         return profile
     }
 
+    // easy, just count how many colors are there
     private fun getUniqueColors(): Int{
         val all: MutableSet<Int> = mutableSetOf()
         readAllPixels {x,y,_ ->
@@ -434,25 +424,30 @@ class Image(val buff: BufferedImage) {
         return all.size
     }
 
+    // checks if the image is grayscale, readAllPixels must return something
     private fun getIsGrayscale(): Boolean{
         var res = true
         readAllPixels {x,y,color ->
+            // if any color is not the same as the others res will be false (false & true : false)
             res = res && (color.red == color.green && color.green == color.blue)
             0
         }
         return res
     }
 
+    // checks if the image is binary
     private fun getIsBinary(): Boolean{
         val bin = listOf(0,255)
         var res = true
         readAllPixels {x,y,color ->
+            // if any color is not binary res will be false (false & true : false)
             res = res && ((color.red in bin) && (color.green in bin) && (color.blue in bin))
             0
         }
         return res
     }
 
+    // apply a color modification to each pixel
     private fun applyPerPixel(processor: PixelProcessor<Int>): Image {
         val newImage = BufferedImage(metadata.width, metadata.height, BufferedImage.TYPE_INT_RGB)
 
