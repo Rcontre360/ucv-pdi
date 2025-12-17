@@ -14,6 +14,8 @@ import org.pdi.core.AppState
 import java.awt.Point
 import kotlin.math.roundToInt
 
+
+// line profile panel. Complicated to build since we had to show the image again to be able to select it
 class LineProfilePanelController {
 
     @FXML
@@ -46,6 +48,7 @@ class LineProfilePanelController {
         val fxImage = javafx.embed.swing.SwingFXUtils.toFXImage(appState.getImage(), null)
         lineProfileImageView.image = fxImage
 
+        // this is the listener to the user clicks on the image
         // for this to work the conatiner MUST be the exact same size of the image on the UI fxml definition
         lineProfileImageView.setOnMouseClicked { event ->
             val img = appState.getImage()
@@ -65,7 +68,6 @@ class LineProfilePanelController {
         val axis = axisToggleGroup.selectedToggle.userData as String
         val lineNumber = if (axis == "X") point.y else point.x
         val channel = channelComboBox.selectionModel.selectedItem[0]
-        println("LINE NUMBER ${lineNumber}")
 
         val data = appState.context.currentImage?.getLineProfile(axis[0], lineNumber, channel)
 

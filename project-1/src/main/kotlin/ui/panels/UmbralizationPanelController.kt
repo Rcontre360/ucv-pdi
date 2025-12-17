@@ -14,6 +14,7 @@ import javafx.stage.Stage
 import org.pdi.core.AppState
 import kotlin.math.abs
 
+// umbralization panel
 class UmbralizationPanelController {
 
     @FXML
@@ -58,10 +59,13 @@ class UmbralizationPanelController {
         drawGradient()
     }
 
+    // we check where click and drag the umbralization thresholds
+    // we also can add new thresholds by doing double click
+    // we can also remove them with right click
     private fun handleMousePressed(event: MouseEvent) {
         val x = event.x.toInt()
 
-        if (event.button == MouseButton.SECONDARY) { // Right-click to remove
+        if (event.button == MouseButton.SECONDARY) {
             val thresholdIndexToRemove = findNearbyThreshold(x)
             if (thresholdIndexToRemove != -1) {
                 thresholds.removeAt(thresholdIndexToRemove)
@@ -72,11 +76,10 @@ class UmbralizationPanelController {
 
         draggedThresholdIndex = findNearbyThreshold(x)
         if (draggedThresholdIndex != -1) {
-            // Cursor change is handled by CSS or directly on scene
             thresholdListView.selectionModel.select(thresholds[draggedThresholdIndex])
         }
 
-        if (event.clickCount == 2 && draggedThresholdIndex == -1) { // Double-click to add
+        if (event.clickCount == 2 && draggedThresholdIndex == -1) {
             val newThreshold = ((x.toDouble() / (gradientCanvas.width - 1)) * 255).toInt().coerceIn(0, 255)
             if (thresholds.none { abs(it - newThreshold) < HIT_TOLERANCE * 2 }) {
                 thresholds.add(newThreshold)
@@ -86,6 +89,7 @@ class UmbralizationPanelController {
         }
     }
 
+    // moves a threshold
     private fun handleMouseDragged(event: MouseEvent) {
         if (draggedThresholdIndex != -1) {
             var newThreshold = ((event.x.toDouble() / (gradientCanvas.width - 1)) * 255).toInt()
@@ -157,6 +161,7 @@ class UmbralizationPanelController {
         }
     }
 
+    // applies the thresholds to the image
     @FXML
     fun applyThresholding() {
         if (!appState.isCurrentImageGrayscale()) {

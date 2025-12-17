@@ -5,6 +5,7 @@ import javafx.scene.control.TextField
 import javafx.scene.layout.GridPane
 import org.pdi.core.Kernel
 
+// kernel matrix panel. Can be updated by the user
 class KernelMatrixPanelController {
 
     @FXML

@@ -5,6 +5,7 @@ import javafx.scene.control.Label
 import org.pdi.core.AppState
 import org.pdi.core.Metadata
 
+// info panel, updates each time the app state is updated
 class InfoPanelController {
 
     @FXML

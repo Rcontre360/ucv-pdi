@@ -7,8 +7,9 @@ import javafx.scene.canvas.GraphicsContext
 import javafx.scene.control.ComboBox
 import javafx.scene.paint.Color
 import org.pdi.core.AppState
-import org.pdi.core.Histogram
+import org.pdi.core.luminosity
 
+// histogram panel with selectors for the channels
 class HistogramPanelController {
 
     @FXML
@@ -34,12 +35,9 @@ class HistogramPanelController {
         drawHistogram()
     }
 
-    @FXML
-    fun initialize() {
-    }
-
     private fun drawHistogram() {
         val histogramData = appState.getHistogram()
+        // canvas and graphics 2d content
         val gc: GraphicsContext = histogramCanvas.graphicsContext2D
         gc.clearRect(0.0, 0.0, histogramCanvas.width, histogramCanvas.height)
 
@@ -68,15 +66,10 @@ class HistogramPanelController {
                 colorToDraw = Color.BLUE
             }
             "Gray" -> {
-                // For grayscale, we can sum the R, G, B histograms or calculate a separate luminosity histogram
-                // For simplicity, let's average the R, G, B values for now.
-                // A more accurate luminosity histogram would require re-calculating it from the image.
-                // For now, we'll just display the red channel as a proxy for gray if no specific gray histogram is available.
-                // Or, we can calculate the average of the three channels.
                 val redData = histogramData[0] ?: IntArray(256)
                 val greenData = histogramData[1] ?: IntArray(256)
                 val blueData = histogramData[2] ?: IntArray(256)
-                dataToDraw = IntArray(256) { i -> (redData[i] + greenData[i] + blueData[i]) / 3 }
+                dataToDraw = IntArray(256) { i -> luminosity(java.awt.Color(redData[i],greenData[i],blueData[i])) }
                 colorToDraw = Color.GRAY
             }
             else -> {

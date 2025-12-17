@@ -10,6 +10,7 @@ import org.pdi.core.AppState
 import org.pdi.io.saveImage
 import java.io.File
 
+// save image panel
 class SaveImagePanelController {
 
     @FXML

@@ -10,6 +10,7 @@ import org.pdi.core.AppState
 import org.pdi.core.StateContext
 import kotlin.math.roundToInt
 
+// tonal curve panel. Very simple
 class TonalCurvePanelController {
 
     @FXML
