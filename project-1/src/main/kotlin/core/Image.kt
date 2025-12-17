@@ -57,6 +57,9 @@ class Image(val buff: BufferedImage) {
     }
 
     // returns the tonal curve of the image. The src image is "this" and the target (f(x)) is the "resImg"
+    // I decided to make this frequencies based implementation because its more robust than just doing a
+    // mapping between one color x to color y. Because for many pixels with color a onn the image they might
+    // map to different colors on the dest image. So this handles that use case better.
     fun getTonalCurve(resImg: Image): Map<Char, IntArray> {
         val sums = Array(4) { LongArray(256) { 0L } }
         val counts = Array(4) { IntArray(256) { 0 } }
