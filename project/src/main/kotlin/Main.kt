@@ -6,6 +6,7 @@ import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.stage.Stage
 import org.pdi.core.AppState
+import nu.pattern.OpenCV
 
 // app start. a template I found out there
 class Main : Application() {
@@ -24,6 +25,7 @@ class Main : Application() {
 }
 
 fun main(args: Array<String>) {
+    OpenCV.loadLocally()
     Application.launch(Main::class.java, *args)
 }
 

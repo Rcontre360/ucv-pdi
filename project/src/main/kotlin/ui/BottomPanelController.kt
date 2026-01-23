@@ -6,6 +6,8 @@ import org.pdi.core.AppState
 
 import javafx.collections.FXCollections
 import javafx.scene.control.ComboBox
+import javafx.scene.control.Slider
+import javafx.scene.control.TextField
 import org.pdi.core.ZoomAlgorithm
 
 // here in the bottom panel we put all the geometric transformations
@@ -16,6 +18,12 @@ class BottomPanelController {
 
     @FXML
     private lateinit var zoomAlgorithmComboBox: ComboBox<ZoomAlgorithm>
+
+    @FXML
+    private lateinit var rotationSlider: Slider
+
+    @FXML
+    private lateinit var rotationTextField: TextField
 
     private lateinit var appState: AppState
 
@@ -39,6 +47,12 @@ class BottomPanelController {
         // Initialize zoom label with current value
         val initialFactor = appState.zoomLevels[appState.context.currentZoomLevelIndex]
         zoomLabel.text = "x${"%.1f".format(initialFactor)}"
+
+        rotationSlider.valueProperty().addListener { _, _, newValue ->
+            val angle = newValue.toInt()
+            rotationTextField.text = angle.toString()
+            appState.rotate(angle)
+        }
     }
 
     @FXML
@@ -49,15 +63,5 @@ class BottomPanelController {
     @FXML
     fun zoomOut() {
         appState.zoomOut()
-    }
-
-    @FXML
-    fun rotate90() {
-        appState.rotate(90)
-    }
-
-    @FXML
-    fun rotateNeg90() {
-        appState.rotate(-90)
     }
 }

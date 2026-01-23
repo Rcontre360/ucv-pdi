@@ -148,7 +148,7 @@ class AppState {
             image = image.zoom(factor, zoomAlgorithm)
         }
         if (context.rotationApplied != 0) {
-            image = image.rotateStraight(context.rotationApplied)
+            image = image.rotate(context.rotationApplied)
         }
         return image
     }
@@ -176,7 +176,7 @@ class AppState {
             }
             is UpdateType.RotationUpdate -> {
                 newStateContext = newStateContext.copy(
-                    rotationApplied = (newStateContext.rotationApplied + updateType.angle) % 360
+                    rotationApplied = updateType.angle
                 )
             }
             UpdateType.ZoomInUpdate -> {

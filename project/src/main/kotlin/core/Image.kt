@@ -1,5 +1,12 @@
 package org.pdi.core
 
+import org.opencv.core.Mat
+import org.opencv.core.Point
+import org.opencv.core.Size
+import org.opencv.imgproc.Imgproc
+import org.pdi.io.toMat
+import org.pdi.io.toBufferedImage
+
 import java.awt.Color
 import java.awt.image.BufferedImage
 import kotlin.Int
@@ -280,50 +287,16 @@ class Image(val buff: BufferedImage) {
         }
     }
 
-    // we rotate the image on a straight angle
-    fun rotateStraight(_angle: Int): Image {
-        var normalizedAngle = _angle % 360
-        if (normalizedAngle < 0) {
-            normalizedAngle += 360
-        }
-
-        if (normalizedAngle % 90 != 0) return this
-
-        val w = metadata.width
-        val h = metadata.height
-
-        val newWidth: Int
-        val newHeight: Int
-
-        when (normalizedAngle) {
-            90, 270 -> {
-                newWidth = h
-                newHeight = w
-            }
-            180 -> {
-                newWidth = w
-                newHeight = h
-            }
-            0 -> {
-                return this
-            }
-            else -> return this
-        }
-
-        val newImage = BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB)
-
-        for (y in 0 until h) {
-            for (x in 0 until w) {
-                val pixel = image.getRGB(x, y)
-                when (normalizedAngle) {
-                    90 -> newImage.setRGB(h - 1 - y, x, pixel)
-                    180 -> newImage.setRGB(w - 1 - x, h - 1 - y, pixel)
-                    270 -> newImage.setRGB(y, w - 1 - x, pixel)
-                }
-            }
-        }
-
-        return Image(newImage)
+    fun rotate(angle: Int): Image {
+        val src = image.toMat()
+        val dst = Mat()
+        val rotationMatrix = Imgproc.getRotationMatrix2D(
+            Point(src.cols() / 2.0, src.rows() / 2.0),
+            angle.toDouble(),
+            1.0
+        )
+        Imgproc.warpAffine(src, dst, rotationMatrix, Size(src.cols().toDouble(), src.rows().toDouble()))
+        return Image(dst.toBufferedImage())
     }
 
     // applies zoom to the image
