@@ -126,3 +126,9 @@ A continuación, se detalla la ubicación de cada funcionalidad implementada en 
     *   **Ubicación**: Panel Derecho -> "Filtros (Convolución)" -> "Selección de Tipo de Kernel" (Opción: `Custom`), y "Mostrar Kernel" (para editar los valores de la matriz).
 
 
+
+
+## CORRECTIONS
+
+- new windows must allow further edit on background (histogram example)
+- remember dir too when saving
