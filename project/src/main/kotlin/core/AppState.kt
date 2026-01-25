@@ -3,6 +3,7 @@ package org.pdi.core
 import org.opencv.core.Mat
 import java.awt.Color
 import java.io.File
+import org.opencv.core.Point
 
 // state context. this class holds values that are used for transition between the initial image and the current one
 // how we decided which values should go here? I wanted those that modify the tonal curve and those that dont interfere with the first ones
@@ -109,6 +110,10 @@ class AppState {
 
     fun applyThresholding(thresholds: List<Int>) {
         update(UpdateType.ThresholdUpdate(thresholds))
+    }
+
+    fun applyRegionGrowing(seeds: List<Point>, maxDiff: Int, connectivity: Int) {
+        update(UpdateType.RegionGrowingUpdate(seeds, maxDiff, connectivity))
     }
 
     // check if the context has changed. If so we will do other thigns on he update function..
@@ -231,6 +236,14 @@ class AppState {
             }
             is UpdateType.BorderOperation -> {
                 _currentProcessedBaseImage = context.currentImage?.applyBorderOperator(updateType.kernelX,updateType.kernelY)
+                newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.RegionGrowingUpdate -> {
+                _currentProcessedBaseImage = context.currentImage?.regionGrowing(
+                    updateType.seeds,
+                    updateType.maxDiff,
+                    updateType.connectivity
+                )
                 newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
         }

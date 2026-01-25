@@ -11,9 +11,11 @@ import javafx.stage.Stage
 import org.pdi.core.AppState
 import org.pdi.ui.panels.HistogramPanelController
 import org.pdi.ui.panels.LineProfilePanelController
+import org.pdi.ui.panels.RegionGrowingPanelController
 import org.pdi.ui.panels.SaveImagePanelController
 import org.pdi.ui.panels.TonalCurvePanelController
 import org.pdi.ui.panels.UmbralizationPanelController
+import java.awt.Color
 
 // top panel. We added here the buttons that create windows.
 // each function here creates a given window performing x functionality. The names are self explanatory
@@ -123,6 +125,29 @@ class TopPanelController {
         stage.initModality(Modality.APPLICATION_MODAL)
         stage.initOwner(primaryStage) // Use primaryStage as owner
         stage.title = "Line Profile"
+        stage.scene = Scene(root)
+        stage.show()
+    }
+
+    @FXML
+    fun showRegionGrowingPanel() {
+        val currentImage = appState.context.currentImage
+        if (currentImage == null) {
+            showAlert("No Image Selected", "No image loaded.")
+            return
+        }
+
+        val grayscaleImage = currentImage.toGrayscale(Color.WHITE)
+
+        val loader = FXMLLoader(javaClass.getResource("/panels/RegionGrowingPanel.fxml"))
+        val root = loader.load<Parent>()
+        val regionGrowingPanelController: RegionGrowingPanelController = loader.getController()
+        regionGrowingPanelController.initialize(appState, grayscaleImage)
+
+        val stage = Stage()
+        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.initOwner(primaryStage)
+        stage.title = "Region Growing"
         stage.scene = Scene(root)
         stage.show()
     }

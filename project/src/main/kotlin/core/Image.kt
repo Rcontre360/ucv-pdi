@@ -3,6 +3,8 @@ package org.pdi.core
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.Point
+import org.opencv.core.Rect
+import org.opencv.core.Scalar
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 import org.pdi.io.toBufferedImage
@@ -11,6 +13,7 @@ import java.awt.image.BufferedImage
 import kotlin.Int
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 // zoom algorithm type
 enum class ZoomAlgorithm {
@@ -352,12 +355,68 @@ class Image(val image: Mat) {
         return Image(newImg)
     }
 
+    fun regionGrowing(seeds: List<Point>, maxDiff: Int, connectivity: Int): Image {
+        // Create a single-channel grayscale version of the input image for floodFill
+        val singleChannelImage = Mat()
+        // 'image' is the 3-channel grayscale input where R=G=B, so COLOR_BGR2GRAY correctly extracts one channel
+        Imgproc.cvtColor(image, singleChannelImage, Imgproc.COLOR_BGR2GRAY) 
+
+        // Mask must be 2 pixels larger than the image and 8-bit single channel.
+        val mask = Mat.zeros(metadata.height + 2, metadata.width + 2, CvType.CV_8UC1)
+        var regionLabel = 1
+
+        val diffScalar = Scalar(maxDiff.toDouble())
+
+        for (seed in seeds) {
+            // Check if the seed point has already been filled
+            // Note: mask coordinates are (y+1, x+1)
+            if (mask.get(seed.y.toInt() + 1, seed.x.toInt() + 1)[0] == 0.0) {
+                // The new value to fill the mask with is encoded in the flags
+                val flags = connectivity or Imgproc.FLOODFILL_MASK_ONLY or (regionLabel shl 8)
+                Imgproc.floodFill(singleChannelImage, mask, seed, Scalar(0.0), Rect(), diffScalar, diffScalar, flags)
+                regionLabel++
+            }
+        }
+        singleChannelImage.release() // Release the temporary single-channel image
+
+        // Create a list of random colors for tinting, one for each region label
+        val random = Random(System.currentTimeMillis())
+        val regionTints = (0 until regionLabel).map {
+            Color(random.nextInt(256), random.nextInt(256), random.nextInt(256))
+        }
+
+        val resultMat = Mat.zeros(image.size(), CvType.CV_8UC3)
+        for (y in 0 until metadata.height) {
+            for (x in 0 until metadata.width) {
+                // Adjust coordinates for the larger mask
+                val label = mask.get(y + 1, x + 1)[0].toInt()
+                val originalPixel = image.get(y, x)[0] // Grayscale value from the 3-channel input
+
+                if (label > 0) {
+                    val tint = regionTints[label]
+                    val (tintR, tintG, tintB) = listOf(tint.red / 255.0, tint.green / 255.0, tint.blue / 255.0)
+                    resultMat.put(y, x,
+                        (originalPixel * tintB).coerceIn(0.0, 255.0),
+                        (originalPixel * tintG).coerceIn(0.0, 255.0),
+                        (originalPixel * tintR).coerceIn(0.0, 255.0)
+                    )
+                } else {
+                    resultMat.put(y, x, originalPixel, originalPixel, originalPixel)
+                }
+            }
+        }
+
+        mask.release()
+        return Image(resultMat)
+    }
+
     // calculates the histogram of the image
     private fun calculateHistogram(): Map<Int, IntArray> {
         val histogram = mutableMapOf<Int, IntArray>()
         val red = IntArray(256)
         val green = IntArray(256)
         val blue = IntArray(256)
+
 
         // we just count the frequency of each color
         for (y in 0 until metadata.height) {

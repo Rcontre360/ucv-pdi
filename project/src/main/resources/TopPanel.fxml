@@ -15,4 +15,5 @@
     <Button text="Umbralization" onAction="#showUmbralization"/>
     <Button text="Line Profile" onAction="#showLineProfile"/>
     <Button text="Clear" onAction="#clearImage"/>
+    <Button text="Region Growing" onAction="#showRegionGrowingPanel"/>
 </HBox>
