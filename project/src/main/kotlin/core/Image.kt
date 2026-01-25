@@ -307,6 +307,21 @@ class Image(val image: Mat) {
         return Image(dst)
     }
 
+    fun translate(dx: Int, dy: Int): Image {
+        val dst = Mat()
+        val translationMatrix = Mat(2, 3, CvType.CV_32F)
+        translationMatrix.put(0, 0, 1.0) // Scale X
+        translationMatrix.put(0, 1, 0.0)
+        translationMatrix.put(0, 2, dx.toDouble()) // Translate X
+        translationMatrix.put(1, 0, 0.0)
+        translationMatrix.put(1, 1, 1.0) // Scale Y
+        translationMatrix.put(1, 2, dy.toDouble()) // Translate Y
+
+        Imgproc.warpAffine(image, dst, translationMatrix, image.size())
+        translationMatrix.release()
+        return Image(dst)
+    }
+
     // applies zoom to the image
     fun zoom(factor: Float, algo: ZoomAlgorithm): Image {
         val w = (metadata.width * factor).toInt()

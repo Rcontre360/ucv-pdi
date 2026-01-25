@@ -30,4 +30,6 @@ sealed class UpdateType {
         val maxDiff: Int,
         val connectivity: Int
     ) : UpdateType()
+    data class PanningModeUpdate(val isPanning: Boolean) : UpdateType()
+    data class TranslationUpdate(val dx: Int, val dy: Int) : UpdateType()
 }

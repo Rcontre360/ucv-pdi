@@ -2,7 +2,10 @@ package org.pdi
 
 import javafx.fxml.FXML
 import javafx.scene.image.ImageView
+import javafx.scene.input.MouseEvent
 import javafx.stage.Stage
+import javafx.event.EventHandler // Import EventHandler
+
 import org.pdi.core.AppState
 import org.pdi.io.toWritableImage
 import org.pdi.ui.BottomPanelController
@@ -30,6 +33,8 @@ class MainController(private val primaryStage: Stage) {
     private lateinit var imageView: ImageView
 
     private val appState = AppState()
+    private var lastMouseX: Double = 0.0
+    private var lastMouseY: Double = 0.0
 
     @FXML
     fun initialize() {
@@ -45,7 +50,45 @@ class MainController(private val primaryStage: Stage) {
             } else {
                 imageView.image = null
             }
-        }
 
+            // Handle panning mode activation/deactivation
+            if (stateContext.isPanningMode) {
+                imageView.onMousePressed = EventHandler { event: MouseEvent -> handleMousePressed(event) }
+                imageView.onMouseDragged = EventHandler { event: MouseEvent -> handleMouseDragged(event) }
+                imageView.onMouseReleased = EventHandler { event: MouseEvent -> handleMouseReleased(event) }
+            } else {
+                imageView.onMousePressed = null
+                imageView.onMouseDragged = null
+                imageView.onMouseReleased = null
+            }
+        }
+    }
+
+    private fun handleMousePressed(event: MouseEvent) {
+        if (appState.context.isPanningMode) {
+            lastMouseX = event.sceneX
+            lastMouseY = event.sceneY
+            event.consume()
+        }
+    }
+
+    private fun handleMouseDragged(event: MouseEvent) {
+        if (appState.context.isPanningMode) {
+            val deltaX = event.sceneX - lastMouseX
+            val deltaY = event.sceneY - lastMouseY
+
+            appState.applyTranslation(deltaX.toInt(), deltaY.toInt())
+
+            lastMouseX = event.sceneX
+            lastMouseY = event.sceneY
+            event.consume()
+        }
+    }
+
+    private fun handleMouseReleased(event: MouseEvent) {
+        if (appState.context.isPanningMode) {
+            // No specific action needed on release for continuous panning
+            event.consume()
+        }
     }
 }

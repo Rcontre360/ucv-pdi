@@ -15,7 +15,10 @@ data class StateContext(
     val contrast: Float = 0.0f,
     val rotationApplied: Int = 0,
     val currentZoomLevelIndex: Int = 9,
-    val isNegative: Boolean = false
+    val isNegative: Boolean = false,
+    val isPanningMode: Boolean = false,
+    val translationX: Int = 0,
+    val translationY: Int = 0
 )
 
 class AppState {
@@ -116,6 +119,14 @@ class AppState {
         update(UpdateType.RegionGrowingUpdate(seeds, maxDiff, connectivity))
     }
 
+    fun setPanningMode(value: Boolean) {
+        update(UpdateType.PanningModeUpdate(value))
+    }
+
+    fun applyTranslation(dx: Int, dy: Int) {
+        update(UpdateType.TranslationUpdate(dx, dy))
+    }
+
     // check if the context has changed. If so we will do other thigns on he update function..
     private fun isContextDefault(context: StateContext): Boolean {
         val default = StateContext()
@@ -123,7 +134,10 @@ class AppState {
                 context.contrast == default.contrast &&
                 context.rotationApplied == default.rotationApplied &&
                 context.currentZoomLevelIndex == default.currentZoomLevelIndex &&
-                context.isNegative == default.isNegative
+                context.isNegative == default.isNegative &&
+                context.isPanningMode == default.isPanningMode &&
+                context.translationX == default.translationX &&
+                context.translationY == default.translationY
     }
 
     // this function takes the initial image and applies those functions that are not one way
@@ -154,6 +168,9 @@ class AppState {
         }
         if (context.rotationApplied != 0) {
             image = image.rotate(context.rotationApplied)
+        }
+        if (context.translationX != 0 || context.translationY != 0) {
+            image = image.translate(context.translationX, context.translationY)
         }
         return image
     }
@@ -197,6 +214,15 @@ class AppState {
                         currentZoomLevelIndex = newStateContext.currentZoomLevelIndex - 1
                     )
                 }
+            }
+            is UpdateType.PanningModeUpdate -> {
+                newStateContext = newStateContext.copy(isPanningMode = updateType.isPanning)
+            }
+            is UpdateType.TranslationUpdate -> {
+                newStateContext = newStateContext.copy(
+                    translationX = context.translationX + updateType.dx,
+                    translationY = context.translationY + updateType.dy
+                )
             }
             // END -------
             // all the operations below update _initialImage.

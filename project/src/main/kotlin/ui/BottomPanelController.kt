@@ -5,6 +5,7 @@ import javafx.scene.control.Label
 import org.pdi.core.AppState
 
 import javafx.collections.FXCollections
+import javafx.scene.control.CheckBox
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Slider
 import javafx.scene.control.TextField
@@ -24,6 +25,9 @@ class BottomPanelController {
 
     @FXML
     private lateinit var rotationTextField: TextField
+
+    @FXML
+    private lateinit var panningCheckBox: CheckBox
 
     private lateinit var appState: AppState
 
@@ -57,6 +61,10 @@ class BottomPanelController {
                 val angle = rotationSlider.value.toInt()
                 appState.rotate(angle)
             }
+        }
+
+        panningCheckBox.selectedProperty().addListener { _, _, newValue ->
+            appState.setPanningMode(newValue)
         }
     }
 

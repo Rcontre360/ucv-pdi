@@ -7,6 +7,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.CheckBox?>
 <HBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.BottomPanelController" spacing="10" style="-fx-background-color: #333333;">
     <padding>
         <Insets top="10" right="10" bottom="10" left="10"/>
@@ -18,4 +19,5 @@
     <Slider fx:id="rotationSlider" min="0" max="360" value="0"/>
     <TextField fx:id="rotationTextField" text="0" prefWidth="40"/>
     <ComboBox fx:id="zoomAlgorithmComboBox" promptText="Zoom Algo"/>
+    <CheckBox fx:id="panningCheckBox" text="Panning Mode" style="-fx-text-fill: white;"/>
 </HBox>
