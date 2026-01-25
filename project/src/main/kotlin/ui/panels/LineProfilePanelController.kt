@@ -11,6 +11,7 @@ import javafx.scene.control.ToggleGroup
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import org.pdi.core.AppState
+import org.pdi.io.toBufferedImage
 import java.awt.Point
 import kotlin.math.roundToInt
 
@@ -45,7 +46,7 @@ class LineProfilePanelController {
             drawGraph()
         }
 
-        val fxImage = javafx.embed.swing.SwingFXUtils.toFXImage(appState.getImage(), null)
+        val fxImage = javafx.embed.swing.SwingFXUtils.toFXImage(appState.getImage()?.toBufferedImage(), null)
         lineProfileImageView.image = fxImage
 
         // this is the listener to the user clicks on the image

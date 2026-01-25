@@ -1,10 +1,10 @@
 package org.pdi
 
-import javafx.embed.swing.SwingFXUtils
 import javafx.fxml.FXML
 import javafx.scene.image.ImageView
 import javafx.stage.Stage
 import org.pdi.core.AppState
+import org.pdi.io.toWritableImage
 import org.pdi.ui.BottomPanelController
 import org.pdi.ui.LeftPanelController
 import org.pdi.ui.RightPanelController
@@ -40,7 +40,7 @@ class MainController(private val primaryStage: Stage) {
 
         appState.addContextListener { stateContext ->
             if (stateContext.currentImage != null) {
-                val fxImage = SwingFXUtils.toFXImage(stateContext.currentImage.image, null)
+                val fxImage = stateContext.currentImage.image.toWritableImage()
                 imageView.image = fxImage
             } else {
                 imageView.image = null

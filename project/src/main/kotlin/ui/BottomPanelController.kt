@@ -49,9 +49,14 @@ class BottomPanelController {
         zoomLabel.text = "x${"%.1f".format(initialFactor)}"
 
         rotationSlider.valueProperty().addListener { _, _, newValue ->
-            val angle = newValue.toInt()
-            rotationTextField.text = angle.toString()
-            appState.rotate(angle)
+            rotationTextField.text = newValue.toInt().toString()
+        }
+
+        rotationSlider.valueChangingProperty().addListener { _, _, isChanging ->
+            if (!isChanging) {
+                val angle = rotationSlider.value.toInt()
+                appState.rotate(angle)
+            }
         }
     }
 

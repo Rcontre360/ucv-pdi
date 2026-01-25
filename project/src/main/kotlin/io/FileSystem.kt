@@ -2,6 +2,8 @@ package org.pdi.io
 
 // this file system module is used to save netbpm and compressed files
 
+import org.opencv.core.Mat
+import org.opencv.core.CvType
 import org.pdi.core.Image
 import java.awt.Color
 import java.awt.image.BufferedImage
@@ -27,34 +29,36 @@ fun saveImage(dir: String, format: String, image: Image) {
         // we have 2 customs ways to save. PDI (compressed stuff) and Netpbm
         "rle" -> PdiIO.write(image, targetType, output.absolutePath)
         "netpbm" -> NetpbmIO.write(image, targetType, output.absolutePath)
-        else -> ImageIO.write(image.image, format, output)
+        else -> ImageIO.write(image.buff, format, output)
     }
 }
 
 // entry point to load an image
-fun loadImage(file: File): BufferedImage {
+fun loadImage(file: File): Image {
     val extension = file.extension.lowercase(Locale.getDefault())
-    return when {
+    val bufferedImage = when {
         // usually we should check the HEADER to ensure the file is correct
-        extension in listOf("pbm", "pgm", "ppm", "netpbm") -> NetpbmIO.read(file)
-        extension == "rle" -> PdiIO.read(file)
+        extension in listOf("pbm", "pgm", "ppm", "netpbm") -> NetpbmIO.read(file).buff
+        extension == "rle" -> PdiIO.read(file).buff
         else -> ImageIO.read(file) ?: throw IOException("Could not read image file: ${file.absolutePath}")
     }
+    return Image(bufferedImage.toMat())
 }
 
 // utility to store as Netpbm
 object NetpbmIO {
-    fun read(file: File): BufferedImage {
+    fun read(file: File): Image {
         val fileScan = Scanner(file)
         return read(fileScan)
     }
 
     // reads given a scanner. Done like this because we need this class for the compressionn
-    fun read(scanner: Scanner): BufferedImage {
+    fun read(scanner: Scanner): Image {
         val imgType = scanner.next()
         val width = scanner.nextInt()
         val height = scanner.nextInt()
-        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+
+        val mat = Mat(height, width, CvType.CV_8UC3)
 
         // checking the image type. If its not P1 we must read the next int
         if (imgType == "P1") 1 else scanner.nextInt()
@@ -66,28 +70,26 @@ object NetpbmIO {
                     "P1" -> {
                         // single color binary
                         val pbmValue = scanner.nextInt()
-                        val color = if (pbmValue == 1) Color.BLACK.rgb else Color.WHITE.rgb
-                        image.setRGB(x, y, color)
+                        val colorValue = if (pbmValue == 1) 0.0 else 255.0
+                        mat.put(y, x, colorValue, colorValue, colorValue)
                     }
                     "P2" -> {
                         // single color
                         val gray = scanner.nextInt()
-                        val color = Color(gray, gray, gray).rgb
-                        image.setRGB(x, y, color)
+                        mat.put(y, x, gray.toDouble(), gray.toDouble(), gray.toDouble())
                     }
                     "P3" -> {
                         // we load 3 colors
                         val r = scanner.nextInt().coerceIn(0, 255)
                         val g = scanner.nextInt().coerceIn(0, 255)
                         val b = scanner.nextInt().coerceIn(0, 255)
-                        val color = Color(r, g, b).rgb
-                        image.setRGB(x, y, color)
+                        mat.put(y, x, b.toDouble(), g.toDouble(), r.toDouble())
                     }
                 }
             }
         }
 
-        return image
+        return Image(mat)
     }
 
     // we write the image
@@ -122,7 +124,7 @@ object NetpbmIO {
     private fun pbmPixelList(image: Image): List<String> {
         val pixels = mutableListOf<String>()
         image.readAllPixels { x, _, color ->
-            val grayValue = color.red
+            val grayValue = color[2].toInt() // Assuming BGR, R is at index 2
             val pbmValue = if (grayValue > 127) 0 else 1
             pixels.add(pbmValue.toString())
             if (x == image.metadata.width-1)
@@ -135,7 +137,7 @@ object NetpbmIO {
     private fun pgmPixelList(image: Image): List<String> {
         val pixels = mutableListOf<String>()
         image.readAllPixels { x, _, color ->
-            val grayValue = color.red
+            val grayValue = color[2].toInt() // Assuming BGR, R is at index 2
             pixels.add(grayValue.toString())
             if (x == image.metadata.width-1)
                 pixels.add("\n")
@@ -147,7 +149,7 @@ object NetpbmIO {
     private fun ppmPixelList(image: Image): List<String> {
         val pixels = mutableListOf<String>()
         image.readAllPixels { x, _, color ->
-            pixels.add("${color.red} ${color.green} ${color.blue}")
+            pixels.add("${color[2].toInt()} ${color[1].toInt()} ${color[0].toInt()}") // BGR to RGB
             if (x == image.metadata.width-1)
                 pixels.add("\n")
         }
@@ -157,7 +159,7 @@ object NetpbmIO {
 
 // compressed logic
 object PdiIO {
-    fun read(file: File): BufferedImage {
+    fun read(file: File): Image {
         val scanner = Scanner(file)
         val filetype = scanner.nextLine()
 

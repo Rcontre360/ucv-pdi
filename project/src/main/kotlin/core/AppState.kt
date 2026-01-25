@@ -1,7 +1,7 @@
 package org.pdi.core
 
+import org.opencv.core.Mat
 import java.awt.Color
-import java.awt.image.BufferedImage
 import java.io.File
 
 // state context. this class holds values that are used for transition between the initial image and the current one
@@ -53,7 +53,7 @@ class AppState {
         return context.currentImage?.histogram
     }
 
-    fun getImage(): BufferedImage? {
+    fun getImage(): Mat? {
         return context.currentImage?.image
     }
 
@@ -214,7 +214,7 @@ class AppState {
             // load an image
             is UpdateType.LoadImageUpdate -> {
                 try {
-                    val loadedImage = Image(org.pdi.io.loadImage(updateType.file))
+                    val loadedImage = org.pdi.io.loadImage(updateType.file)
                     _originalLoadedImage = loadedImage
                     _currentProcessedBaseImage = loadedImage
                     newStateContext = StateContext(currentImage = loadedImage)

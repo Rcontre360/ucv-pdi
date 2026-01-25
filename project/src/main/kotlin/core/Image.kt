@@ -1,12 +1,11 @@
 package org.pdi.core
 
+import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.Point
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
-import org.pdi.io.toMat
 import org.pdi.io.toBufferedImage
-
 import java.awt.Color
 import java.awt.image.BufferedImage
 import kotlin.Int
@@ -20,7 +19,7 @@ enum class ZoomAlgorithm {
 }
 
 // callback function for some utilities inside image
-typealias PixelProcessor<T> = (x: Int, y: Int, originalColor: Color) -> T
+typealias PixelProcessor<T> = (x: Int, y: Int, originalColor: DoubleArray) -> T
 
 // metadata class. this represent the current image data, even when we zoom the image pixels grow
 // the bitsPerPixel is internally always 24 but we represent how many bits we would use
@@ -38,27 +37,26 @@ data class Metadata(
 // the image you are creating a new copy of it.
 // I used this approach since inmutability allows me to assume things about variables
 // and have "less" bugs. In the future this should be mutable for more performance
-class Image(val buff: BufferedImage) {
-    val image: BufferedImage = buff
+class Image(val image: Mat) {
     // since this image is inmutable all the related variables can be inmutable
     // histogram is only calculated once, same with all the other fields
     val histogram: Histogram by lazy { Histogram(calculateHistogram()) }
     val isGrayscale = getIsGrayscale()
     val isBinary = getIsBinary()
     val metadata = Metadata(
-        width = image.width,
-        height = image.height,
+        width = image.width(),
+        height = image.height(),
         uniqueColors = getUniqueColors() ,
         bitsPerPixel = if (isBinary) {1} else{ if (isGrayscale){8} else {24} },
     )
+    val buff: BufferedImage by lazy { image.toBufferedImage() }
 
     // runs a function over all pixels, readonly
     fun readAllPixels(processor: PixelProcessor<Any>) {
-        for (y in 0 until image.height) {
-            for (x in 0 until image.width) {
-                val pixel = image.getRGB(x, y)
-                val color = Color(pixel)
-                processor(x, y, color)
+        for (y in 0 until image.height()) {
+            for (x in 0 until image.width()) {
+                val pixel = image.get(y, x)
+                processor(x, y, pixel)
             }
         }
     }
@@ -73,20 +71,28 @@ class Image(val buff: BufferedImage) {
 
         for (y in 0 until metadata.height) {
             for (x in 0 until metadata.width) {
-                val srcColor = Color(image.getRGB(x, y))
-                val dstColor = Color(resImg.image.getRGB(x, y))
+                val srcColor = image.get(y,x)
+                val dstColor = resImg.image.get(y,x)
+
+                val srcRed = srcColor[2].toInt()
+                val srcGreen = srcColor[1].toInt()
+                val srcBlue = srcColor[0].toInt()
+                val dstRed = dstColor[2].toInt()
+                val dstGreen = dstColor[1].toInt()
+                val dstBlue = dstColor[0].toInt()
+
 
                 // R, G, B channels
-                sums[0][srcColor.red] = sums[0][srcColor.red] + dstColor.red
-                counts[0][srcColor.red]++
-                sums[1][srcColor.green] = sums[1][srcColor.green] + dstColor.green
-                counts[1][srcColor.green]++
-                sums[2][srcColor.blue] = sums[2][srcColor.blue] + dstColor.blue
-                counts[2][srcColor.blue]++
+                sums[0][srcRed] = sums[0][srcRed] + dstRed
+                counts[0][srcRed]++
+                sums[1][srcGreen] = sums[1][srcGreen] + dstGreen
+                counts[1][srcGreen]++
+                sums[2][srcBlue] = sums[2][srcBlue] + dstBlue
+                counts[2][srcBlue]++
 
                 // Luminosity channel
-                val srcLum = (0.2126 * srcColor.red + 0.7152 * srcColor.green + 0.0722 * srcColor.blue).roundToInt()
-                val dstLum = (0.2126 * dstColor.red + 0.7152 * dstColor.green + 0.0722 * dstColor.blue).roundToInt()
+                val srcLum = (0.2126 * srcRed + 0.7152 * srcGreen + 0.0722 * srcBlue).roundToInt()
+                val dstLum = (0.2126 * dstRed + 0.7152 * dstGreen + 0.0722 * dstBlue).roundToInt()
                 sums[3][srcLum] = sums[3][srcLum] + dstLum
                 counts[3][srcLum]++
             }
@@ -157,15 +163,15 @@ class Image(val buff: BufferedImage) {
                     val imageX = (x - kernel.cols / 2 + j)
                     val imageY = (y - kernel.rows / 2 + i)
                     // if the window is OUTSIDE the image. We apply some "padding" with black, this wont mess with borders
-                    val color = if (imageX < 0 || imageX >= image.width || imageY < 0 || imageY >= image.height){
-                        Color.BLACK
+                    val color = if (imageX < 0 || imageX >= image.width() || imageY < 0 || imageY >= image.height()){
+                        doubleArrayOf(0.0,0.0,0.0)
                     } else {
-                        Color(image.getRGB(imageX, imageY))
+                        image.get(imageY, imageX)
                     }
 
-                    imgR[i][j] = color.red.toFloat()
-                    imgG[i][j] = color.green.toFloat()
-                    imgB[i][j] = color.blue.toFloat()
+                    imgR[i][j] = color[2].toFloat()
+                    imgG[i][j] = color[1].toFloat()
+                    imgB[i][j] = color[0].toFloat()
                 }
             }
 
@@ -174,7 +180,7 @@ class Image(val buff: BufferedImage) {
             val g = kernel.convolute(imgG).roundToInt().coerceIn(0, 255)
             val b = kernel.convolute(imgB).roundToInt().coerceIn(0, 255)
 
-            Color(r,g,b).rgb
+            doubleArrayOf(b.toDouble(), g.toDouble(), r.toDouble())
         }
     }
 
@@ -186,15 +192,15 @@ class Image(val buff: BufferedImage) {
 
         return applyPerPixel { x, y, _ ->
             // get both colors from both images
-            val cx = Color(imageX.image.getRGB(x, y))
-            val cy = Color(imageY.image.getRGB(x, y))
+            val cx = imageX.image.get(y, x)
+            val cy = imageY.image.get(y, x)
 
             // sqrt( x^2 + y^2 ) onn each channel
-            val r = sqrt((cx.red*cx.red + cy.red * cy.red).toDouble()).toInt().coerceIn(0, 255)
-            val g = sqrt((cx.green * cx.green + cy.green * cy.green).toDouble()).toInt().coerceIn(0, 255)
-            val b = sqrt((cx.blue * cx.blue + cy.blue * cy.blue).toDouble()).toInt().coerceIn(0, 255)
+            val r = sqrt((cx[2]*cx[2] + cy[2] * cy[2])).toInt().coerceIn(0, 255)
+            val g = sqrt((cx[1]*cx[1] + cy[1] * cy[1])).toInt().coerceIn(0, 255)
+            val b = sqrt((cx[0]*cx[0] + cy[0] * cy[0])).toInt().coerceIn(0, 255)
 
-            Color(r,g,b).rgb
+            doubleArrayOf(b.toDouble(), g.toDouble(), r.toDouble())
         }
     }
 
@@ -206,32 +212,32 @@ class Image(val buff: BufferedImage) {
         return applyPerPixel { _, _, color ->
             val gray = luminosity(color)
 
-            Color(
-                (gray * tintR).toInt().coerceIn(0, 255),
-                (gray * tintG).toInt().coerceIn(0, 255),
-                (gray * tintB).toInt().coerceIn(0, 255)
-            ).rgb
+            doubleArrayOf(
+                (gray * tintB).toInt().coerceIn(0, 255).toDouble(),
+                (gray * tintG).toInt().coerceIn(0, 255).toDouble(),
+                (gray * tintR).toInt().coerceIn(0, 255).toDouble()
+            )
         }
     }
 
     fun negative(): Image {
         return applyPerPixel { _, _, color ->
-            Color(
-                255 - color.red,
-                255 - color.green,
-                255 - color.blue
-            ).rgb
+            doubleArrayOf(
+                255.0 - color[0],
+                255.0 - color[1],
+                255.0 - color[2]
+            )
         }
     }
 
     // simple brightness function. Instead of adding a constant it multiplies by a factor (between 0-2)
     fun changeBrightness(factor: Float): Image {
         return applyPerPixel { _, _, color ->
-            Color(
-                (color.red * (1 + factor)).toInt().coerceIn(0, 255),
-                (color.green * (1 + factor)).toInt().coerceIn(0, 255),
-                (color.blue * (1 + factor)).toInt().coerceIn(0, 255)
-            ).rgb
+            doubleArrayOf(
+                (color[0] * (1 + factor)).toInt().coerceIn(0, 255).toDouble(),
+                (color[1] * (1 + factor)).toInt().coerceIn(0, 255).toDouble(),
+                (color[2] * (1 + factor)).toInt().coerceIn(0, 255).toDouble()
+            )
         }
     }
 
@@ -249,11 +255,11 @@ class Image(val buff: BufferedImage) {
             val gMap = newHistogram[1]!!
             val bMap = newHistogram[2]!!
 
-            val newR = rMap[color.red]
-            val newG = gMap[color.green]
-            val newB = bMap[color.blue]
+            val newR = rMap[color[2].toInt()]
+            val newG = gMap[color[1].toInt()]
+            val newB = bMap[color[0].toInt()]
 
-            Color(newR, newG, newB, color.alpha).rgb
+            doubleArrayOf(newB.toDouble(), newG.toDouble(), newR.toDouble())
         }
     }
 
@@ -281,29 +287,28 @@ class Image(val buff: BufferedImage) {
 
         // just applying the above function on a single channel and copying that on the rest
         return applyPerPixel { _, _, color ->
-            val gray = color.red
+            val gray = color[0].toInt()
             val newGray = thresholding(gray)
-            Color(newGray, newGray, newGray).rgb
+            doubleArrayOf(newGray.toDouble(), newGray.toDouble(), newGray.toDouble())
         }
     }
 
     fun rotate(angle: Int): Image {
-        val src = image.toMat()
         val dst = Mat()
         val rotationMatrix = Imgproc.getRotationMatrix2D(
-            Point(src.cols() / 2.0, src.rows() / 2.0),
+            Point(image.cols() / 2.0, image.rows() / 2.0),
             angle.toDouble(),
             1.0
         )
-        Imgproc.warpAffine(src, dst, rotationMatrix, Size(src.cols().toDouble(), src.rows().toDouble()))
-        return Image(dst.toBufferedImage())
+        Imgproc.warpAffine(image, dst, rotationMatrix, Size(image.cols().toDouble(), image.rows().toDouble()))
+        return Image(dst)
     }
 
     // applies zoom to the image
     fun zoom(factor: Float, algo: ZoomAlgorithm): Image {
         val w = (metadata.width * factor).toInt()
         val h = (metadata.height * factor).toInt()
-        val newImg = BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
+        val newImg = Mat(h, w, image.type())
 
         for (y in 0 until h) {
             for (x in 0 until w) {
@@ -313,8 +318,8 @@ class Image(val buff: BufferedImage) {
                         // when factor < 0 it acts as a multiplicationn. Sometimes it gets out of range
                         val srcX = (x / factor).toInt().coerceIn(0,metadata.width - 1)
                         val srcY = (y / factor).toInt().coerceIn(0,metadata.height - 1)
-                        val pixel = image.getRGB(srcX, srcY)
-                        newImg.setRGB(x, y, pixel)
+                        val pixel = image.get(srcY, srcX)
+                        newImg.put(y, x, *pixel)
                     }
                     ZoomAlgorithm.LINEAR_INTERPOLATION -> {
                         // this was implemented given the pdfs sent on classes
@@ -324,21 +329,21 @@ class Image(val buff: BufferedImage) {
                         val srcY = (y / factor).toInt().coerceIn(0,metadata.height - 2)
 
                         // given the 4 pixel values, it interpolates the value within them
-                        fun interpolateChannel(is_v:Int, ds:Int, ir:Int, dr:Int): Int{
-                            return ((1-a) * (1-b) * is_v + a*(1-b) * ds + (1-a)*b*ir + a*b*dr).toInt();
+                        fun interpolateChannel(is_v:Double, ds:Double, ir:Double, dr:Double): Double{
+                            return ((1-a) * (1-b) * is_v + a*(1-b) * ds + (1-a)*b*ir + a*b*dr);
                         }
 
-                        val p_is = Color(image.getRGB(srcX, srcY))
-                        val p_ds =Color( image.getRGB(srcX + 1, srcY))
-                        val p_ir = Color(image.getRGB(srcX, srcY + 1))
-                        val p_dr = Color(image.getRGB(srcX + 1, srcY + 1))
+                        val p_is = image.get(srcY, srcX)
+                        val p_ds = image.get(srcY, srcX + 1)
+                        val p_ir = image.get(srcY + 1, srcX)
+                        val p_dr = image.get(srcY + 1, srcX + 1)
 
-                        val res = Color(
-                            interpolateChannel(p_is.red, p_ds.red, p_ir.red, p_dr.red),
-                            interpolateChannel(p_is.green, p_ds.green, p_ir.green, p_dr.green),
-                            interpolateChannel(p_is.blue, p_ds.blue, p_ir.blue, p_dr.blue),
+                        val res = doubleArrayOf(
+                            interpolateChannel(p_is[0], p_ds[0], p_ir[0], p_dr[0]),
+                            interpolateChannel(p_is[1], p_ds[1], p_ir[1], p_dr[1]),
+                            interpolateChannel(p_is[2], p_ds[2], p_ir[2], p_dr[2]),
                         )
-                        newImg.setRGB(x, y, res.rgb)
+                        newImg.put(y, x, *res)
                     }
                 }
             }
@@ -357,10 +362,10 @@ class Image(val buff: BufferedImage) {
         // we just count the frequency of each color
         for (y in 0 until metadata.height) {
             for (x in 0 until metadata.width) {
-                val color = Color(image.getRGB(x, y))
-                red[color.red]++
-                green[color.green]++
-                blue[color.blue]++
+                val color = image.get(y, x)
+                red[color[2].toInt()]++
+                green[color[1].toInt()]++
+                blue[color[0].toInt()]++
             }
         }
 
@@ -374,17 +379,17 @@ class Image(val buff: BufferedImage) {
     // given an axis, line and channel. We get the profile of the linne which is just a list of pairs (x,f(x))
     fun getLineProfile(axis: Char, lineNumber: Int, channel: Char): List<Pair<Int, Int>> {
         val profile = mutableListOf<Pair<Int, Int>>()
-        val limit = if (axis == 'X') {image.width} else {image.height}
+        val limit = if (axis == 'X') {image.width()} else {image.height()}
 
         for (i in 0 until limit){
             val color = if (axis == 'X')
-                {Color(image.getRGB(i, lineNumber))} else
-                {Color(image.getRGB(lineNumber,i))}
+                {image.get(lineNumber,i)} else
+                {image.get(i,lineNumber)}
 
             val value = when (channel) {
-                'R' -> color.red
-                'G' -> color.green
-                'B' -> color.blue
+                'R' -> color[2].toInt()
+                'G' -> color[1].toInt()
+                'B' -> color[0].toInt()
                 'L' -> luminosity(color) // Grayscale approximation
                 else -> 0
             }
@@ -396,10 +401,9 @@ class Image(val buff: BufferedImage) {
 
     // easy, just count how many colors are there
     private fun getUniqueColors(): Int{
-        val all: MutableSet<Int> = mutableSetOf()
-        readAllPixels {x,y,_ ->
-            val pixel = image.getRGB(x, y)
-            all.add(pixel)
+        val all: MutableSet<String> = mutableSetOf()
+        readAllPixels {x,y,color ->
+            all.add(color.joinToString())
         }
         return all.size
     }
@@ -409,7 +413,7 @@ class Image(val buff: BufferedImage) {
         var res = true
         readAllPixels {x,y,color ->
             // if any color is not the same as the others res will be false (false & true : false)
-            res = res && (color.red == color.green && color.green == color.blue)
+            res = res && (color[0] == color[1] && color[1] == color[2])
             0
         }
         return res
@@ -417,26 +421,29 @@ class Image(val buff: BufferedImage) {
 
     // checks if the image is binary
     private fun getIsBinary(): Boolean{
-        val bin = listOf(0,255)
+        val bin = listOf(0.0,255.0)
         var res = true
         readAllPixels {x,y,color ->
             // if any color is not binary res will be false (false & true : false)
-            res = res && ((color.red in bin) && (color.green in bin) && (color.blue in bin))
+            res = res && ((color[0] in bin) && (color[1] in bin) && (color[2] in bin))
             0
         }
         return res
     }
 
     // apply a color modification to each pixel
-    private fun applyPerPixel(processor: PixelProcessor<Int>): Image {
-        val newImage = BufferedImage(metadata.width, metadata.height, BufferedImage.TYPE_INT_RGB)
+    private fun applyPerPixel(processor: PixelProcessor<DoubleArray>): Image {
+        val newImage = Mat.zeros(image.size(), image.type())
 
         readAllPixels {x,y,color ->
             val newRgbValue = processor(x, y, color)
-            newImage.setRGB(x, y, newRgbValue)
+            newImage.put(y, x, *newRgbValue)
         }
 
         return Image(newImage)
     }
 
+    private fun luminosity(color: DoubleArray): Int {
+        return (0.2126 * color[2] + 0.7152 * color[1] + 0.0722 * color[0]).roundToInt()
+    }
 }
