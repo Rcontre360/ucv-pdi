@@ -13,7 +13,9 @@ enum class KernelType {
     ROBERTS_X,
     ROBERTS_Y,
     PREWITT_X,
-    PREWITT_Y
+    PREWITT_Y,
+    ERODE,
+    DILATE
 }
 
 // abstract kernel class, initializes with its size

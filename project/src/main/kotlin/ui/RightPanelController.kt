@@ -73,7 +73,7 @@ class RightPanelController {
         operationsComboBox.items.addAll(BorderDetectionType.values().toList())
         operationsComboBox.selectionModel.selectFirst()
 
-        updateCurrentKernel() // Initial update of currentKernel
+        updateCurrentKernel()
     }
 
     @FXML
@@ -100,7 +100,7 @@ class RightPanelController {
         val rows = rowsField.text.toIntOrNull() ?: 3
         val cols = colsField.text.toIntOrNull() ?: 3
         val selected = typeComboBox.selectionModel.selectedItem ?: KernelType.CUSTOM // Default if nothing selected
-        
+
         currentKernel = createKernelInstance(rows, cols, selected)
         val (customRows, customCols) = currentKernel.isCustomizable()
         rowsField.isEditable = customRows
@@ -120,12 +120,15 @@ class RightPanelController {
                 laplacianProfilingKernel.generateKernel()
                 laplacianProfilingKernel
             }
+
             KernelType.SOBEL_X -> SobelXKernel(rows)
             KernelType.SOBEL_Y -> SobelYKernel(rows)
             KernelType.ROBERTS_X -> RobertsXKernel()
             KernelType.ROBERTS_Y -> RobertsYKernel()
             KernelType.PREWITT_X -> PrewittXKernel()
             KernelType.PREWITT_Y -> PrewittYKernel()
+            KernelType.ERODE -> ErodeKernel(rows, cols)
+            KernelType.DILATE -> DilateKernel(rows, cols)
         }
         kernel.generateKernel()
         return kernel

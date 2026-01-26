@@ -1,0 +1,28 @@
+package org.pdi.core.kernels
+
+import org.pdi.core.Kernel
+
+// median kernel, the only kernel where convolution is different
+class DilateKernel(rows: Int, cols: Int) : Kernel(rows, cols) {
+
+    // is customizable
+    override fun isCustomizable():Pair<Boolean,Boolean> = Pair(true,true)
+
+    // easy to generate
+    override fun generateKernel() {
+        kernel = Array(rows) { FloatArray(cols) { 1f } }
+    }
+
+    // sort all values and pick the middle one
+    override fun convolute(src: Array<FloatArray>): Float{
+        var mx = 0.0f
+        for (i in 0 until rows) {
+            for (j in 0 until cols) {
+                if (kernel[i][j] == 1.0f){
+                    mx = maxOf(mx, src[i][j])
+                }
+            }
+        }
+        return mx
+    }
+}
