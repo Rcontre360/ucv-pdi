@@ -32,4 +32,9 @@ sealed class UpdateType {
     ) : UpdateType()
     data class PanningModeUpdate(val isPanning: Boolean) : UpdateType()
     data class TranslationUpdate(val dx: Int, val dy: Int) : UpdateType()
+    
+    // New HLS adjustment types
+    data class HueAdjustment(val deltaHue: Int) : UpdateType()
+    data class SaturationAdjustment(val deltaSaturation: Float) : UpdateType()
+    data class LightnessAdjustment(val deltaLightness: Float) : UpdateType()
 }

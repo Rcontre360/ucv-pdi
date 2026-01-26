@@ -14,6 +14,7 @@ import kotlin.Int
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import kotlin.random.Random
+import org.opencv.core.Core // Import Core for split/merge
 
 // zoom algorithm type
 enum class ZoomAlgorithm {
@@ -519,5 +520,48 @@ class Image(val image: Mat) {
 
     private fun luminosity(color: DoubleArray): Int {
         return (0.2126 * color[2] + 0.7152 * color[1] + 0.0722 * color[0]).roundToInt()
+    }
+
+    fun applyHLSAdjustments(hueFactor: Int, saturationFactor: Float, lightnessFactor: Float): Image {
+        val hlsMat = Mat()
+        Imgproc.cvtColor(image, hlsMat, Imgproc.COLOR_BGR2HLS)
+
+        val channels = arrayListOf<Mat>()
+        Core.split(hlsMat, channels)
+
+        val hueChannel = channels[0]
+        val lightnessChannel = channels[1]
+        val saturationChannel = channels[2]
+
+        for (y in 0 until hlsMat.rows()) {
+            for (x in 0 until hlsMat.cols()) {
+                // Hue adjustment
+                val currentHue = hueChannel.get(y, x)[0]
+                var newHue = currentHue + hueFactor
+
+                while (newHue < 0) newHue += 180.0
+                newHue %= 180.0
+                hueChannel.put(y, x, newHue)
+
+                // Lightness adjustment
+                val currentLightness = lightnessChannel.get(y, x)[0]
+                val newLightness = (currentLightness + (lightnessFactor * 255)).coerceIn(0.0, 255.0)
+                lightnessChannel.put(y, x, newLightness)
+
+                // Saturation adjustment
+                val currentSaturation = saturationChannel.get(y, x)[0]
+                val newSaturation = (currentSaturation + (saturationFactor * 255)).coerceIn(0.0, 255.0)
+                saturationChannel.put(y, x, newSaturation)
+            }
+        }
+
+        Core.merge(channels, hlsMat)
+        val resultMat = Mat()
+        Imgproc.cvtColor(hlsMat, resultMat, Imgproc.COLOR_HLS2BGR)
+
+        hlsMat.release()
+        channels.forEach { it.release() }
+
+        return Image(resultMat)
     }
 }

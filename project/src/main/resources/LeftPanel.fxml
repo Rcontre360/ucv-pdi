@@ -19,4 +19,10 @@
     <Button text="Grayscale/Coloring" onAction="#applyGrayscale"/>
     <Button text="Negative" onAction="#applyNegative"/>
     <ColorPicker fx:id="colorPicker" />
+    <Label fx:id="hueValueLabel" text="Matiz: 0"/>
+    <Slider fx:id="hueSlider" min="-180" max="180" value="0"/>
+    <Label fx:id="saturationValueLabel" text="Saturación: 0"/>
+    <Slider fx:id="saturationSlider" min="-100" max="100" value="0"/>
+    <Label fx:id="lightnessValueLabel" text="Luminosidad: 0"/>
+    <Slider fx:id="lightnessSlider" min="-100" max="100" value="0"/>
 </VBox>

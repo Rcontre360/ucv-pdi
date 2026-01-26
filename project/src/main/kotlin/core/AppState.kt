@@ -18,7 +18,10 @@ data class StateContext(
     val isNegative: Boolean = false,
     val isPanningMode: Boolean = false,
     val translationX: Int = 0,
-    val translationY: Int = 0
+    val translationY: Int = 0,
+    val hueFactor: Int = 0,
+    val saturationFactor: Float = 0.0f,
+    val lightnessFactor: Float = 0.0f
 )
 
 class AppState {
@@ -127,6 +130,18 @@ class AppState {
         update(UpdateType.TranslationUpdate(dx, dy))
     }
 
+    fun adjustHue(newFactor: Int) {
+        update(UpdateType.HueAdjustment(newFactor))
+    }
+
+    fun adjustSaturation(newFactor: Float) {
+        update(UpdateType.SaturationAdjustment(newFactor))
+    }
+
+    fun adjustLightness(newFactor: Float) {
+        update(UpdateType.LightnessAdjustment(newFactor))
+    }
+
     // check if the context has changed. If so we will do other thigns on he update function..
     private fun isContextDefault(context: StateContext): Boolean {
         val default = StateContext()
@@ -137,7 +152,10 @@ class AppState {
                 context.isNegative == default.isNegative &&
                 context.isPanningMode == default.isPanningMode &&
                 context.translationX == default.translationX &&
-                context.translationY == default.translationY
+                context.translationY == default.translationY &&
+                context.hueFactor == default.hueFactor &&
+                context.saturationFactor == default.saturationFactor &&
+                context.lightnessFactor == default.lightnessFactor
     }
 
     // this function takes the initial image and applies those functions that are not one way
@@ -161,6 +179,9 @@ class AppState {
         }
         if (context.brightness != 0.0f) {
             image = image.changeBrightness(context.brightness)
+        }
+        if (context.hueFactor != 0 || context.saturationFactor != 0.0f || context.lightnessFactor != 0.0f) {
+            image = image.applyHLSAdjustments(context.hueFactor, context.saturationFactor, context.lightnessFactor)
         }
         if (context.currentZoomLevelIndex != 9) {
             val factor = zoomLevels[context.currentZoomLevelIndex]
@@ -223,6 +244,16 @@ class AppState {
                     translationX = context.translationX + updateType.dx,
                     translationY = context.translationY + updateType.dy
                 )
+            }
+            // New HLS adjustment types
+            is UpdateType.HueAdjustment -> {
+                newStateContext = newStateContext.copy(hueFactor = updateType.deltaHue)
+            }
+            is UpdateType.SaturationAdjustment -> {
+                newStateContext = newStateContext.copy(saturationFactor = updateType.deltaSaturation)
+            }
+            is UpdateType.LightnessAdjustment -> {
+                newStateContext = newStateContext.copy(lightnessFactor = updateType.deltaLightness)
             }
             // END -------
             // all the operations below update _initialImage.
