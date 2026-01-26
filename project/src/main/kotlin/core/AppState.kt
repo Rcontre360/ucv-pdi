@@ -21,7 +21,10 @@ data class StateContext(
     val translationY: Int = 0,
     val hueFactor: Int = 0,
     val saturationFactor: Float = 0.0f,
-    val lightnessFactor: Float = 0.0f
+    val lightnessFactor: Float = 0.0f,
+    val yFactor: Float = 0.0f,
+    val uFactor: Float = 0.0f,
+    val vFactor: Float = 0.0f
 )
 
 class AppState {
@@ -142,6 +145,18 @@ class AppState {
         update(UpdateType.LightnessAdjustment(newFactor))
     }
 
+    fun adjustY(newFactor: Float) {
+        update(UpdateType.YAdjustment(newFactor))
+    }
+
+    fun adjustU(newFactor: Float) {
+        update(UpdateType.UAdjustment(newFactor))
+    }
+
+    fun adjustV(newFactor: Float) {
+        update(UpdateType.VAdjustment(newFactor))
+    }
+
     // check if the context has changed. If so we will do other thigns on he update function..
     private fun isContextDefault(context: StateContext): Boolean {
         val default = StateContext()
@@ -155,7 +170,10 @@ class AppState {
                 context.translationY == default.translationY &&
                 context.hueFactor == default.hueFactor &&
                 context.saturationFactor == default.saturationFactor &&
-                context.lightnessFactor == default.lightnessFactor
+                context.lightnessFactor == default.lightnessFactor &&
+                context.yFactor == default.yFactor &&
+                context.uFactor == default.uFactor &&
+                context.vFactor == default.vFactor
     }
 
     // this function takes the initial image and applies those functions that are not one way
@@ -182,6 +200,9 @@ class AppState {
         }
         if (context.hueFactor != 0 || context.saturationFactor != 0.0f || context.lightnessFactor != 0.0f) {
             image = image.applyHLSAdjustments(context.hueFactor, context.saturationFactor, context.lightnessFactor)
+        }
+        if (context.yFactor != 0.0f || context.uFactor != 0.0f || context.vFactor != 0.0f) {
+            image = image.applyYUVAdjustments(context.yFactor, context.uFactor, context.vFactor)
         }
         if (context.currentZoomLevelIndex != 9) {
             val factor = zoomLevels[context.currentZoomLevelIndex]
@@ -254,6 +275,16 @@ class AppState {
             }
             is UpdateType.LightnessAdjustment -> {
                 newStateContext = newStateContext.copy(lightnessFactor = updateType.deltaLightness)
+            }
+            // New YUV adjustment types
+            is UpdateType.YAdjustment -> {
+                newStateContext = newStateContext.copy(yFactor = updateType.newFactor)
+            }
+            is UpdateType.UAdjustment -> {
+                newStateContext = newStateContext.copy(uFactor = updateType.newFactor)
+            }
+            is UpdateType.VAdjustment -> {
+                newStateContext = newStateContext.copy(vFactor = updateType.newFactor)
             }
             // END -------
             // all the operations below update _initialImage.

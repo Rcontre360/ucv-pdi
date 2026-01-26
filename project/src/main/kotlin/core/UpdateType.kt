@@ -37,4 +37,9 @@ sealed class UpdateType {
     data class HueAdjustment(val deltaHue: Int) : UpdateType()
     data class SaturationAdjustment(val deltaSaturation: Float) : UpdateType()
     data class LightnessAdjustment(val deltaLightness: Float) : UpdateType()
+    
+    // New YUV adjustment types
+    data class YAdjustment(val newFactor: Float) : UpdateType()
+    data class UAdjustment(val newFactor: Float) : UpdateType()
+    data class VAdjustment(val newFactor: Float) : UpdateType()
 }

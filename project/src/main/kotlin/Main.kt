@@ -17,8 +17,8 @@ class Main : Application() {
         val root = loader.load<Parent>()
         primaryStage.title = "Image Viewer"
         primaryStage.minWidth = 1040.0
-        primaryStage.minHeight = 600.0
-        val scene = Scene(root, 1040.0, 600.0)
+        primaryStage.minHeight = 800.0
+        val scene = Scene(root, 1040.0, 800.0)
         primaryStage.scene = scene
         primaryStage.show()
     }

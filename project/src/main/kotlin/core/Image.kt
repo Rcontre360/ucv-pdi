@@ -564,4 +564,44 @@ class Image(val image: Mat) {
 
         return Image(resultMat)
     }
+
+    fun applyYUVAdjustments(yFactor: Float, uFactor: Float, vFactor: Float): Image {
+        val yuvMat = Mat()
+        Imgproc.cvtColor(image, yuvMat, Imgproc.COLOR_BGR2YUV)
+
+        val channels = arrayListOf<Mat>()
+        Core.split(yuvMat, channels)
+
+        val yChannel = channels[0] // Y (Luminance)
+        val uChannel = channels[1] // U (Chrominance)
+        val vChannel = channels[2] // V (Chrominance)
+
+        for (y in 0 until yuvMat.rows()) {
+            for (x in 0 until yuvMat.cols()) {
+                // Y adjustment (Luminance)
+                val currentY = yChannel.get(y, x)[0]
+                val newY = (currentY + (yFactor * 255)).coerceIn(0.0, 255.0)
+                yChannel.put(y, x, newY)
+
+                // U adjustment (Chrominance)
+                val currentU = uChannel.get(y, x)[0]
+                val newU = (currentU + (uFactor * 255)).coerceIn(0.0, 255.0)
+                uChannel.put(y, x, newU)
+
+                // V adjustment (Chrominance)
+                val currentV = vChannel.get(y, x)[0]
+                val newV = (currentV + (vFactor * 255)).coerceIn(0.0, 255.0)
+                vChannel.put(y, x, newV)
+            }
+        }
+
+        Core.merge(channels, yuvMat)
+        val resultMat = Mat()
+        Imgproc.cvtColor(yuvMat, resultMat, Imgproc.COLOR_YUV2BGR)
+
+        yuvMat.release()
+        channels.forEach { it.release() }
+
+        return Image(resultMat)
+    }
 }
