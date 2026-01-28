@@ -132,3 +132,4 @@ A continuación, se detalla la ubicación de cada funcionalidad implementada en 
 
 - new windows must allow further edit on background (histogram example)
 - remember dir too when saving
+- undo/redo with 4 operations. Must be with old operations as well?

@@ -42,4 +42,5 @@ sealed class UpdateType {
     data class YAdjustment(val newFactor: Float) : UpdateType()
     data class UAdjustment(val newFactor: Float) : UpdateType()
     data class VAdjustment(val newFactor: Float) : UpdateType()
+    object DFTUpdate : UpdateType()
 }

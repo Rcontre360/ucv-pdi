@@ -152,6 +152,11 @@ class TopPanelController {
         stage.show()
     }
 
+    @FXML
+    fun applyDFT() {
+        appState.applyDFT()
+    }
+
     // utility alert
     private fun showAlert(title: String, message: String) {
         val alert = Alert(AlertType.INFORMATION)

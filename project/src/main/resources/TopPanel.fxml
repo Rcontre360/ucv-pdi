@@ -16,4 +16,5 @@
     <Button text="Line Profile" onAction="#showLineProfile"/>
     <Button text="Clear" onAction="#clearImage"/>
     <Button text="Region Growing" onAction="#showRegionGrowingPanel"/>
+    <Button text="DFT" onAction="#applyDFT"/>
 </HBox>

@@ -157,6 +157,10 @@ class AppState {
         update(UpdateType.VAdjustment(newFactor))
     }
 
+    fun applyDFT() {
+        update(UpdateType.DFTUpdate)
+    }
+
     // check if the context has changed. If so we will do other thigns on he update function..
     private fun isContextDefault(context: StateContext): Boolean {
         val default = StateContext()
@@ -332,6 +336,10 @@ class AppState {
                     updateType.maxDiff,
                     updateType.connectivity
                 )
+                newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            UpdateType.DFTUpdate -> {
+                _currentProcessedBaseImage = context.currentImage?.dft()
                 newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
         }
