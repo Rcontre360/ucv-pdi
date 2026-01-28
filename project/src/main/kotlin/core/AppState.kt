@@ -339,8 +339,6 @@ class AppState {
                 newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             UpdateType.DFTUpdate -> {
-                _currentProcessedBaseImage = context.currentImage?.dft()
-                newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
         }
 

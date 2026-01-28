@@ -7,7 +7,7 @@ import javafx.stage.Stage
 import javafx.event.EventHandler // Import EventHandler
 
 import org.pdi.core.AppState
-import org.pdi.io.toWritableImage
+import org.pdi.io.toBufferedImage
 import org.pdi.ui.BottomPanelController
 import org.pdi.ui.LeftPanelController
 import org.pdi.ui.RightPanelController
@@ -38,14 +38,14 @@ class MainController(private val primaryStage: Stage) {
 
     @FXML
     fun initialize() {
-        topPanelController.setAppState(appState, primaryStage) 
+        topPanelController.setAppState(appState, primaryStage)
         leftPanelController.setAppState(appState)
         rightPanelController.setAppState(appState, primaryStage)
         bottomPanelController.setAppState(appState)
 
         appState.addContextListener { stateContext ->
             if (stateContext.currentImage != null) {
-                val fxImage = stateContext.currentImage.image.toWritableImage()
+                val fxImage = javafx.embed.swing.SwingFXUtils.toFXImage(stateContext.currentImage.image.toBufferedImage(), null)
                 imageView.image = fxImage
             } else {
                 imageView.image = null

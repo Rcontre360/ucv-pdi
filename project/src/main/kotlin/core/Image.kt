@@ -605,82 +605,33 @@ class Image(val image: Mat) {
         return Image(resultMat)
     }
 
-    fun dft(): Image {
-        val gray = if (isGrayscale) {
-            image
+    fun dft(): Mat {
+        val gray = Mat.zeros(image.size(), image.type())
+        if (image.channels() > 1) {
+            Imgproc.cvtColor(image, gray, Imgproc.COLOR_BGR2GRAY)
         } else {
-            val mat = Mat()
-            Imgproc.cvtColor(image, mat, Imgproc.COLOR_BGR2GRAY)
-            mat
+            image.copyTo(gray)
         }
 
-        val optimalRows = Core.getOptimalDFTSize(gray.rows())
-        val optimalCols = Core.getOptimalDFTSize(gray.cols())
-        val padded = Mat()
-        Core.copyMakeBorder(gray, padded, 0, optimalRows - gray.rows(), 0, optimalCols - gray.cols(), Core.BORDER_CONSTANT, Scalar.all(0.0))
-        gray.release()
+        val floatGray = Mat()
+        gray.convertTo(floatGray, CvType.CV_32F)
 
-        val realPart = Mat()
-        padded.convertTo(realPart, CvType.CV_32F)
-        padded.release()
+        val fourier = Mat()
+        Core.dft(floatGray, fourier, Core.DFT_COMPLEX_OUTPUT)
 
-        val imaginaryPart = Mat.zeros(realPart.size(), CvType.CV_32F)
-        val planes = mutableListOf(realPart, imaginaryPart)
-
-        val complexI = Mat()
-        Core.merge(planes, complexI)
-        Core.dft(complexI, complexI)
-
-        Core.split(complexI, planes)
-        complexI.release()
+        val planes = mutableListOf<Mat>()
+        Core.split(fourier, planes)
 
         val magnitude = Mat()
         Core.magnitude(planes[0], planes[1], magnitude)
-        planes.forEach { it.release() }
 
-        Core.add(magnitude, Scalar.all(1.0), magnitude)
+        Core.add(magnitude, Scalar(1.0), magnitude)
         Core.log(magnitude, magnitude)
+        Core.multiply(magnitude, Scalar(20.0), magnitude)
 
-        // Crop the spectrum, if it has an odd number of rows or columns
-        val rect = Rect(0, 0, magnitude.cols() and -2, magnitude.rows() and -2)
-        val cropped = Mat(magnitude, rect)
-        magnitude.release()
+        val result = Mat()
+        Core.normalize(magnitude, result, 0.0, 255.0, Core.NORM_MINMAX, CvType.CV_8UC1)
 
-        // Rearrange the quadrants of Fourier image so that the origin is at the image center
-        val cx = cropped.cols() / 2
-        val cy = cropped.rows() / 2
-
-        val q0 = Mat(cropped, Rect(0, 0, cx, cy))
-        val q1 = Mat(cropped, Rect(cx, 0, cx, cy))
-        val q2 = Mat(cropped, Rect(0, cy, cx, cy))
-        val q3 = Mat(cropped, Rect(cx, cy, cx, cy))
-
-        val tmp = Mat()
-        q0.copyTo(tmp)
-        q3.copyTo(q0)
-        tmp.copyTo(q3)
-        q1.copyTo(tmp)
-        q2.copyTo(q1)
-        tmp.copyTo(q2)
-
-        tmp.release()
-        q0.release()
-        q1.release()
-        q2.release()
-        q3.release()
-
-        Core.normalize(cropped, cropped, 0.0, 255.0, Core.NORM_MINMAX)
-
-        val resultMat = Mat()
-        cropped.convertTo(resultMat, CvType.CV_8UC1)
-        cropped.release()
-
-        // Convert grayscale to BGR to be displayed
-        val bgrMat = Mat()
-        Imgproc.cvtColor(resultMat, bgrMat, Imgproc.COLOR_GRAY2BGR)
-        resultMat.release()
-
-
-        return Image(bgrMat)
+        return result
     }
 }

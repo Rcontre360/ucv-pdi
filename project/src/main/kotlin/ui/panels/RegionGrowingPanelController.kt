@@ -13,8 +13,8 @@ import javafx.scene.shape.Circle
 import javafx.stage.Stage
 import org.pdi.core.AppState
 import org.pdi.core.Image
-import org.pdi.io.toWritableImage
 import org.opencv.core.Point
+import org.pdi.io.toBufferedImage
 
 class RegionGrowingPanelController {
 
@@ -46,7 +46,7 @@ class RegionGrowingPanelController {
     fun initialize(appState: AppState, image: Image) {
         this.appState = appState
         this.image = image
-        regionGrowingImageView.image = image.image.toWritableImage()
+        regionGrowingImageView.image = javafx.embed.swing.SwingFXUtils.toFXImage(image.image.toBufferedImage(), null)
         regionGrowingImageView.isPreserveRatio = true
 
         // Mode ComboBox setup

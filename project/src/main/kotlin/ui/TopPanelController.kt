@@ -5,10 +5,10 @@ import javafx.fxml.FXMLLoader
 import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.control.Alert
-import javafx.scene.control.Alert.AlertType
 import javafx.stage.Modality
 import javafx.stage.Stage
 import org.pdi.core.AppState
+import org.pdi.ui.panels.DFTPreviewPanelController // New import
 import org.pdi.ui.panels.HistogramPanelController
 import org.pdi.ui.panels.LineProfilePanelController
 import org.pdi.ui.panels.RegionGrowingPanelController
@@ -154,12 +154,28 @@ class TopPanelController {
 
     @FXML
     fun applyDFT() {
-        appState.applyDFT()
+        val currentImage = appState.context.currentImage
+        if (currentImage == null) {
+            showAlert("No Image Selected", "No image loaded.")
+            return
+        }
+
+        val loader = FXMLLoader(javaClass.getResource("/panels/DFTPreviewPanel.fxml"))
+        val root = loader.load<Parent>()
+        val dftPreviewPanelController: DFTPreviewPanelController = loader.getController()
+        dftPreviewPanelController.setup(appState, currentImage.dft())
+
+        val stage = Stage()
+        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.initOwner(primaryStage)
+        stage.title = "DFT Preview and Filter"
+        stage.scene = Scene(root)
+        stage.show()
     }
 
     // utility alert
     private fun showAlert(title: String, message: String) {
-        val alert = Alert(AlertType.INFORMATION)
+        val alert = Alert(Alert.AlertType.INFORMATION)
         alert.title = title
         alert.headerText = null
         alert.contentText = message
