@@ -50,4 +50,5 @@ sealed class UpdateType {
     object DFTUpdate : UpdateType()
     data class DFTFilter(val type: FilterType, val threshold: Double, val preserveColor: Boolean) : UpdateType()
     data class KMeansQuantization(val k: Int) : UpdateType()
+    data class UniformQuantization(val bits: Int) : UpdateType()
 }

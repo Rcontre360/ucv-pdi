@@ -509,7 +509,11 @@ class Image(val image: Mat) {
 
     // apply a color modification to each pixel
     private fun applyPerPixel(processor: PixelProcessor<DoubleArray>): Image {
-        val newImage = Mat.zeros(image.size(), image.type())
+        // Determine the type for the new image.
+        // If the original image had 1 channel (Grayscale), assume the processor returns 1 channel.
+        // Otherwise (3 or 4 channels), assume the processor returns 3 channels (BGR).
+        val newImageType = if (image.channels() == 1) CvType.CV_8UC1 else CvType.CV_8UC3
+        val newImage = Mat.zeros(image.size(), newImageType)
 
         readAllPixels {x,y,color ->
             val newRgbValue = processor(x, y, color)
@@ -854,5 +858,29 @@ class Image(val image: Mat) {
         centers.release()
 
         return Image(quantizedBgrMat)
+    }
+
+    fun uniformQuantization(bits: Int): Image {
+        if (bits < 0 || bits > 8) {
+            throw IllegalArgumentException("Bits per channel must be between 0 and 8.")
+        }
+        if (bits == 8) {
+            return this // No quantization needed if using 8 bits
+        }
+        if (bits == 0) {
+            // All pixels become black if 0 bits are used
+            return Image(Mat.zeros(image.size(), image.type()))
+        }
+
+        // Calculate the step size for quantization
+        val levels = (1 shl bits) // 2^bits
+        val step = 256.0 / levels // Size of each quantization step
+
+        return applyPerPixel { _, _, color ->
+            val b = (color[0] / step).toInt() * step
+            val g = (color[1] / step).toInt() * step
+            val r = (color[2] / step).toInt() * step
+            doubleArrayOf(b, g, r).map { it.coerceIn(0.0, 255.0) }.toDoubleArray()
+        }
     }
 }

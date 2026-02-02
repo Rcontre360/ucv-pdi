@@ -169,6 +169,10 @@ class AppState {
         update(UpdateType.KMeansQuantization(k))
     }
 
+    fun applyUniformQuantization(bits: Int) {
+        update(UpdateType.UniformQuantization(bits))
+    }
+
     // check if the context has changed. If so we will do other thigns on he update function..
     private fun isContextDefault(context: StateContext): Boolean {
         val default = StateContext()
@@ -357,6 +361,10 @@ class AppState {
             }
             is UpdateType.KMeansQuantization -> {
                 _currentProcessedBaseImage = context.currentImage?.kMeansQuantization(updateType.k)
+                newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.UniformQuantization -> {
+                _currentProcessedBaseImage = context.currentImage?.uniformQuantization(updateType.bits)
                 newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
         }

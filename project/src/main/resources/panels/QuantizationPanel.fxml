@@ -20,8 +20,14 @@
 
     <!-- K-Means specific controls will go here -->
     <VBox fx:id="kmeansControls" spacing="5" alignment="CENTER_LEFT">
-        <Label text="Number of Colors (K):" style="-fx-font-weight: bold;"/>
+        <Label fx:id="uniqueColorsLabel"  text="Number of Colors (K):" style="-fx-font-weight: bold;"/>
         <Spinner fx:id="kSpinner" prefWidth="80" editable="true"/>
+    </VBox>
+
+    <!-- Uniform Quantization specific controls will go here -->
+    <VBox fx:id="uniformQuantizationControls" spacing="5" alignment="CENTER_LEFT" visible="false">
+        <Label text="Bits per Channel (0-8):" style="-fx-font-weight: bold;"/>
+        <Spinner fx:id="bitsSpinner" prefWidth="80" editable="true"/>
     </VBox>
 
     <HBox spacing="10" alignment="CENTER">
