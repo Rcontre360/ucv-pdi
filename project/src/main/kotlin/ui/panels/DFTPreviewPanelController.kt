@@ -9,12 +9,8 @@ import javafx.scene.image.ImageView
 import javafx.stage.Stage
 import org.opencv.core.Mat
 import org.pdi.core.AppState
+import org.pdi.core.FilterType
 import org.pdi.io.toBufferedImage
-
-enum class FilterType {
-    LOW_PASS,
-    HIGH_PASS
-}
 
 class DFTPreviewPanelController {
 
@@ -63,8 +59,8 @@ class DFTPreviewPanelController {
     @FXML
     fun applyFilter() {
         val filterType = filterTypeComboBox.value
-        val threshold = thresholdSlider.value.toFloat()
-        //appState.applyDTFFilter(filterType, threshold, dftData)
+        val threshold = thresholdSlider.value / 100.0
+        appState.applyDFTFilter(filterType, threshold)
         cancel()
     }
 
