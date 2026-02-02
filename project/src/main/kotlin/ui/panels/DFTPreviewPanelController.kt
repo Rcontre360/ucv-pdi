@@ -7,6 +7,8 @@ import javafx.scene.control.Label
 import javafx.scene.control.Slider
 import javafx.scene.image.ImageView
 import javafx.stage.Stage
+import org.opencv.core.Core
+import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.pdi.core.AppState
 import org.pdi.core.FilterType
@@ -16,6 +18,9 @@ class DFTPreviewPanelController {
 
     @FXML
     private lateinit var dftImagePanel: ImageView
+
+    @FXML
+    private lateinit var filterMaskPreview: ImageView
 
     @FXML
     private lateinit var filterTypeComboBox: ComboBox<FilterType>
@@ -41,11 +46,12 @@ class DFTPreviewPanelController {
         filterTypeComboBox.selectionModel.select(FilterType.LOW_PASS)
 
         filterTypeComboBox.selectionModel.selectedItemProperty().addListener { _, _, _ ->
-
+            updateFilterPreview()
         }
 
         thresholdSlider.valueProperty().addListener { _, _, newValue ->
             thresholdLabel.text = "Threshold: ${newValue.toInt()}%"
+            updateFilterPreview()
         }
     }
 
@@ -53,7 +59,27 @@ class DFTPreviewPanelController {
         this.appState = appState
         this.dftImage = dftImage
 
-        dftImagePanel.image =javafx.embed.swing.SwingFXUtils.toFXImage(dftImage.toBufferedImage(), null)
+        dftImagePanel.image = javafx.embed.swing.SwingFXUtils.toFXImage(dftImage.toBufferedImage(), null)
+        updateFilterPreview()
+    }
+
+    private fun updateFilterPreview() {
+        if (!::dftImage.isInitialized) return
+
+        val filterType = filterTypeComboBox.value
+        val threshold = thresholdSlider.value / 100.0
+        val isInverted = filterType == FilterType.HIGH_PASS
+
+        val mask = org.pdi.core.createFilterMask(dftImage.width(), dftImage.height(), threshold, isInverted)
+
+        val displayMask = Mat()
+        Core.normalize(mask, displayMask, 0.0, 255.0, Core.NORM_MINMAX)
+        displayMask.convertTo(displayMask, CvType.CV_8U)
+
+        filterMaskPreview.image = javafx.embed.swing.SwingFXUtils.toFXImage(displayMask.toBufferedImage(), null)
+
+        mask.release()
+        displayMask.release()
     }
 
     @FXML
