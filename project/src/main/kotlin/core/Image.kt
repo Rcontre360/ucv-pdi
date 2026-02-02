@@ -632,6 +632,26 @@ class Image(val image: Mat) {
         val result = Mat()
         Core.normalize(magnitude, result, 0.0, 255.0, Core.NORM_MINMAX, CvType.CV_8UC1)
 
+        val cx = result.cols() / 2
+        val cy = result.rows() / 2
+
+        // Create a ROI (Region of Interest) for each quadrant
+        val q0 = result.submat(Rect(0, 0, cx, cy))   // Top-Left
+        val q1 = result.submat(Rect(cx, 0, cx, cy))  // Top-Right
+        val q2 = result.submat(Rect(0, cy, cx, cy))  // Bottom-Left
+        val q3 = result.submat(Rect(cx, cy, cx, cy)) // Bottom-Right
+
+        // Swap quadrants (Top-Left with Bottom-Right)
+        val tmp = Mat()
+        q0.copyTo(tmp)
+        q3.copyTo(q0)
+        tmp.copyTo(q3)
+
+        // Swap quadrants (Top-Right with Bottom-Left)
+        q1.copyTo(tmp)
+        q2.copyTo(q1)
+        tmp.copyTo(q2)
+
         return result
     }
 }
