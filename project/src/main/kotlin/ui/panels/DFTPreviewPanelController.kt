@@ -2,6 +2,7 @@ package org.pdi.ui.panels
 
 import javafx.fxml.FXML
 import javafx.scene.control.Button
+import javafx.scene.control.CheckBox
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Label
 import javafx.scene.control.Slider
@@ -24,6 +25,9 @@ class DFTPreviewPanelController {
 
     @FXML
     private lateinit var filterTypeComboBox: ComboBox<FilterType>
+
+    @FXML
+    private lateinit var colorCheckBox: CheckBox
 
     @FXML
     private lateinit var thresholdSlider: Slider
@@ -87,7 +91,8 @@ class DFTPreviewPanelController {
     fun applyFilter() {
         val filterType = filterTypeComboBox.value
         val threshold = thresholdSlider.value / 100.0
-        appState.applyDFTFilter(filterType, threshold)
+        val preserveColor = colorCheckBox.isSelected
+        appState.applyDFTFilter(filterType, threshold, preserveColor)
         cancel()
     }
 

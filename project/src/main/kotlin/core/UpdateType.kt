@@ -48,5 +48,5 @@ sealed class UpdateType {
     data class UAdjustment(val newFactor: Float) : UpdateType()
     data class VAdjustment(val newFactor: Float) : UpdateType()
     object DFTUpdate : UpdateType()
-    data class DFTFilter(val type: FilterType, val threshold: Double) : UpdateType()
+    data class DFTFilter(val type: FilterType, val threshold: Double, val preserveColor: Boolean) : UpdateType()
 }

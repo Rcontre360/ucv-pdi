@@ -161,8 +161,8 @@ class AppState {
         update(UpdateType.DFTUpdate)
     }
 
-    fun applyDFTFilter(filterType: FilterType, threshold: Double) {
-        update(UpdateType.DFTFilter(filterType, threshold))
+    fun applyDFTFilter(filterType: FilterType, threshold: Double, preserveColor: Boolean) {
+        update(UpdateType.DFTFilter(filterType, threshold, preserveColor))
     }
 
     // check if the context has changed. If so we will do other thigns on he update function..
@@ -346,8 +346,8 @@ class AppState {
             }
             is UpdateType.DFTFilter -> {
                 _currentProcessedBaseImage = when (updateType.type) {
-                    FilterType.LOW_PASS -> context.currentImage?.lowPass(updateType.threshold)
-                    FilterType.HIGH_PASS -> context.currentImage?.highPass(updateType.threshold)
+                    FilterType.LOW_PASS -> context.currentImage?.lowPass(updateType.threshold, updateType.preserveColor)
+                    FilterType.HIGH_PASS -> context.currentImage?.highPass(updateType.threshold, updateType.preserveColor)
                 }
                 newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
