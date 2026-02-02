@@ -3,7 +3,7 @@ package org.pdi.ui.panels
 import javafx.fxml.FXML
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Label
-import javafx.scene.control.Slider
+import javafx.scene.control.Spinner
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
 import org.pdi.core.AppState
@@ -17,7 +17,7 @@ class QuantizationPanelController {
     private lateinit var kmeansControls: VBox
 
     @FXML
-    private lateinit var kSlider: Slider
+    private lateinit var kSpinner: Spinner<Int>
 
     @FXML
     private lateinit var kValueLabel: Label
@@ -26,27 +26,33 @@ class QuantizationPanelController {
 
     @FXML
     fun initialize() {
-        methodComboBox.items.addAll("K-Means")
-        methodComboBox.selectionModel.select("K-Means") // Default to K-Means
+        // 1. Initialize the Value Factory (Min: 2, Max: 256, Initial: 8)
+        val valueFactory = javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory(2, 256, 8)
+        kSpinner.valueFactory = valueFactory
 
-        // K-Means specific controls logic
+        methodComboBox.items.addAll("K-Means")
+        methodComboBox.selectionModel.select("K-Means")
+
         methodComboBox.selectionModel.selectedItemProperty().addListener { _, _, newValue ->
             kmeansControls.isVisible = newValue == "K-Means"
         }
 
-        kSlider.valueProperty().addListener { _, _, newValue ->
-            kValueLabel.text = newValue.toInt().toString()
+        // Now newValue will never be null because the factory guarantees a range
+        kSpinner.valueProperty().addListener { _, _, newValue ->
+            kValueLabel.text = newValue.toString()
+        }
+        kSpinner.focusedProperty().addListener { _, _, newValue ->
+            if (!newValue) kSpinner.increment(0) // This force-syncs the typed text to the value
         }
     }
 
     fun setup(appState: AppState) {
         this.appState = appState
-        // Potentially load initial values from appState if needed
     }
 
     @FXML
     fun applyQuantization() {
-        val k = kSlider.value.toInt()
+        val k = kSpinner.value.toInt()
         appState.applyKMeansQuantization(k)
         cancel()
     }

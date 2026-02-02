@@ -8,6 +8,8 @@
 <?import javafx.scene.layout.HBox?>
 
 <?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Spinner?>
 <VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.panels.QuantizationPanelController" spacing="10" alignment="TOP_CENTER">
     <padding>
         <Insets top="20" right="20" bottom="20" left="20"/>
@@ -19,10 +21,7 @@
     <!-- K-Means specific controls will go here -->
     <VBox fx:id="kmeansControls" spacing="5" alignment="CENTER_LEFT">
         <Label text="Number of Colors (K):" style="-fx-font-weight: bold;"/>
-        <HBox spacing="5" alignment="CENTER_LEFT">
-            <Slider fx:id="kSlider" min="2" max="256" value="8"/>
-            <Label fx:id="kValueLabel" text="8"/>
-        </HBox>
+        <Spinner fx:id="kSpinner" prefWidth="80" editable="true"/>
     </VBox>
 
     <HBox spacing="10" alignment="CENTER">
