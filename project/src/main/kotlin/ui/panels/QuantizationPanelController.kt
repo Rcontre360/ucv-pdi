@@ -47,12 +47,12 @@ class QuantizationPanelController {
             if (!newValue) bitsSpinner.increment(0) // This force-syncs the typed text to the value
         }
 
-        methodComboBox.items.addAll("K-Means", "Uniform Quantization")
+        methodComboBox.items.addAll("K-Means", "Uniform Quantization", "Median Cut")
         methodComboBox.selectionModel.select("K-Means") // Default to K-Means
 
         // Listener to show/hide controls based on selected method
         methodComboBox.selectionModel.selectedItemProperty().addListener { _, _, newValue ->
-            kmeansControls.isVisible = newValue == "K-Means"
+            kmeansControls.isVisible = (newValue == "K-Means" || newValue == "Median Cut")
             uniformQuantizationControls.isVisible = newValue == "Uniform Quantization"
         }
     }
@@ -89,6 +89,15 @@ class QuantizationPanelController {
                     return
                 }
                 appState.applyUniformQuantization(bits)
+            }
+            "Median Cut" -> {
+                val k = kSpinner.value
+                val uniqueColors = appState.context.currentImage?.metadata?.uniqueColors ?: 256
+                if (k < 2 || k > uniqueColors) {
+                    showAlert("Invalid Input", "Number of colors (K) must be between 2 and $uniqueColors.")
+                    return
+                }
+                appState.applyMedianCutQuantization(k)
             }
             else -> {
                 showAlert("Error", "Please select a quantization method.")

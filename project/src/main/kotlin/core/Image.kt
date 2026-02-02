@@ -51,8 +51,16 @@ class Image(val image: Mat) {
     val metadata = Metadata(
         width = image.width(),
         height = image.height(),
-        uniqueColors = getUniqueColors() ,
-        bitsPerPixel = if (isBinary) {1} else{ if (isGrayscale){8} else {24} },
+        uniqueColors = getUniqueColors(),
+        bitsPerPixel = if (isBinary) {
+            1
+        } else {
+            if (isGrayscale) {
+                8
+            } else {
+                24
+            }
+        },
     )
     val buff: BufferedImage by lazy { image.toBufferedImage() }
 
@@ -76,8 +84,8 @@ class Image(val image: Mat) {
 
         for (y in 0 until metadata.height) {
             for (x in 0 until metadata.width) {
-                val srcColor = image.get(y,x)
-                val dstColor = resImg.image.get(y,x)
+                val srcColor = image.get(y, x)
+                val dstColor = resImg.image.get(y, x)
 
                 val srcRed = srcColor[2].toInt()
                 val srcGreen = srcColor[1].toInt()
@@ -137,8 +145,16 @@ class Image(val image: Mat) {
                 }
 
                 // then we interpolate points in the middle based on their distance
-                val prevY = if (prevX < 0) {lut[nextX]} else {lut[prevX]}
-                val nextY = if (nextX >= lut.size) {lut[prevX]} else {lut[nextX]}
+                val prevY = if (prevX < 0) {
+                    lut[nextX]
+                } else {
+                    lut[prevX]
+                }
+                val nextY = if (nextX >= lut.size) {
+                    lut[prevX]
+                } else {
+                    lut[nextX]
+                }
                 for (j in i until nextX) {
                     // distance based "t"
                     val t = (j - prevX).toFloat() / (nextX - prevX)
@@ -154,13 +170,13 @@ class Image(val image: Mat) {
 
     // applies a kernel to the current image and returns its result
     // this function calculates the window we must send to the kernel and uses the convolute function to get the value
-    fun applyKernel(kernel:Kernel):Image{
+    fun applyKernel(kernel: Kernel): Image {
         // for each pixel we do the following. Calculate the window surrounding that pixel, the size of the kernel
         return applyPerPixel { x, y, _ ->
             // the matrixes that will hold the image windows
-            val imgR = Array(kernel.rows) {FloatArray(kernel.cols)}
-            val imgG = Array(kernel.rows) {FloatArray(kernel.cols)}
-            val imgB = Array(kernel.rows) {FloatArray(kernel.cols)}
+            val imgR = Array(kernel.rows) { FloatArray(kernel.cols) }
+            val imgG = Array(kernel.rows) { FloatArray(kernel.cols) }
+            val imgB = Array(kernel.rows) { FloatArray(kernel.cols) }
 
             for (i in 0 until kernel.rows) {
                 for (j in 0 until kernel.cols) {
@@ -168,8 +184,8 @@ class Image(val image: Mat) {
                     val imageX = (x - kernel.cols / 2 + j)
                     val imageY = (y - kernel.rows / 2 + i)
                     // if the window is OUTSIDE the image. We apply some "padding" with black, this wont mess with borders
-                    val color = if (imageX < 0 || imageX >= image.width() || imageY < 0 || imageY >= image.height()){
-                        doubleArrayOf(0.0,0.0,0.0)
+                    val color = if (imageX < 0 || imageX >= image.width() || imageY < 0 || imageY >= image.height()) {
+                        doubleArrayOf(0.0, 0.0, 0.0)
                     } else {
                         image.get(imageY, imageX)
                     }
@@ -191,7 +207,7 @@ class Image(val image: Mat) {
 
     // this applies a given border operator (we can even mix them since this receives 2 kernels)
     // it applies the kernels and calculates the given gradient
-    fun applyBorderOperator(kernelX:Kernel,kernelY:Kernel):Image{
+    fun applyBorderOperator(kernelX: Kernel, kernelY: Kernel): Image {
         val imageX = applyKernel(kernelX)
         val imageY = applyKernel(kernelY)
 
@@ -201,9 +217,9 @@ class Image(val image: Mat) {
             val cy = imageY.image.get(y, x)
 
             // sqrt( x^2 + y^2 ) onn each channel
-            val r = sqrt((cx[2]*cx[2] + cy[2] * cy[2])).toInt().coerceIn(0, 255)
-            val g = sqrt((cx[1]*cx[1] + cy[1] * cy[1])).toInt().coerceIn(0, 255)
-            val b = sqrt((cx[0]*cx[0] + cy[0] * cy[0])).toInt().coerceIn(0, 255)
+            val r = sqrt((cx[2] * cx[2] + cy[2] * cy[2])).toInt().coerceIn(0, 255)
+            val g = sqrt((cx[1] * cx[1] + cy[1] * cy[1])).toInt().coerceIn(0, 255)
+            val b = sqrt((cx[0] * cx[0] + cy[0] * cy[0])).toInt().coerceIn(0, 255)
 
             doubleArrayOf(b.toDouble(), g.toDouble(), r.toDouble())
         }
@@ -252,7 +268,7 @@ class Image(val image: Mat) {
     fun changeContrast(factor: Float): Image {
         val min = (127 * factor)
         val max = 255 - (127 * factor)
-        val newHistogram = histogram.stretch(min.toInt(),max.toInt())
+        val newHistogram = histogram.stretch(min.toInt(), max.toInt())
 
         return applyPerPixel { _, _, color ->
             // we just map using the new histogram
@@ -283,7 +299,11 @@ class Image(val image: Mat) {
                     // which color is this interval? if we split the 0-255 intervals, the first interval obtained will
                     // always be BLACK, the next one obviously needs to be white, since black again is like having a single interval.
                     // we keep doing this until reaching the last interval
-                    val intensity = if (i % 2 == 0) {0} else {255}
+                    val intensity = if (i % 2 == 0) {
+                        0
+                    } else {
+                        255
+                    }
                     return intensity
                 }
             }
@@ -336,21 +356,22 @@ class Image(val image: Mat) {
                 when (algo) {
                     ZoomAlgorithm.CLOSEST_NEIGHTBOUR -> {
                         // when factor < 0 it acts as a multiplicationn. Sometimes it gets out of range
-                        val srcX = (x / factor).toInt().coerceIn(0,metadata.width - 1)
-                        val srcY = (y / factor).toInt().coerceIn(0,metadata.height - 1)
+                        val srcX = (x / factor).toInt().coerceIn(0, metadata.width - 1)
+                        val srcY = (y / factor).toInt().coerceIn(0, metadata.height - 1)
                         val pixel = image.get(srcY, srcX)
                         newImg.put(y, x, *pixel)
                     }
+
                     ZoomAlgorithm.LINEAR_INTERPOLATION -> {
                         // this was implemented given the pdfs sent on classes
-                        val a = (x/factor) - (x / factor).toInt()
-                        val b = (y/factor) - (y / factor).toInt()
-                        val srcX = (x / factor).toInt().coerceIn(0,metadata.width - 2)
-                        val srcY = (y / factor).toInt().coerceIn(0,metadata.height - 2)
+                        val a = (x / factor) - (x / factor).toInt()
+                        val b = (y / factor) - (y / factor).toInt()
+                        val srcX = (x / factor).toInt().coerceIn(0, metadata.width - 2)
+                        val srcY = (y / factor).toInt().coerceIn(0, metadata.height - 2)
 
                         // given the 4 pixel values, it interpolates the value within them
-                        fun interpolateChannel(is_v:Double, ds:Double, ir:Double, dr:Double): Double{
-                            return ((1-a) * (1-b) * is_v + a*(1-b) * ds + (1-a)*b*ir + a*b*dr);
+                        fun interpolateChannel(is_v: Double, ds: Double, ir: Double, dr: Double): Double {
+                            return ((1 - a) * (1 - b) * is_v + a * (1 - b) * ds + (1 - a) * b * ir + a * b * dr);
                         }
 
                         val p_is = image.get(srcY, srcX)
@@ -376,7 +397,7 @@ class Image(val image: Mat) {
         // Create a single-channel grayscale version of the input image for floodFill
         val singleChannelImage = Mat()
         // 'image' is the 3-channel grayscale input where R=G=B, so COLOR_BGR2GRAY correctly extracts one channel
-        Imgproc.cvtColor(image, singleChannelImage, Imgproc.COLOR_BGR2GRAY) 
+        Imgproc.cvtColor(image, singleChannelImage, Imgproc.COLOR_BGR2GRAY)
 
         // Mask must be 2 pixels larger than the image and 8-bit single channel.
         val mask = Mat.zeros(metadata.height + 2, metadata.width + 2, CvType.CV_8UC1)
@@ -412,7 +433,8 @@ class Image(val image: Mat) {
                 if (label > 0) {
                     val tint = regionTints[label]
                     val (tintR, tintG, tintB) = listOf(tint.red / 255.0, tint.green / 255.0, tint.blue / 255.0)
-                    resultMat.put(y, x,
+                    resultMat.put(
+                        y, x,
                         (originalPixel * tintB).coerceIn(0.0, 255.0),
                         (originalPixel * tintG).coerceIn(0.0, 255.0),
                         (originalPixel * tintR).coerceIn(0.0, 255.0)
@@ -455,12 +477,18 @@ class Image(val image: Mat) {
     // given an axis, line and channel. We get the profile of the linne which is just a list of pairs (x,f(x))
     fun getLineProfile(axis: Char, lineNumber: Int, channel: Char): List<Pair<Int, Int>> {
         val profile = mutableListOf<Pair<Int, Int>>()
-        val limit = if (axis == 'X') {image.width()} else {image.height()}
+        val limit = if (axis == 'X') {
+            image.width()
+        } else {
+            image.height()
+        }
 
-        for (i in 0 until limit){
-            val color = if (axis == 'X')
-                {image.get(lineNumber,i)} else
-                {image.get(i,lineNumber)}
+        for (i in 0 until limit) {
+            val color = if (axis == 'X') {
+                image.get(lineNumber, i)
+            } else {
+                image.get(i, lineNumber)
+            }
 
             val value = when (channel) {
                 'R' -> color[2].toInt()
@@ -476,18 +504,18 @@ class Image(val image: Mat) {
     }
 
     // easy, just count how many colors are there
-    private fun getUniqueColors(): Int{
+    private fun getUniqueColors(): Int {
         val all: MutableSet<String> = mutableSetOf()
-        readAllPixels {x,y,color ->
+        readAllPixels { x, y, color ->
             all.add(color.joinToString())
         }
         return all.size
     }
 
     // checks if the image is grayscale, readAllPixels must return something
-    private fun getIsGrayscale(): Boolean{
+    private fun getIsGrayscale(): Boolean {
         var res = true
-        readAllPixels {x,y,color ->
+        readAllPixels { x, y, color ->
             // if any color is not the same as the others res will be false (false & true : false)
             res = res && (color[0] == color[1] && color[1] == color[2])
             0
@@ -496,10 +524,10 @@ class Image(val image: Mat) {
     }
 
     // checks if the image is binary
-    private fun getIsBinary(): Boolean{
-        val bin = listOf(0.0,255.0)
+    private fun getIsBinary(): Boolean {
+        val bin = listOf(0.0, 255.0)
         var res = true
-        readAllPixels {x,y,color ->
+        readAllPixels { x, y, color ->
             // if any color is not binary res will be false (false & true : false)
             res = res && ((color[0] in bin) && (color[1] in bin) && (color[2] in bin))
             0
@@ -515,7 +543,7 @@ class Image(val image: Mat) {
         val newImageType = if (image.channels() == 1) CvType.CV_8UC1 else CvType.CV_8UC3
         val newImage = Mat.zeros(image.size(), newImageType)
 
-        readAllPixels {x,y,color ->
+        readAllPixels { x, y, color ->
             val newRgbValue = processor(x, y, color)
             newImage.put(y, x, *newRgbValue)
         }
@@ -679,7 +707,7 @@ class Image(val image: Mat) {
 
             val inverseDft = Mat()
             Core.idft(filteredDft, inverseDft, Core.DFT_REAL_OUTPUT + Core.DFT_SCALE)
-            
+
             val filteredPaddedY = Mat()
             inverseDft.convertTo(filteredPaddedY, CvType.CV_8U)
 
@@ -693,7 +721,7 @@ class Image(val image: Mat) {
                 Imgproc.cvtColor(filteredY, grayBgr, Imgproc.COLOR_GRAY2BGR)
                 grayBgr
             }
-            
+
             // Release all intermediate mats
             yuvChannels.forEach { it.release() }
             dft.release()
@@ -719,7 +747,7 @@ class Image(val image: Mat) {
 
             val filteredDft = Mat()
             Core.multiply(dft, filterComplex, filteredDft)
-            
+
             shiftQuadrants(filteredDft) // Shift back before inverse DFT
 
             val inverseDft = Mat()
@@ -760,7 +788,7 @@ class Image(val image: Mat) {
 
             val filteredPaddedY = Mat()
             inverseDft.convertTo(filteredPaddedY, CvType.CV_8U)
-            
+
             // Crop the filtered Y channel back to the original image size
             val filteredY = Mat(filteredPaddedY, Rect(0, 0, uChannel.width(), uChannel.height()))
 
@@ -843,7 +871,7 @@ class Image(val image: Mat) {
         val quantizedBgrMat = Mat(originalHeight, originalWidth, CvType.CV_8UC3)
         for (i in 0 until originalHeight * originalWidth) {
             val label = labels.get(i, 0)[0].toInt()
-            
+
             // Get the center color vector for this label as bytes
             val centerRowMat = centers.row(label) // centerRowMat is now CV_8U
             val centerColorBytes = ByteArray(3) // Use ByteArray for CV_8U data
@@ -882,5 +910,137 @@ class Image(val image: Mat) {
             val r = (color[2] / step).toInt() * step
             doubleArrayOf(b, g, r).map { it.coerceIn(0.0, 255.0) }.toDoubleArray()
         }
+    }
+
+    // Helper data class for Median Cut
+    private data class ColorBucket(val pixels: MutableList<DoubleArray>) {
+        var minB = 256.0;
+        var maxB = -1.0
+        var minG = 256.0;
+        var maxG = -1.0
+        var minR = 256.0;
+        var maxR = -1.0
+
+        init {
+            if (pixels.isNotEmpty()) {
+                updateBounds()
+            }
+        }
+
+        fun updateBounds() {
+            minB = 256.0; maxB = -1.0
+            minG = 256.0; maxG = -1.0
+            minR = 256.0; maxR = -1.0
+            pixels.forEach { pixel ->
+                minB = minOf(minB, pixel[0])
+                maxB = maxOf(maxB, pixel[0])
+                minG = minOf(minG, pixel[1])
+                maxG = maxOf(maxG, pixel[1])
+                minR = minOf(minR, pixel[2])
+                maxR = maxOf(maxR, pixel[2])
+            }
+        }
+
+        fun getLongestDimension(): Int {
+            val rangeB = maxB - minB
+            val rangeG = maxG - minG
+            val rangeR = maxR - minR
+
+            return when {
+                rangeR >= rangeG && rangeR >= rangeB -> 2 // Red is longest
+                rangeG >= rangeR && rangeG >= rangeB -> 1 // Green is longest
+                else -> 0 // Blue is longest or equal
+            }
+        }
+
+        fun getAverageColor(): DoubleArray {
+            if (pixels.isEmpty()) return doubleArrayOf(0.0, 0.0, 0.0)
+            var sumB = 0.0;
+            var sumG = 0.0;
+            var sumR = 0.0
+            pixels.forEach { pixel ->
+                sumB += pixel[0]
+                sumG += pixel[1]
+                sumR += pixel[2]
+            }
+            return doubleArrayOf(sumB / pixels.size, sumG / pixels.size, sumR / pixels.size)
+        }
+    }
+
+    fun medianCutQuantization(k: Int): Image {
+        if (k < 2 || k > 256) { // Limit k to a reasonable range
+            throw IllegalArgumentException("Number of colors (k) must be between 2 and 256.")
+        }
+
+        // 1. Extract all pixel colors
+        val allPixels = mutableListOf<DoubleArray>()
+        readAllPixels { _, _, color -> allPixels.add(color.clone()) } // Clone to avoid modifying original array
+
+        if (allPixels.isEmpty()) return this // No pixels to quantize
+
+        // 2. Initialize with one bucket containing all pixels
+        val buckets = mutableListOf(ColorBucket(allPixels))
+
+        // 3. Recursively split buckets until k colors are achieved
+        while (buckets.size < k) {
+            // Find the bucket with the largest range
+            val longestBucket = buckets.maxByOrNull { bucket ->
+                val rangeB = bucket.maxB - bucket.minB
+                val rangeG = bucket.maxG - bucket.minG
+                val rangeR = bucket.maxR - bucket.minR
+                maxOf(rangeB, rangeG, rangeR)
+            } ?: break // Should not happen if buckets not empty
+
+            if (longestBucket.pixels.size < 2) {
+                // Cannot split further if bucket has 0 or 1 pixel
+                break
+            }
+
+            buckets.remove(longestBucket)
+
+            // Split the longest bucket
+            val dimension = longestBucket.getLongestDimension()
+            longestBucket.pixels.sortBy { it[dimension] } // Sort by the longest dimension
+            val medianIndex = longestBucket.pixels.size / 2
+
+            val bucket1Pixels = longestBucket.pixels.subList(0, medianIndex)
+            val bucket2Pixels = longestBucket.pixels.subList(medianIndex, longestBucket.pixels.size)
+
+            if (bucket1Pixels.isNotEmpty()) {
+                buckets.add(ColorBucket(bucket1Pixels))
+            }
+            if (bucket2Pixels.isNotEmpty()) {
+                buckets.add(ColorBucket(bucket2Pixels))
+            }
+            // If the split didn't increase the number of buckets, break to prevent infinite loop
+            if (buckets.size == buckets.size - 1 + (if (bucket1Pixels.isNotEmpty()) 1 else 0) + (if (bucket2Pixels.isNotEmpty()) 1 else 0)) {
+                break
+            }
+        }
+
+        // 4. Generate the quantized palette (average colors of final buckets)
+        val palette = buckets.map { it.getAverageColor() }
+
+        // 5. Reconstruct the image using the new palette
+        return applyPerPixel { _, _, pixelColor ->
+            findClosestColor(pixelColor, palette)
+        }
+    }
+
+    private fun findClosestColor(pixel: DoubleArray, palette: List<DoubleArray>): DoubleArray {
+        var minDistance = Double.MAX_VALUE
+        var closestColor: DoubleArray = doubleArrayOf(0.0, 0.0, 0.0)
+
+        palette.forEach { color ->
+            val distB = pixel[0] - color[0]
+            val distG = pixel[1] - color[1]
+            val distR = pixel[2] - color[2]
+            val distance = distB * distB + distG * distG + distR * distR // Euclidean distance squared
+            if (distance < minDistance) {
+                minDistance = distance
+                closestColor = color
+            }
+        }
+        return closestColor
     }
 }
