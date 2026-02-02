@@ -605,53 +605,82 @@ class Image(val image: Mat) {
         return Image(resultMat)
     }
 
-    fun dft(): Mat {
-        val gray = Mat.zeros(image.size(), image.type())
-        if (image.channels() > 1) {
-            Imgproc.cvtColor(image, gray, Imgproc.COLOR_BGR2GRAY)
-        } else {
-            image.copyTo(gray)
-        }
+    fun dftImage(): Mat {
+        val complexImage = performDFT(this.image)
+        val magnitude = getDFTLogMagnitude(complexImage)
+        complexImage.release()
+        return magnitude
+    }
 
-        val floatGray = Mat()
-        gray.convertTo(floatGray, CvType.CV_32F)
+    fun highPass(threshold: Double): Image {
+        val dft = performDFT(this.image)
+        val filter = createFilterMask(dft.cols(), dft.rows(), threshold, inverted = true)
+        val filterPlanes = listOf(filter, filter.clone())
+        val filterComplex = Mat()
+        Core.merge(filterPlanes, filterComplex)
 
-        val fourier = Mat()
-        Core.dft(floatGray, fourier, Core.DFT_COMPLEX_OUTPUT)
+        val filteredDft = Mat()
+        Core.multiply(dft, filterComplex, filteredDft)
 
-        val planes = mutableListOf<Mat>()
-        Core.split(fourier, planes)
-
-        val magnitude = Mat()
-        Core.magnitude(planes[0], planes[1], magnitude)
-
-        Core.add(magnitude, Scalar(1.0), magnitude)
-        Core.log(magnitude, magnitude)
-        Core.multiply(magnitude, Scalar(20.0), magnitude)
+        val inverseDft = Mat()
+        Core.idft(filteredDft, inverseDft, Core.DFT_REAL_OUTPUT + Core.DFT_SCALE)
 
         val result = Mat()
-        Core.normalize(magnitude, result, 0.0, 255.0, Core.NORM_MINMAX, CvType.CV_8UC1)
+        inverseDft.convertTo(result, CvType.CV_8U)
 
-        val cx = result.cols() / 2
-        val cy = result.rows() / 2
+        // If the original image was color, convert the grayscale result back to BGR
+        val finalMat = if (image.channels() > 1) {
+            val colorMat = Mat()
+            Imgproc.cvtColor(result, colorMat, Imgproc.COLOR_GRAY2BGR)
+            colorMat
+        } else {
+            result
+        }
 
-        // Create a ROI (Region of Interest) for each quadrant
-        val q0 = result.submat(Rect(0, 0, cx, cy))   // Top-Left
-        val q1 = result.submat(Rect(cx, 0, cx, cy))  // Top-Right
-        val q2 = result.submat(Rect(0, cy, cx, cy))  // Bottom-Left
-        val q3 = result.submat(Rect(cx, cy, cx, cy)) // Bottom-Right
+        dft.release()
+        filter.release()
+        filterPlanes.forEach { it.release() }
+        filterComplex.release()
+        filteredDft.release()
+        inverseDft.release()
+        if (image.channels() > 1) result.release() // release intermediate grayscale mat
 
-        // Swap quadrants (Top-Left with Bottom-Right)
-        val tmp = Mat()
-        q0.copyTo(tmp)
-        q3.copyTo(q0)
-        tmp.copyTo(q3)
+        return Image(finalMat)
+    }
 
-        // Swap quadrants (Top-Right with Bottom-Left)
-        q1.copyTo(tmp)
-        q2.copyTo(q1)
-        tmp.copyTo(q2)
+    fun lowPass(threshold: Double): Image {
+        val dft = performDFT(this.image)
+        val filter = createFilterMask(dft.cols(), dft.rows(), threshold)
+        val filterPlanes = listOf(filter, filter.clone())
+        val filterComplex = Mat()
+        Core.merge(filterPlanes, filterComplex)
 
-        return result
+        val filteredDft = Mat()
+        Core.multiply(dft, filterComplex, filteredDft)
+
+        val inverseDft = Mat()
+        Core.idft(filteredDft, inverseDft, Core.DFT_REAL_OUTPUT + Core.DFT_SCALE)
+
+        val result = Mat()
+        inverseDft.convertTo(result, CvType.CV_8U)
+
+        // If the original image was color, convert the grayscale result back to BGR
+        val finalMat = if (image.channels() > 1) {
+            val colorMat = Mat()
+            Imgproc.cvtColor(result, colorMat, Imgproc.COLOR_GRAY2BGR)
+            colorMat
+        } else {
+            result
+        }
+        
+        dft.release()
+        filter.release()
+        filterPlanes.forEach { it.release() }
+        filterComplex.release()
+        filteredDft.release()
+        inverseDft.release()
+        if (image.channels() > 1) result.release() // release intermediate grayscale mat
+
+        return Image(finalMat)
     }
 }
