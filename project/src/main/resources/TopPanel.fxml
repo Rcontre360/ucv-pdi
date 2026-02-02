@@ -17,4 +17,5 @@
     <Button text="Clear" onAction="#clearImage"/>
     <Button text="Region Growing" onAction="#showRegionGrowingPanel"/>
     <Button text="DFT" onAction="#applyDFT"/>
+    <Button text="Quantize" onAction="#showQuantizationPanel"/>
 </HBox>

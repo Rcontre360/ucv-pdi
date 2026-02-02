@@ -165,6 +165,10 @@ class AppState {
         update(UpdateType.DFTFilter(filterType, threshold, preserveColor))
     }
 
+    fun applyKMeansQuantization(k: Int) {
+        update(UpdateType.KMeansQuantization(k))
+    }
+
     // check if the context has changed. If so we will do other thigns on he update function..
     private fun isContextDefault(context: StateContext): Boolean {
         val default = StateContext()
@@ -349,6 +353,10 @@ class AppState {
                     FilterType.LOW_PASS -> context.currentImage?.lowPass(updateType.threshold, updateType.preserveColor)
                     FilterType.HIGH_PASS -> context.currentImage?.highPass(updateType.threshold, updateType.preserveColor)
                 }
+                newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.KMeansQuantization -> {
+                _currentProcessedBaseImage = context.currentImage?.kMeansQuantization(updateType.k)
                 newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
         }

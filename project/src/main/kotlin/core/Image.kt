@@ -15,6 +15,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import kotlin.random.Random
 import org.opencv.core.Core // Import Core for split/merge
+import org.opencv.core.TermCriteria
 
 // zoom algorithm type
 enum class ZoomAlgorithm {
@@ -798,5 +799,60 @@ class Image(val image: Mat) {
         Imgproc.cvtColor(yuvMat, bgrMat, Imgproc.COLOR_YUV2BGR)
         yuvMat.release()
         return bgrMat
+    }
+
+    // K-Means Quantization constant
+    private val KMEANS_MAX_ITERATIONS = 10
+
+    fun kMeansQuantization(k: Int): Image {
+        val originalHeight = image.rows()
+        val originalWidth = image.cols()
+
+        // 1. Reshape BGR image to N x 1 Mat where N is total pixels, and each row is a 3-element pixel vector (BGR)
+        val samples = image.reshape(0, originalHeight * originalWidth)
+        samples.convertTo(samples, CvType.CV_32F) // K-means expects float data
+
+        // 2. Define termination criteria
+        val criteria = TermCriteria(
+            TermCriteria.EPS + TermCriteria.MAX_ITER,
+            KMEANS_MAX_ITERATIONS,
+            1.0
+        )
+
+        // 3. Perform K-means clustering
+        val labels = Mat()
+        val centers = Mat() // This will store CV_32F centers initially
+        Core.kmeans(
+            samples,
+            k,
+            labels,
+            criteria,
+            3, // Number of attempts
+            Core.KMEANS_PP_CENTERS,
+            centers
+        )
+
+        // Convert centers to CV_8U (BGR colors) for reconstruction
+        centers.convertTo(centers, CvType.CV_8U)
+
+        // 5. Reconstruct the quantized image
+        val quantizedBgrMat = Mat(originalHeight, originalWidth, CvType.CV_8UC3)
+        for (i in 0 until originalHeight * originalWidth) {
+            val label = labels.get(i, 0)[0].toInt()
+            
+            // Get the center color vector for this label as bytes
+            val centerRowMat = centers.row(label) // centerRowMat is now CV_8U
+            val centerColorBytes = ByteArray(3) // Use ByteArray for CV_8U data
+            centerRowMat.get(0, 0, centerColorBytes) // This should work now
+
+            quantizedBgrMat.put(i / originalWidth, i % originalWidth, centerColorBytes)
+        }
+
+        // Release intermediate Mats
+        samples.release()
+        labels.release()
+        centers.release()
+
+        return Image(quantizedBgrMat)
     }
 }

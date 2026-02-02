@@ -11,6 +11,7 @@ import org.pdi.core.AppState
 import org.pdi.ui.panels.DFTPreviewPanelController // New import
 import org.pdi.ui.panels.HistogramPanelController
 import org.pdi.ui.panels.LineProfilePanelController
+import org.pdi.ui.panels.QuantizationPanelController
 import org.pdi.ui.panels.RegionGrowingPanelController
 import org.pdi.ui.panels.SaveImagePanelController
 import org.pdi.ui.panels.TonalCurvePanelController
@@ -169,6 +170,27 @@ class TopPanelController {
         stage.initModality(Modality.APPLICATION_MODAL)
         stage.initOwner(primaryStage)
         stage.title = "DFT Preview and Filter"
+        stage.scene = Scene(root)
+        stage.show()
+    }
+
+    @FXML
+    fun showQuantizationPanel() {
+        val currentImage = appState.context.currentImage
+        if (currentImage == null) {
+            showAlert("No Image Selected", "No image loaded.")
+            return
+        }
+
+        val loader = FXMLLoader(javaClass.getResource("/panels/QuantizationPanel.fxml"))
+        val root = loader.load<Parent>()
+        val quantizationPanelController: QuantizationPanelController = loader.getController()
+        quantizationPanelController.setup(appState)
+
+        val stage = Stage()
+        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.initOwner(primaryStage)
+        stage.title = "Quantization"
         stage.scene = Scene(root)
         stage.show()
     }
