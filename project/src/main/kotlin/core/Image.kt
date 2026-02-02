@@ -614,6 +614,7 @@ class Image(val image: Mat) {
 
     fun highPass(threshold: Double): Image {
         val dft = performDFT(this.image)
+        shiftQuadrants(dft) // Shift before filtering
         val filter = createFilterMask(dft.cols(), dft.rows(), threshold, inverted = true)
         val filterPlanes = listOf(filter, filter.clone())
         val filterComplex = Mat()
@@ -621,6 +622,8 @@ class Image(val image: Mat) {
 
         val filteredDft = Mat()
         Core.multiply(dft, filterComplex, filteredDft)
+
+        shiftQuadrants(filteredDft) // Shift back before inverse DFT
 
         val inverseDft = Mat()
         Core.idft(filteredDft, inverseDft, Core.DFT_REAL_OUTPUT + Core.DFT_SCALE)
@@ -650,6 +653,7 @@ class Image(val image: Mat) {
 
     fun lowPass(threshold: Double): Image {
         val dft = performDFT(this.image)
+        shiftQuadrants(dft) // Shift before filtering
         val filter = createFilterMask(dft.cols(), dft.rows(), threshold)
         val filterPlanes = listOf(filter, filter.clone())
         val filterComplex = Mat()
@@ -657,6 +661,8 @@ class Image(val image: Mat) {
 
         val filteredDft = Mat()
         Core.multiply(dft, filterComplex, filteredDft)
+        
+        shiftQuadrants(filteredDft) // Shift back before inverse DFT
 
         val inverseDft = Mat()
         Core.idft(filteredDft, inverseDft, Core.DFT_REAL_OUTPUT + Core.DFT_SCALE)

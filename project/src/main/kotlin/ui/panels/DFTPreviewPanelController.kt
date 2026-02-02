@@ -73,8 +73,9 @@ class DFTPreviewPanelController {
         val mask = org.pdi.core.createFilterMask(dftImage.width(), dftImage.height(), threshold, isInverted)
 
         val displayMask = Mat()
-        Core.normalize(mask, displayMask, 0.0, 255.0, Core.NORM_MINMAX)
-        displayMask.convertTo(displayMask, CvType.CV_8U)
+        // Convert the CV_32F mask (with values 0.0 or 1.0) to an 8-bit image for display
+        // We scale by 255.0 to map 1.0 to 255 (white).
+        mask.convertTo(displayMask, CvType.CV_8U, 255.0)
 
         filterMaskPreview.image = javafx.embed.swing.SwingFXUtils.toFXImage(displayMask.toBufferedImage(), null)
 

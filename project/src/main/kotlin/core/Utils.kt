@@ -19,18 +19,29 @@ fun createFilterMask(width: Int, height: Int, threshold: Double, inverted: Boole
     val mask = Mat.zeros(height, width, CvType.CV_32F)
     val centerX = width / 2
     val centerY = height / 2
-    val maxDist = sqrt((centerX * centerX + centerY * centerY).toDouble())
+
+    // Calculate the dimensions of the rectangular filter based on the threshold
+    val filterWidth = (width * threshold).toInt()
+    val filterHeight = (height * threshold).toInt()
+
+    val halfFilterWidth = filterWidth / 2
+    val halfFilterHeight = filterHeight / 2
+
+    val startX = (centerX - halfFilterWidth).coerceIn(0, width)
+    val endX = (centerX + halfFilterWidth).coerceIn(0, width)
+    val startY = (centerY - halfFilterHeight).coerceIn(0, height)
+    val endY = (centerY + halfFilterHeight).coerceIn(0, height)
 
     for (y in 0 until height) {
         for (x in 0 until width) {
-            val distance = sqrt(((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY)).toDouble())
-            var value = 1 - (distance / maxDist)
-
-            if (inverted) {
-                value = 1 - value
+            val value = if (x >= startX && x < endX && y >= startY && y < endY) {
+                // Inside the central rectangle
+                if (!inverted) 1.0 else 0.0
+            } else {
+                // Outside the central rectangle
+                if (!inverted) 0.0 else 1.0
             }
-
-            mask.put(y, x, if (value > 1 - threshold) 1.0 else 0.0)
+            mask.put(y, x, value)
         }
     }
     return mask
@@ -98,4 +109,28 @@ fun getDFTLogMagnitude(complexImage: Mat): Mat {
     planes.forEach { it.release() }
     
     return result
+}
+
+fun shiftQuadrants(image: Mat, inPlace: Boolean = true): Mat {
+    val mat = if (inPlace) image else image.clone()
+
+    val cx = mat.cols() / 2
+    val cy = mat.rows() / 2
+
+    val q0 = mat.submat(Rect(0, 0, cx, cy))
+    val q1 = mat.submat(Rect(cx, 0, cx, cy))
+    val q2 = mat.submat(Rect(0, cy, cx, cy))
+    val q3 = mat.submat(Rect(cx, cy, cx, cy))
+
+    val tmp = Mat()
+    q0.copyTo(tmp)
+    q3.copyTo(q0)
+    tmp.copyTo(q3)
+    q1.copyTo(tmp)
+    q2.copyTo(q1)
+    tmp.copyTo(q2)
+
+    tmp.release()
+
+    return mat
 }
