@@ -17,24 +17,32 @@
     <Button text="Negative" onAction="#applyNegative"/>
     <ColorPicker fx:id="colorPicker" />
 
-    <TitledPane text="Image Adjustments" expanded="true">
-        <VBox spacing="10">
-            <Label fx:id="brightnessValueLabel" text="Brightness: 0.00"/>
-            <Slider fx:id="brightnessSlider" min="-100" max="100" value="0"/>
-            <Label fx:id="contrastValueLabel" text="Contrast: 0.00"/>
-            <Slider fx:id="contrastSlider" min="0" max="100" value="0"/>
-            <Label fx:id="hueValueLabel" text="Matiz: 0"/>
-            <Slider fx:id="hueSlider" min="-180" max="180" value="0"/>
-            <Label fx:id="saturationValueLabel" text="Saturación: 0"/>
-            <Slider fx:id="saturationSlider" min="-100" max="100" value="0"/>
-            <Label fx:id="lightnessValueLabel" text="Luminosidad: 0"/>
-            <Slider fx:id="lightnessSlider" min="-100" max="100" value="0"/>
-            <Label fx:id="yValueLabel" text="Luma (Y): 0"/>
-            <Slider fx:id="ySlider" min="-100" max="100" value="0"/>
-            <Label fx:id="uValueLabel" text="Croma (U): 0"/>
-            <Slider fx:id="uSlider" min="-100" max="100" value="0"/>
-            <Label fx:id="vValueLabel" text="Croma (V): 0"/>
-            <Slider fx:id="vSlider" min="-100" max="100" value="0"/>
-        </VBox>
-    </TitledPane>
+    <VBox spacing="10">
+        <Label fx:id="brightnessValueLabel" text="Brightness: 0.00"/>
+        <Slider fx:id="brightnessSlider" min="-100" max="100" value="0"/>
+        <Label fx:id="contrastValueLabel" text="Contrast: 0.00"/>
+        <Slider fx:id="contrastSlider" min="0" max="100" value="0"/>
+
+        <TitledPane text="HLS Adjustments" expanded="false">
+            <VBox spacing="10">
+                <Label fx:id="hueValueLabel" text="Matiz: 0"/>
+                <Slider fx:id="hueSlider" min="-180" max="180" value="0"/>
+                <Label fx:id="saturationValueLabel" text="Saturación: 0"/>
+                <Slider fx:id="saturationSlider" min="-100" max="100" value="0"/>
+                <Label fx:id="lightnessValueLabel" text="Luminosidad: 0"/>
+                <Slider fx:id="lightnessSlider" min="-100" max="100" value="0"/>
+            </VBox>
+        </TitledPane>
+
+        <TitledPane text="YUV Adjustments" expanded="false">
+            <VBox spacing="10">
+                <Label fx:id="yValueLabel" text="Luma (Y): 0"/>
+                <Slider fx:id="ySlider" min="-100" max="100" value="0"/>
+                <Label fx:id="uValueLabel" text="Croma (U): 0"/>
+                <Slider fx:id="uSlider" min="-100" max="100" value="0"/>
+                <Label fx:id="vValueLabel" text="Croma (V): 0"/>
+                <Slider fx:id="vSlider" min="-100" max="100" value="0"/>
+            </VBox>
+        </TitledPane>
+    </VBox>
 </VBox>
