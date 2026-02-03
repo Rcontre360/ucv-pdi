@@ -117,8 +117,8 @@ class AppState {
         update(UpdateType.LoadImageUpdate(file))
     }
 
-    fun applyThresholding(thresholds: List<Int>) {
-        update(UpdateType.ThresholdUpdate(thresholds))
+    fun applyThresholding(type: Int) {
+        update(UpdateType.ThresholdUpdate(type))
     }
 
     fun applyRegionGrowing(seeds: List<Point>, maxDiff: Int, connectivity: Int) {
@@ -316,12 +316,12 @@ class AppState {
                 _currentProcessedBaseImage = context.currentImage?.toGrayscale(updateType.tint)
                 newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
-            // thresholding (umbralizacion)
+
             is UpdateType.ThresholdUpdate -> {
                 if (!isCurrentImageGrayscale()) {
                     return
                 }
-                _currentProcessedBaseImage = context.currentImage?.makeThreshold(updateType.thresholds.toTypedArray())
+                _currentProcessedBaseImage = context.currentImage?.makeThreshold(updateType.type)
                 newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             // load an image

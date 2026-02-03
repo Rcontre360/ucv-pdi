@@ -284,38 +284,23 @@ class Image(val image: Mat) {
         }
     }
 
-    // makes a thresholding given a set of umbrals. The umbrals is just an array of numbers between 0 and 255,
-    // where the numbers dont repeat..or shouldnt :)
-    fun makeThreshold(umbrals: Array<Int>): Image {
-        val sortedUmbrals = umbrals.sorted()
+    fun makeThreshold(type:Int): Image {
+        val src = this.image
+        val gray = Mat()
+        val binary = Mat()
 
-        fun thresholding(v: Int): Int {
-            if (sortedUmbrals.isEmpty()) return v
-
-            // very easy, this just returns the new value of a given pixel
-            for (i in sortedUmbrals.indices) {
-                // since umbrals are sorted, we will start with the lowest one until finding the right umbral
-                if (v < sortedUmbrals[i]) {
-                    // which color is this interval? if we split the 0-255 intervals, the first interval obtained will
-                    // always be BLACK, the next one obviously needs to be white, since black again is like having a single interval.
-                    // we keep doing this until reaching the last interval
-                    val intensity = if (i % 2 == 0) {
-                        0
-                    } else {
-                        255
-                    }
-                    return intensity
-                }
-            }
-            return 255
+        if (src.channels() > 1) {
+            Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY)
+        } else {
+            src.copyTo(gray)
         }
 
-        // just applying the above function on a single channel and copying that on the rest
-        return applyPerPixel { _, _, color ->
-            val gray = color[0].toInt()
-            val newGray = thresholding(gray)
-            doubleArrayOf(newGray.toDouble(), newGray.toDouble(), newGray.toDouble())
-        }
+        Imgproc.threshold(gray, binary, 0.0, 255.0, Imgproc.THRESH_BINARY or Imgproc.THRESH_OTSU)
+
+        val resultBGR = Mat()
+        Imgproc.cvtColor(binary, resultBGR, Imgproc.COLOR_GRAY2BGR)
+
+        return Image(resultBGR)
     }
 
     fun rotate(angle: Int): Image {

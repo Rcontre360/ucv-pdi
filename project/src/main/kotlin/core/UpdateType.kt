@@ -23,7 +23,7 @@ sealed class UpdateType {
     data class NegativeUpdate(val isNegative: Boolean) : UpdateType()
     data class RotationUpdate(val angle: Int) : UpdateType()
     // this is for binary thresholding (umbralization in the code, typo for mixing spanish/english)
-    data class ThresholdUpdate(val thresholds: List<Int>) : UpdateType()
+    data class ThresholdUpdate(val type: Int) : UpdateType()
     object ZoomInUpdate : UpdateType()
     object ZoomOutUpdate : UpdateType()
     data class LoadImageUpdate(val file: File) : UpdateType()

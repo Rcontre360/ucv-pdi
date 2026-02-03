@@ -1,35 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.geometry.Insets?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.panels.UmbralizationPanelController">
+<?import javafx.scene.layout.Region?>
+<VBox spacing="15" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.pdi.ui.panels.UmbralizationPanelController"
+      prefWidth="350">
     <padding>
-        <Insets top="10" right="10" bottom="10" left="10"/>
+        <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
-    <center>
-        <VBox spacing="10">
-            <Label text="Drag handles, double-click to add, or right-click to remove." alignment="CENTER"/>
-            <Canvas fx:id="gradientCanvas" width="256" height="50"/>
-        </VBox>
-    </center>
-    <right>
-        <VBox spacing="10">
-            <Label text="Values"/>
-            <ListView fx:id="thresholdListView" prefHeight="150"/>
-            <Button text="Add" onAction="#addThreshold"/>
-            <Button fx:id="removeThresholdButton" text="Remove" onAction="#removeThreshold"/>
-        </VBox>
-    </right>
-    <bottom>
-        <HBox alignment="CENTER">
-            <Button text="Apply" onAction="#applyThresholding"/>
-        </HBox>
-    </bottom>
-</BorderPane>
+
+    <Label text="Thresholding Configuration" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+
+    <VBox spacing="8">
+        <Label text="Algorithm:"/>
+        <ComboBox fx:id="algorithmComboBox" maxWidth="Infinity" promptText="Choose Method"/>
+    </VBox>
+
+    <Region VBox.vgrow="ALWAYS" />
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancel" onAction="#close" prefWidth="80"/>
+        <Button text="Apply" onAction="#applyThresholding" prefWidth="100"
+                style="-fx-background-color: #0078d7; -fx-text-fill: white; -fx-font-weight: bold;"/>
+    </HBox>
+</VBox>
