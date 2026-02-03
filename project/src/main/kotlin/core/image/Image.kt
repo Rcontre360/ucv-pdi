@@ -1,4 +1,4 @@
-package org.pdi.core
+package org.pdi.core.image
 
 import org.opencv.core.CvType
 import org.opencv.core.Mat
@@ -7,15 +7,14 @@ import org.opencv.core.Rect
 import org.opencv.core.Scalar
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
-import org.pdi.io.toBufferedImage
 import java.awt.Color
-import java.awt.image.BufferedImage
 import kotlin.Int
 import kotlin.math.roundToInt
-import kotlin.math.sqrt
 import kotlin.random.Random
 import org.opencv.core.Core // Import Core for split/merge
 import org.opencv.core.TermCriteria
+import org.pdi.core.Kernel
+import kotlin.math.hypot
 
 // zoom algorithm type
 enum class ZoomAlgorithm {
@@ -24,7 +23,7 @@ enum class ZoomAlgorithm {
 }
 
 // callback function for some utilities inside image
-typealias PixelProcessor<T> = (x: Int, y: Int, originalColor: DoubleArray) -> T
+typealias PixelProcessor<T> = (x: Int, y: Int, originalColor: Color) -> T
 
 // metadata class. this represent the current image data, even when we zoom the image pixels grow
 // the bitsPerPixel is internally always 24 but we represent how many bits we would use
@@ -62,13 +61,12 @@ class Image(val image: Mat) {
             }
         },
     )
-    val buff: BufferedImage by lazy { image.toBufferedImage() }
 
     // runs a function over all pixels, readonly
-    fun readAllPixels(processor: PixelProcessor<Any>) {
+    fun readAllPixels(processor: PixelProcessor<Unit>) {
         for (y in 0 until image.height()) {
             for (x in 0 until image.width()) {
-                val pixel = image.get(y, x)
+                val pixel = image.getRGB(x, y)
                 processor(x, y, pixel)
             }
         }
@@ -84,28 +82,21 @@ class Image(val image: Mat) {
 
         for (y in 0 until metadata.height) {
             for (x in 0 until metadata.width) {
-                val srcColor = image.get(y, x)
-                val dstColor = resImg.image.get(y, x)
-
-                val srcRed = srcColor[2].toInt()
-                val srcGreen = srcColor[1].toInt()
-                val srcBlue = srcColor[0].toInt()
-                val dstRed = dstColor[2].toInt()
-                val dstGreen = dstColor[1].toInt()
-                val dstBlue = dstColor[0].toInt()
-
+                val src = image.getRGB(x, y)
+                val dst = image.getRGB(x, y)
 
                 // R, G, B channels
-                sums[0][srcRed] = sums[0][srcRed] + dstRed
-                counts[0][srcRed]++
-                sums[1][srcGreen] = sums[1][srcGreen] + dstGreen
-                counts[1][srcGreen]++
-                sums[2][srcBlue] = sums[2][srcBlue] + dstBlue
-                counts[2][srcBlue]++
+                sums[0][src.red] = sums[0][src.red] + dst.red
+                counts[0][src.red]++
+                sums[1][src.green] = sums[1][src.green] + dst.green
+                counts[1][src.green]++
+                sums[2][src.blue] = sums[2][src.blue] + dst.blue
+                counts[2][src.blue]++
 
                 // Luminosity channel
-                val srcLum = (0.2126 * srcRed + 0.7152 * srcGreen + 0.0722 * srcBlue).roundToInt()
-                val dstLum = (0.2126 * dstRed + 0.7152 * dstGreen + 0.0722 * dstBlue).roundToInt()
+                val srcLum = luminosity(src)
+                val dstLum = luminosity(dst)
+
                 sums[3][srcLum] = sums[3][srcLum] + dstLum
                 counts[3][srcLum]++
             }
@@ -185,23 +176,22 @@ class Image(val image: Mat) {
                     val imageY = (y - kernel.rows / 2 + i)
                     // if the window is OUTSIDE the image. We apply some "padding" with black, this wont mess with borders
                     val color = if (imageX < 0 || imageX >= image.width() || imageY < 0 || imageY >= image.height()) {
-                        doubleArrayOf(0.0, 0.0, 0.0)
+                        Color.black
                     } else {
-                        image.get(imageY, imageX)
+                        image.getRGB(imageX,imageY)
                     }
 
-                    imgR[i][j] = color[2].toFloat()
-                    imgG[i][j] = color[1].toFloat()
-                    imgB[i][j] = color[0].toFloat()
+                    imgR[i][j] = color.red.toFloat()
+                    imgG[i][j] = color.green.toFloat()
+                    imgB[i][j] = color.blue.toFloat()
                 }
             }
 
-            // we convolute with each channel
-            val r = kernel.convolute(imgR).roundToInt().coerceIn(0, 255)
-            val g = kernel.convolute(imgG).roundToInt().coerceIn(0, 255)
-            val b = kernel.convolute(imgB).roundToInt().coerceIn(0, 255)
-
-            doubleArrayOf(b.toDouble(), g.toDouble(), r.toDouble())
+            Color(
+                kernel.convolute(imgR).roundToInt().coerceIn(0, 255),
+                kernel.convolute(imgG).roundToInt().coerceIn(0, 255),
+                kernel.convolute(imgB).roundToInt().coerceIn(0, 255)
+            )
         }
     }
 
@@ -213,15 +203,14 @@ class Image(val image: Mat) {
 
         return applyPerPixel { x, y, _ ->
             // get both colors from both images
-            val cx = imageX.image.get(y, x)
-            val cy = imageY.image.get(y, x)
+            val cx = imageX.image.getRGB(x,y)
+            val cy = imageY.image.getRGB(x,y)
 
-            // sqrt( x^2 + y^2 ) onn each channel
-            val r = sqrt((cx[2] * cx[2] + cy[2] * cy[2])).toInt().coerceIn(0, 255)
-            val g = sqrt((cx[1] * cx[1] + cy[1] * cy[1])).toInt().coerceIn(0, 255)
-            val b = sqrt((cx[0] * cx[0] + cy[0] * cy[0])).toInt().coerceIn(0, 255)
-
-            doubleArrayOf(b.toDouble(), g.toDouble(), r.toDouble())
+            Color(
+                hypot(cx.red.toDouble(),cy.red.toDouble()).toInt().coerceIn(0, 255),
+                hypot(cx.green.toDouble(),cy.green.toDouble()).toInt().coerceIn(0, 255),
+                hypot(cx.blue.toDouble(),cy.blue.toDouble()).toInt().coerceIn(0, 255)
+            )
         }
     }
 
@@ -233,20 +222,20 @@ class Image(val image: Mat) {
         return applyPerPixel { _, _, color ->
             val gray = luminosity(color)
 
-            doubleArrayOf(
-                (gray * tintB).toInt().coerceIn(0, 255).toDouble(),
-                (gray * tintG).toInt().coerceIn(0, 255).toDouble(),
-                (gray * tintR).toInt().coerceIn(0, 255).toDouble()
+            Color(
+                (gray * tintR).toInt().coerceIn(0, 255),
+                (gray * tintG).toInt().coerceIn(0, 255),
+                (gray * tintB).toInt().coerceIn(0, 255)
             )
         }
     }
 
     fun negative(): Image {
         return applyPerPixel { _, _, color ->
-            doubleArrayOf(
-                255.0 - color[0],
-                255.0 - color[1],
-                255.0 - color[2]
+            Color(
+                255 - color.red,
+                255 - color.green,
+                255 - color.blue
             )
         }
     }
@@ -254,10 +243,10 @@ class Image(val image: Mat) {
     // simple brightness function. Instead of adding a constant it multiplies by a factor (between 0-2)
     fun changeBrightness(factor: Float): Image {
         return applyPerPixel { _, _, color ->
-            doubleArrayOf(
-                (color[0] * (1 + factor)).toInt().coerceIn(0, 255).toDouble(),
-                (color[1] * (1 + factor)).toInt().coerceIn(0, 255).toDouble(),
-                (color[2] * (1 + factor)).toInt().coerceIn(0, 255).toDouble()
+            Color(
+                (color.red * (1 + factor)).toInt().coerceIn(0, 255),
+                (color.green * (1 + factor)).toInt().coerceIn(0, 255),
+                (color.blue * (1 + factor)).toInt().coerceIn(0, 255)
             )
         }
     }
@@ -271,16 +260,11 @@ class Image(val image: Mat) {
         val newHistogram = histogram.stretch(min.toInt(), max.toInt())
 
         return applyPerPixel { _, _, color ->
-            // we just map using the new histogram
             val rMap = newHistogram[0]!!
             val gMap = newHistogram[1]!!
             val bMap = newHistogram[2]!!
 
-            val newR = rMap[color[2].toInt()]
-            val newG = gMap[color[1].toInt()]
-            val newB = bMap[color[0].toInt()]
-
-            doubleArrayOf(newB.toDouble(), newG.toDouble(), newR.toDouble())
+            Color(rMap[color.red], gMap[color.green], bMap[color.blue])
         }
     }
 
@@ -314,6 +298,7 @@ class Image(val image: Mat) {
 
         return Image(resultBGR)
     }
+
     private fun calculateTriangleThreshold(hist: IntArray): Int {
         // 1. Find boundaries: First and last non-zero bins
         var min = 0
@@ -411,8 +396,8 @@ class Image(val image: Mat) {
                         // when factor < 0 it acts as a multiplicationn. Sometimes it gets out of range
                         val srcX = (x / factor).toInt().coerceIn(0, metadata.width - 1)
                         val srcY = (y / factor).toInt().coerceIn(0, metadata.height - 1)
-                        val pixel = image.get(srcY, srcX)
-                        newImg.put(y, x, *pixel)
+                        val pixel = image.getRGB(srcX,srcY)
+                        newImg.putRGB(y, x, pixel)
                     }
 
                     ZoomAlgorithm.LINEAR_INTERPOLATION -> {
@@ -423,21 +408,22 @@ class Image(val image: Mat) {
                         val srcY = (y / factor).toInt().coerceIn(0, metadata.height - 2)
 
                         // given the 4 pixel values, it interpolates the value within them
-                        fun interpolateChannel(is_v: Double, ds: Double, ir: Double, dr: Double): Double {
-                            return ((1 - a) * (1 - b) * is_v + a * (1 - b) * ds + (1 - a) * b * ir + a * b * dr);
+                        fun interpolateChannel(isV: Int, ds: Int, ir: Int, dr: Int): Int {
+                            return ((1 - a) * (1 - b) * isV + a * (1 - b) * ds + (1 - a) * b * ir + a * b * dr).toInt()
                         }
 
-                        val p_is = image.get(srcY, srcX)
-                        val p_ds = image.get(srcY, srcX + 1)
-                        val p_ir = image.get(srcY + 1, srcX)
-                        val p_dr = image.get(srcY + 1, srcX + 1)
+                        val pIs = image.getRGB(srcX,srcY)
+                        val pDs = image.getRGB( srcX + 1,srcY)
+                        val pIr = image.getRGB( srcX,srcY + 1)
+                        val pDr = image.getRGB( srcX + 1,srcY + 1)
 
-                        val res = doubleArrayOf(
-                            interpolateChannel(p_is[0], p_ds[0], p_ir[0], p_dr[0]),
-                            interpolateChannel(p_is[1], p_ds[1], p_ir[1], p_dr[1]),
-                            interpolateChannel(p_is[2], p_ds[2], p_ir[2], p_dr[2]),
+                        val res = Color(
+                            interpolateChannel(pIs.red, pDs.red, pIr.red, pDr.red),
+                            interpolateChannel(pIs.green, pDs.green, pIr.green, pDr.green),
+                            interpolateChannel(pIs.blue, pDs.blue, pIr.blue, pDr.blue),
                         )
-                        newImg.put(y, x, *res)
+
+                        newImg.putRGB(y, x, res)
                     }
                 }
             }
@@ -509,14 +495,13 @@ class Image(val image: Mat) {
         val green = IntArray(256)
         val blue = IntArray(256)
 
-
         // we just count the frequency of each color
         for (y in 0 until metadata.height) {
             for (x in 0 until metadata.width) {
-                val color = image.get(y, x)
-                red[color[2].toInt()]++
-                green[color[1].toInt()]++
-                blue[color[0].toInt()]++
+                val color = image.getRGB(x, y)
+                red[color.red]++
+                green[color.green]++
+                blue[color.blue]++
             }
         }
 
@@ -538,15 +523,15 @@ class Image(val image: Mat) {
 
         for (i in 0 until limit) {
             val color = if (axis == 'X') {
-                image.get(lineNumber, i)
+                image.getRGB(i,lineNumber)
             } else {
-                image.get(i, lineNumber)
+                image.getRGB(lineNumber,i)
             }
 
             val value = when (channel) {
-                'R' -> color[2].toInt()
-                'G' -> color[1].toInt()
-                'B' -> color[0].toInt()
+                'R' -> color.red
+                'G' -> color.green
+                'B' -> color.blue
                 'L' -> luminosity(color) // Grayscale approximation
                 else -> 0
             }
@@ -559,8 +544,8 @@ class Image(val image: Mat) {
     // easy, just count how many colors are there
     private fun getUniqueColors(): Int {
         val all: MutableSet<String> = mutableSetOf()
-        readAllPixels { x, y, color ->
-            all.add(color.joinToString())
+        readAllPixels {_, _, color ->
+            all.add(color.toString())
         }
         return all.size
     }
@@ -568,28 +553,26 @@ class Image(val image: Mat) {
     // checks if the image is grayscale, readAllPixels must return something
     private fun getIsGrayscale(): Boolean {
         var res = true
-        readAllPixels { x, y, color ->
+        readAllPixels { _, _, color ->
             // if any color is not the same as the others res will be false (false & true : false)
-            res = res && (color[0] == color[1] && color[1] == color[2])
-            0
+            res = res && (color.red == color.blue && color.blue == color.green)
         }
         return res
     }
 
     // checks if the image is binary
     private fun getIsBinary(): Boolean {
-        val bin = listOf(0.0, 255.0)
+        val bin = listOf(0, 255)
         var res = true
-        readAllPixels { x, y, color ->
+        readAllPixels { _, _, color ->
             // if any color is not binary res will be false (false & true : false)
-            res = res && ((color[0] in bin) && (color[1] in bin) && (color[2] in bin))
-            0
+            res = res && ((color.red in bin) && (color.green in bin) && (color.blue in bin));
         }
         return res
     }
 
     // apply a color modification to each pixel
-    private fun applyPerPixel(processor: PixelProcessor<DoubleArray>): Image {
+    private fun applyPerPixel(processor: PixelProcessor<Color>): Image {
         // Determine the type for the new image.
         // If the original image had 1 channel (Grayscale), assume the processor returns 1 channel.
         // Otherwise (3 or 4 channels), assume the processor returns 3 channels (BGR).
@@ -598,14 +581,10 @@ class Image(val image: Mat) {
 
         readAllPixels { x, y, color ->
             val newRgbValue = processor(x, y, color)
-            newImage.put(y, x, *newRgbValue)
+            newImage.putRGB(x, y, newRgbValue)
         }
 
         return Image(newImage)
-    }
-
-    private fun luminosity(color: DoubleArray): Int {
-        return (0.2126 * color[2] + 0.7152 * color[1] + 0.0722 * color[0]).roundToInt()
     }
 
     fun applyHLSAdjustments(hueFactor: Int, saturationFactor: Float, lightnessFactor: Float): Image {
@@ -704,11 +683,11 @@ class Image(val image: Mat) {
         return Image(resultMat)
     }
 
-    fun dftImage(): Mat {
+    fun dftImage(): Image {
         val complexImage = performDFT(this.image)
         val magnitude = getDFTLogMagnitude(complexImage)
         complexImage.release()
-        return magnitude
+        return Image(magnitude)
     }
 
     fun highPass(threshold: Double, preserveColor: Boolean): Image {
@@ -958,21 +937,22 @@ class Image(val image: Mat) {
         val step = 256.0 / levels // Size of each quantization step
 
         return applyPerPixel { _, _, color ->
-            val b = (color[0] / step).toInt() * step
-            val g = (color[1] / step).toInt() * step
-            val r = (color[2] / step).toInt() * step
-            doubleArrayOf(b, g, r).map { it.coerceIn(0.0, 255.0) }.toDoubleArray()
+            val b = ((color.blue / step).toInt() * step).toInt().coerceIn(0,255)
+            val g = ((color.green / step).toInt() * step).toInt().coerceIn(0,255)
+            val r = ((color.red / step).toInt() * step).toInt().coerceIn(0,255)
+
+            Color(b, g, r)
         }
     }
 
     // Helper data class for Median Cut
-    private data class ColorBucket(val pixels: MutableList<DoubleArray>) {
-        var minB = 256.0;
-        var maxB = -1.0
-        var minG = 256.0;
-        var maxG = -1.0
-        var minR = 256.0;
-        var maxR = -1.0
+    private data class ColorBucket(val pixels: MutableList<Color>) {
+        var minB = 256
+        var maxB = -1
+        var minG = 256
+        var maxG = -1
+        var minR = 256
+        var maxR = -1
 
         init {
             if (pixels.isNotEmpty()) {
@@ -981,16 +961,16 @@ class Image(val image: Mat) {
         }
 
         fun updateBounds() {
-            minB = 256.0; maxB = -1.0
-            minG = 256.0; maxG = -1.0
-            minR = 256.0; maxR = -1.0
+            minB = 256; maxB = -1
+            minG = 256; maxG = -1
+            minR = 256; maxR = -1
             pixels.forEach { pixel ->
-                minB = minOf(minB, pixel[0])
-                maxB = maxOf(maxB, pixel[0])
-                minG = minOf(minG, pixel[1])
-                maxG = maxOf(maxG, pixel[1])
-                minR = minOf(minR, pixel[2])
-                maxR = maxOf(maxR, pixel[2])
+                minR = minOf(minR, pixel.red)
+                maxR = maxOf(maxR, pixel.red)
+                minG = minOf(minG, pixel.green)
+                maxG = maxOf(maxG, pixel.green)
+                minB = minOf(minB, pixel.blue)
+                maxB = maxOf(maxB, pixel.blue)
             }
         }
 
@@ -1000,23 +980,28 @@ class Image(val image: Mat) {
             val rangeR = maxR - minR
 
             return when {
-                rangeR >= rangeG && rangeR >= rangeB -> 2 // Red is longest
+                rangeR >= rangeG && rangeR >= rangeB -> 0 // Red is longest
                 rangeG >= rangeR && rangeG >= rangeB -> 1 // Green is longest
-                else -> 0 // Blue is longest or equal
+                else -> 2 // Blue is longest or equal
             }
         }
 
-        fun getAverageColor(): DoubleArray {
-            if (pixels.isEmpty()) return doubleArrayOf(0.0, 0.0, 0.0)
-            var sumB = 0.0;
-            var sumG = 0.0;
-            var sumR = 0.0
-            pixels.forEach { pixel ->
-                sumB += pixel[0]
-                sumG += pixel[1]
-                sumR += pixel[2]
+        fun getAverageColor(): Color {
+            if (pixels.isEmpty()) return Color.black
+
+            val sum = pixels.fold(Color.black) { acc, pixel ->
+                Color(
+                    acc.red + pixel.red,
+                    acc.green + pixel.green,
+                    acc.blue + pixel.blue
+                )
             }
-            return doubleArrayOf(sumB / pixels.size, sumG / pixels.size, sumR / pixels.size)
+
+            return Color(
+                (sum.red / pixels.size).toInt(),
+                (sum.green / pixels.size).toInt(),
+                (sum.blue / pixels.size).toInt()
+            )
         }
     }
 
@@ -1026,8 +1011,8 @@ class Image(val image: Mat) {
         }
 
         // 1. Extract all pixel colors
-        val allPixels = mutableListOf<DoubleArray>()
-        readAllPixels { _, _, color -> allPixels.add(color.clone()) } // Clone to avoid modifying original array
+        val allPixels = mutableListOf<Color>()
+        readAllPixels { _, _, color -> allPixels.add(color) } // Clone to avoid modifying original array
 
         if (allPixels.isEmpty()) return this // No pixels to quantize
 
@@ -1053,7 +1038,13 @@ class Image(val image: Mat) {
 
             // Split the longest bucket
             val dimension = longestBucket.getLongestDimension()
-            longestBucket.pixels.sortBy { it[dimension] } // Sort by the longest dimension
+            val comparator = when (dimension) {
+                0 -> compareBy<Color> { it.red }
+                1 -> compareBy<Color> { it.green }
+                else -> compareBy<Color> { it.blue }
+            }
+            longestBucket.pixels.sortWith(comparator)
+
             val medianIndex = longestBucket.pixels.size / 2
 
             val bucket1Pixels = longestBucket.pixels.subList(0, medianIndex)
@@ -1075,25 +1066,26 @@ class Image(val image: Mat) {
         val palette = buckets.map { it.getAverageColor() }
 
         // 5. Reconstruct the image using the new palette
-        return applyPerPixel { _, _, pixelColor ->
-            findClosestColor(pixelColor, palette)
+        return applyPerPixel { _, _, c ->
+            findClosestColor(c, palette)
         }
     }
 
-    private fun findClosestColor(pixel: DoubleArray, palette: List<DoubleArray>): DoubleArray {
+    private fun findClosestColor(pixel: Color, palette: List<Color>): Color {
         var minDistance = Double.MAX_VALUE
-        var closestColor: DoubleArray = doubleArrayOf(0.0, 0.0, 0.0)
+        var closest = Color.black
 
         palette.forEach { color ->
-            val distB = pixel[0] - color[0]
-            val distG = pixel[1] - color[1]
-            val distR = pixel[2] - color[2]
-            val distance = distB * distB + distG * distG + distR * distR // Euclidean distance squared
+            val distR = pixel.red - color.red
+            val distG = pixel.green - color.green
+            val distB = pixel.blue - color.blue
+            val distance = hypot(distR.toDouble(), hypot(distG.toDouble(), distB.toDouble()))
+
             if (distance < minDistance) {
                 minDistance = distance
-                closestColor = color
+                closest = color
             }
         }
-        return closestColor
+        return closest
     }
 }

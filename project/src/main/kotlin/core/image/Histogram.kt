@@ -1,4 +1,4 @@
-package org.pdi.core
+package org.pdi.core.image
 
 import kotlin.math.roundToInt
 

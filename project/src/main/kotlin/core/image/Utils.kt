@@ -1,4 +1,4 @@
-package org.pdi.core
+package org.pdi.core.image
 
 import org.opencv.core.Core
 import org.opencv.core.CvType
@@ -7,9 +7,16 @@ import org.opencv.core.Rect
 import org.opencv.core.Scalar
 import org.opencv.imgproc.Imgproc
 import java.awt.Color
-import kotlin.math.pow
 import kotlin.math.roundToInt
-import kotlin.math.sqrt
+
+fun Mat.getRGB(x:Int,y:Int): Color {
+    val rawColor = this.get(y, x)
+    return Color(rawColor[2].toInt(),rawColor[1].toInt(),rawColor[0].toInt())
+}
+
+fun Mat.putRGB(x:Int,y:Int,c:Color) {
+    this.put(y,x, floatArrayOf(c.blue.toFloat(),c.green.toFloat(),c.red.toFloat()))
+}
 
 fun luminosity(c: Color): Int {
     return (0.2126 * c.red + 0.7152 * c.green + 0.0722 * c.blue).roundToInt()

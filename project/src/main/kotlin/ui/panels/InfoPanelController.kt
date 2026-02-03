@@ -3,7 +3,7 @@ package org.pdi.ui.panels
 import javafx.fxml.FXML
 import javafx.scene.control.Label
 import org.pdi.core.AppState
-import org.pdi.core.Metadata
+import org.pdi.core.image.Metadata
 
 // info panel, updates each time the app state is updated
 class InfoPanelController {

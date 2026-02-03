@@ -9,7 +9,7 @@ import javafx.scene.control.CheckBox
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Slider
 import javafx.scene.control.TextField
-import org.pdi.core.ZoomAlgorithm
+import org.pdi.core.image.ZoomAlgorithm
 
 // here in the bottom panel we put all the geometric transformations
 class BottomPanelController {

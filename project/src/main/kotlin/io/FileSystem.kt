@@ -4,8 +4,9 @@ package org.pdi.io
 
 import org.opencv.core.Mat
 import org.opencv.core.CvType
-import org.pdi.core.Image
-import java.awt.Color
+import org.pdi.core.image.Image
+import org.pdi.core.image.toBufferedImage
+import org.pdi.core.image.toMat
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
@@ -29,7 +30,7 @@ fun saveImage(dir: String, format: String, image: Image) {
         // we have 2 customs ways to save. PDI (compressed stuff) and Netpbm
         "rle" -> PdiIO.write(image, targetType, output.absolutePath)
         "netpbm" -> NetpbmIO.write(image, targetType, output.absolutePath)
-        else -> ImageIO.write(image.buff, format, output)
+        else -> ImageIO.write(image.image.toBufferedImage(), format, output)
     }
 }
 
@@ -38,8 +39,8 @@ fun loadImage(file: File): Image {
     val extension = file.extension.lowercase(Locale.getDefault())
     val bufferedImage = when {
         // usually we should check the HEADER to ensure the file is correct
-        extension in listOf("pbm", "pgm", "ppm", "netpbm") -> NetpbmIO.read(file).buff
-        extension == "rle" -> PdiIO.read(file).buff
+        extension in listOf("pbm", "pgm", "ppm", "netpbm") -> NetpbmIO.read(file).image.toBufferedImage()
+        extension == "rle" -> PdiIO.read(file).image.toBufferedImage()
         else -> ImageIO.read(file) ?: throw IOException("Could not read image file: ${file.absolutePath}")
     }
     return Image(bufferedImage.toMat())
@@ -124,7 +125,7 @@ object NetpbmIO {
     private fun pbmPixelList(image: Image): List<String> {
         val pixels = mutableListOf<String>()
         image.readAllPixels { x, _, color ->
-            val grayValue = color[2].toInt() // Assuming BGR, R is at index 2
+            val grayValue = color.red
             val pbmValue = if (grayValue > 127) 0 else 1
             pixels.add(pbmValue.toString())
             if (x == image.metadata.width-1)
@@ -137,7 +138,7 @@ object NetpbmIO {
     private fun pgmPixelList(image: Image): List<String> {
         val pixels = mutableListOf<String>()
         image.readAllPixels { x, _, color ->
-            val grayValue = color[2].toInt() // Assuming BGR, R is at index 2
+            val grayValue = color.red.toInt()
             pixels.add(grayValue.toString())
             if (x == image.metadata.width-1)
                 pixels.add("\n")
@@ -149,7 +150,7 @@ object NetpbmIO {
     private fun ppmPixelList(image: Image): List<String> {
         val pixels = mutableListOf<String>()
         image.readAllPixels { x, _, color ->
-            pixels.add("${color[2].toInt()} ${color[1].toInt()} ${color[0].toInt()}") // BGR to RGB
+            pixels.add("${color.red} ${color.green} ${color.blue}") // BGR to RGB
             if (x == image.metadata.width-1)
                 pixels.add("\n")
         }

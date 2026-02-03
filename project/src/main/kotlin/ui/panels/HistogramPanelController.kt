@@ -7,7 +7,6 @@ import javafx.scene.canvas.GraphicsContext
 import javafx.scene.control.ComboBox
 import javafx.scene.paint.Color
 import org.pdi.core.AppState
-import org.pdi.core.luminosity
 
 // histogram panel with selectors for the channels
 class HistogramPanelController {

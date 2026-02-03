@@ -12,9 +12,9 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Circle
 import javafx.stage.Stage
 import org.pdi.core.AppState
-import org.pdi.core.Image
+import org.pdi.core.image.Image
 import org.opencv.core.Point
-import org.pdi.io.toBufferedImage
+import org.pdi.core.image.toBufferedImage
 
 class RegionGrowingPanelController {
 

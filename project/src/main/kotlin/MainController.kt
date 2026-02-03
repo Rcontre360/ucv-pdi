@@ -7,7 +7,7 @@ import javafx.stage.Stage
 import javafx.event.EventHandler // Import EventHandler
 
 import org.pdi.core.AppState
-import org.pdi.io.toBufferedImage
+import org.pdi.core.image.toBufferedImage
 import org.pdi.ui.BottomPanelController
 import org.pdi.ui.LeftPanelController
 import org.pdi.ui.RightPanelController

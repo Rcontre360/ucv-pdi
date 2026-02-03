@@ -8,12 +8,13 @@ import javafx.scene.control.Label
 import javafx.scene.control.Slider
 import javafx.scene.image.ImageView
 import javafx.stage.Stage
-import org.opencv.core.Core
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.pdi.core.AppState
 import org.pdi.core.FilterType
-import org.pdi.io.toBufferedImage
+import org.pdi.core.image.Image
+import org.pdi.core.image.createFilterMask
+import org.pdi.core.image.toBufferedImage
 
 class DFTPreviewPanelController {
 
@@ -36,13 +37,10 @@ class DFTPreviewPanelController {
     private lateinit var thresholdLabel: Label
 
     @FXML
-    private lateinit var applyButton: Button
-
-    @FXML
     private lateinit var cancelButton: Button
 
     private lateinit var appState: AppState
-    private lateinit var dftImage: Mat
+    private lateinit var dftImage: Image
 
     @FXML
     fun initialize() {
@@ -59,11 +57,11 @@ class DFTPreviewPanelController {
         }
     }
 
-    fun setup(appState: AppState, dftImage: Mat) {
+    fun setup(appState: AppState, dftImage: Image) {
         this.appState = appState
         this.dftImage = dftImage
 
-        dftImagePanel.image = javafx.embed.swing.SwingFXUtils.toFXImage(dftImage.toBufferedImage(), null)
+        dftImagePanel.image = javafx.embed.swing.SwingFXUtils.toFXImage(dftImage.image.toBufferedImage(), null)
         updateFilterPreview()
     }
 
@@ -74,7 +72,7 @@ class DFTPreviewPanelController {
         val threshold = thresholdSlider.value / 100.0
         val isInverted = filterType == FilterType.HIGH_PASS
 
-        val mask = org.pdi.core.createFilterMask(dftImage.width(), dftImage.height(), threshold, isInverted)
+        val mask = createFilterMask(dftImage.metadata.width, dftImage.metadata.height, threshold, isInverted)
 
         val displayMask = Mat()
         // Convert the CV_32F mask (with values 0.0 or 1.0) to an 8-bit image for display

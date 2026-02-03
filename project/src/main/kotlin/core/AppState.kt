@@ -4,6 +4,9 @@ import org.opencv.core.Mat
 import java.awt.Color
 import java.io.File
 import org.opencv.core.Point
+import org.pdi.core.image.Histogram
+import org.pdi.core.image.Image
+import org.pdi.core.image.ZoomAlgorithm
 
 // state context. this class holds values that are used for transition between the initial image and the current one
 // how we decided which values should go here? I wanted those that modify the tonal curve and those that dont interfere with the first ones
@@ -155,10 +158,6 @@ class AppState {
 
     fun adjustV(newFactor: Float) {
         update(UpdateType.VAdjustment(newFactor))
-    }
-
-    fun applyDFT() {
-        update(UpdateType.DFTUpdate)
     }
 
     fun applyDFTFilter(filterType: FilterType, threshold: Double, preserveColor: Boolean) {
@@ -353,8 +352,6 @@ class AppState {
                     updateType.connectivity
                 )
                 newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
-            }
-            UpdateType.DFTUpdate -> {
             }
             is UpdateType.DFTFilter -> {
                 _currentProcessedBaseImage = when (updateType.type) {

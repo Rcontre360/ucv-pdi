@@ -5,15 +5,11 @@ import javafx.fxml.FXML
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.control.ComboBox
-import javafx.scene.control.Label
-import javafx.scene.control.RadioButton
 import javafx.scene.control.ToggleGroup
-import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import org.pdi.core.AppState
-import org.pdi.io.toBufferedImage
+import org.pdi.core.image.toBufferedImage
 import java.awt.Point
-import kotlin.math.roundToInt
 
 
 // line profile panel. Complicated to build since we had to show the image again to be able to select it
