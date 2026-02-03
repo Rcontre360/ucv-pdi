@@ -284,23 +284,91 @@ class Image(val image: Mat) {
         }
     }
 
-    fun makeThreshold(type:Int): Image {
+    fun makeThreshold(type: Int): Image {
         val src = this.image
         val gray = Mat()
         val binary = Mat()
 
+        // 1. Ensure we are working with Grayscale
         if (src.channels() > 1) {
             Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY)
         } else {
             src.copyTo(gray)
         }
 
-        Imgproc.threshold(gray, binary, 0.0, 255.0, Imgproc.THRESH_BINARY or Imgproc.THRESH_OTSU)
+        if (type == 0) {
+            // --- OTSU IMPLEMENTATION ---
+            Imgproc.threshold(gray, binary, 0.0, 255.0, Imgproc.THRESH_BINARY or Imgproc.THRESH_OTSU)
+        } else {
+            // --- TRIANGLE IMPLEMENTATION ---
+            // Assuming channel 0 is the one used for the grayscale histogram
+            val histData = histogram[0] ?: IntArray(256) { 0 }
+            val threshold = calculateTriangleThreshold(histData)
 
+            Imgproc.threshold(gray, binary, threshold.toDouble(), 255.0, Imgproc.THRESH_BINARY)
+        }
+
+        // Convert back to 3-channel BGR to avoid the IndexOutOfBounds error
         val resultBGR = Mat()
         Imgproc.cvtColor(binary, resultBGR, Imgproc.COLOR_GRAY2BGR)
 
         return Image(resultBGR)
+    }
+    private fun calculateTriangleThreshold(hist: IntArray): Int {
+        // 1. Find boundaries: First and last non-zero bins
+        var min = 0
+        while (min < 255 && hist[min] == 0) min++
+
+        var max = 255
+        while (max > 0 && hist[max] == 0) max--
+
+        // 2. Find the peak (highest frequency)
+        var maxFreq = -1
+        var peakIndex = -1
+        for (i in min..max) {
+            if (hist[i] > maxFreq) {
+                maxFreq = hist[i]
+                peakIndex = i
+            }
+        }
+
+        // 3. Determine the tail side.
+        // If peak is closer to min, tail is at max. If closer to max, tail is at min.
+        val isTailAtMax = (peakIndex - min) > (max - peakIndex)
+
+        // We only iterate between the peak and the chosen tail
+        val rangeStart = if (isTailAtMax) min else peakIndex
+        val rangeEnd = if (isTailAtMax) peakIndex else max
+
+        var bestThreshold = peakIndex
+        var maxDistance = -1.0
+
+        // Coordinates of the two points defining our line
+        val x0 = peakIndex.toDouble()
+        val y0 = hist[peakIndex].toDouble()
+        val x1 = (if (isTailAtMax) min else max).toDouble()
+        val y1 = hist[if (isTailAtMax) min else max].toDouble()
+
+        // 4. Geometry calculation
+        // Line: ax + by + c = 0
+        val a = y1 - y0
+        val b = x0 - x1
+        val c = x1 * y0 - y1 * x0
+        val denominator = Math.sqrt(a * a + b * b)
+
+        if (denominator == 0.0) return peakIndex // Safety check
+
+        for (i in rangeStart..rangeEnd) {
+            // Absolute distance from point (i, hist[i]) to the line
+            val dist = Math.abs(a * i + b * hist[i] + c) / denominator
+
+            if (dist > maxDistance) {
+                maxDistance = dist
+                bestThreshold = i
+            }
+        }
+
+        return bestThreshold
     }
 
     fun rotate(angle: Int): Image {
