@@ -160,8 +160,8 @@ class AppState {
         update(UpdateType.VAdjustment(newFactor))
     }
 
-    fun applyDFTFilter(filterType: FilterType, threshold: Double, preserveColor: Boolean) {
-        update(UpdateType.DFTFilter(filterType, threshold, preserveColor))
+    fun applyDFTFilter(filterType: FilterType, threshold: Double) {
+        update(UpdateType.DFTFilter(filterType, threshold))
     }
 
     fun applyKMeansQuantization(k: Int) {
@@ -354,10 +354,7 @@ class AppState {
                 newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.DFTFilter -> {
-                _currentProcessedBaseImage = when (updateType.type) {
-                    FilterType.LOW_PASS -> context.currentImage?.lowPass(updateType.threshold, updateType.preserveColor)
-                    FilterType.HIGH_PASS -> context.currentImage?.highPass(updateType.threshold, updateType.preserveColor)
-                }
+                _currentProcessedBaseImage = context.currentImage?.frequencyFilter(updateType.threshold,updateType.type == FilterType.HIGH_PASS)
                 newStateContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.KMeansQuantization -> {

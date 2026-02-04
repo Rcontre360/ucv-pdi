@@ -28,8 +28,6 @@
             <Label fx:id="thresholdLabel" text="Threshold: 0%" style="-fx-font-weight: bold;"/>
             <Slider fx:id="thresholdSlider" min="0" max="100" value="0"/>
 
-            <CheckBox fx:id="colorCheckBox" text="Color" selected="true" style="-fx-padding: 5 0 0 0;"/>
-
             <Label text="Filter Preview:" style="-fx-font-weight: bold; -fx-padding: 10 0 0 0;"/>
             <ImageView fx:id="filterMaskPreview" fitWidth="150" fitHeight="150" preserveRatio="true"/>
 

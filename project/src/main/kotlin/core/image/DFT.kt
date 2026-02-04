@@ -7,29 +7,23 @@ import org.opencv.core.Rect
 import org.opencv.core.Scalar
 import org.opencv.imgproc.Imgproc
 
-
 fun performDFT(image: Mat): Mat {
+    // we always have 3 channel images even if they are gray
     val gray = Mat()
-    if (image.channels() > 1) {
-        Imgproc.cvtColor(image, gray, Imgproc.COLOR_BGR2GRAY)
-    } else {
+    if (image.channels() == 1) {
         image.copyTo(gray)
+    } else {
+        Imgproc.cvtColor(image, gray, Imgproc.COLOR_BGR2GRAY)
     }
 
-    val padded = Mat()
-    val optimalRows = Core.getOptimalDFTSize(gray.rows())
-    val optimalCols = Core.getOptimalDFTSize(gray.cols())
-    Core.copyMakeBorder(gray, padded, 0, optimalRows - gray.rows(), 0, optimalCols - gray.cols(), Core.BORDER_CONSTANT, Scalar.all(0.0))
-
-    val planes = listOf(padded, Mat.zeros(padded.size(), CvType.CV_32F))
-    padded.convertTo(planes[0], CvType.CV_32F)
+    val planes = listOf(gray, Mat.zeros(gray.size(), CvType.CV_32F))
+    gray.convertTo(planes[0], CvType.CV_32F)
 
     val complexImage = Mat()
     Core.merge(planes, complexImage)
     Core.dft(complexImage, complexImage)
 
     gray.release()
-    padded.release()
 
     return complexImage
 }
@@ -43,56 +37,32 @@ fun getDFTLogMagnitude(complexImage: Mat): Mat {
     Core.add(magnitude, Scalar.all(1.0), magnitude)
     Core.log(magnitude, magnitude)
 
-    // Crop the spectrum if it has an odd number of rows or columns
     val crop = magnitude.submat(Rect(0, 0, magnitude.cols() and -2, magnitude.rows() and -2))
-
-    val cx = crop.cols() / 2
-    val cy = crop.rows() / 2
-
-    val q0 = crop.submat(Rect(0, 0, cx, cy))
-    val q1 = crop.submat(Rect(cx, 0, cx, cy))
-    val q2 = crop.submat(Rect(0, cy, cx, cy))
-    val q3 = crop.submat(Rect(cx, cy, cx, cy))
-
-    val tmp = Mat()
-    q0.copyTo(tmp)
-    q3.copyTo(q0)
-    tmp.copyTo(q3)
-    q1.copyTo(tmp)
-    q2.copyTo(q1)
-    tmp.copyTo(q2)
+    shiftQuadrants(crop)
 
     val result = Mat()
     Core.normalize(crop, result, 0.0, 255.0, Core.NORM_MINMAX, CvType.CV_8U)
 
-    tmp.release()
     magnitude.release()
-    planes.forEach { it.release() }
+    planes.release()
 
     return result
 }
 
-fun shiftQuadrants(image: Mat, inPlace: Boolean = true): Mat {
-    val mat = if (inPlace) image else image.clone()
-
+fun shiftQuadrants(mat: Mat): Mat {
     val cx = mat.cols() / 2
     val cy = mat.rows() / 2
-
-    val q0 = mat.submat(Rect(0, 0, cx, cy))
-    val q1 = mat.submat(Rect(cx, 0, cx, cy))
-    val q2 = mat.submat(Rect(0, cy, cx, cy))
-    val q3 = mat.submat(Rect(cx, cy, cx, cy))
-
     val tmp = Mat()
-    q0.copyTo(tmp)
-    q3.copyTo(q0)
-    tmp.copyTo(q3)
-    q1.copyTo(tmp)
-    q2.copyTo(q1)
-    tmp.copyTo(q2)
 
-    tmp.release()
+    val q0 = mat.submat(0, cy, 0, cx)
+    val q3 = mat.submat(cy, mat.rows(), cx, mat.cols())
+    q0.copyTo(tmp); q3.copyTo(q0); tmp.copyTo(q3)
 
+    val q1 = mat.submat(0, cy, cx, mat.cols())
+    val q2 = mat.submat(cy, mat.rows(), 0, cx)
+    q1.copyTo(tmp); q2.copyTo(q1); tmp.copyTo(q2)
+
+    listOf(tmp, q0, q1, q2, q3).release()
     return mat
 }
 
@@ -119,13 +89,27 @@ fun applyFrequencyFilter(
     val result = Mat()
     inverseDft.convertTo(result, CvType.CV_8U)
 
-    // Centralized memory cleanup
-    dft.release()
-    filter.release()
-    filterPlanes.forEach { it.release() }
-    filterComplex.release()
-    filteredDft.release()
-    inverseDft.release()
+    listOf(dft,filter,filterComplex,filteredDft,inverseDft).release()
+    filterPlanes.release()
 
     return result
+}
+
+fun createFilterMask(width: Int, height: Int, threshold: Double, inverted: Boolean = false): Mat {
+    val baseValue = if (inverted) 1.0 else 0.0
+    val rectValue = if (inverted) 0.0 else 1.0
+    val mask = Mat(height, width, CvType.CV_32F, Scalar(baseValue))
+
+    val filterW = (width * threshold).toInt()
+    val filterH = (height * threshold).toInt()
+    val x = (width - filterW) / 2
+    val y = (height - filterH) / 2
+
+    if (filterW > 0 && filterH > 0) {
+        val roi = mask.submat(Rect(x, y, filterW, filterH))
+        roi.setTo(Scalar(rectValue))
+        roi.release()
+    }
+
+    return mask
 }

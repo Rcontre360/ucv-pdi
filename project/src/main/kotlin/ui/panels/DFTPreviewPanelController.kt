@@ -28,9 +28,6 @@ class DFTPreviewPanelController {
     private lateinit var filterTypeComboBox: ComboBox<FilterType>
 
     @FXML
-    private lateinit var colorCheckBox: CheckBox
-
-    @FXML
     private lateinit var thresholdSlider: Slider
 
     @FXML
@@ -89,8 +86,7 @@ class DFTPreviewPanelController {
     fun applyFilter() {
         val filterType = filterTypeComboBox.value
         val threshold = thresholdSlider.value / 100.0
-        val preserveColor = colorCheckBox.isSelected
-        appState.applyDFTFilter(filterType, threshold, preserveColor)
+        appState.applyDFTFilter(filterType, threshold)
         cancel()
     }
 

@@ -47,7 +47,7 @@ sealed class UpdateType {
     data class YAdjustment(val newFactor: Float) : UpdateType()
     data class UAdjustment(val newFactor: Float) : UpdateType()
     data class VAdjustment(val newFactor: Float) : UpdateType()
-    data class DFTFilter(val type: FilterType, val threshold: Double, val preserveColor: Boolean) : UpdateType()
+    data class DFTFilter(val type: FilterType, val threshold: Double) : UpdateType()
     data class KMeansQuantization(val k: Int) : UpdateType()
     data class UniformQuantization(val bits: Int) : UpdateType()
     data class MedianCutQuantization(val k: Int) : UpdateType()

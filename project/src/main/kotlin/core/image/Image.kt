@@ -60,101 +60,39 @@ class Image(val image: Mat) {
         },
     )
 
-    // runs a function over all pixels, readonly
-    fun readAllPixels(processor: PixelProcessor<Unit>) {
-        for (y in 0 until image.height()) {
-            for (x in 0 until image.width()) {
-                val pixel = image.getRGB(x, y)
-                processor(x, y, pixel)
-            }
-        }
-    }
-
     // returns the tonal curve of the image. The src image is "this" and the target (f(x)) is the "resImg"
     // I decided to make this frequencies based implementation because its more robust than just doing a
     // mapping between one color x to color y. Because for many pixels with color a onn the image they might
     // map to different colors on the dest image. So this handles that use case better.
     fun getTonalCurve(resImg: Image): Map<Char, IntArray> {
-        val sums = Array(4) { LongArray(256) { 0L } }
-        val counts = Array(4) { IntArray(256) { 0 } }
+        val sums = Array(4) { LongArray(256) }
+        val counts = Array(4) { IntArray(256) }
 
         for (y in 0 until metadata.height) {
             for (x in 0 until metadata.width) {
                 val src = image.getRGB(x, y)
-                val dst = image.getRGB(x, y)
+                val dst = resImg.image.getRGB(x, y)
 
-                // R, G, B channels
-                sums[0][src.red] = sums[0][src.red] + dst.red
-                counts[0][src.red]++
-                sums[1][src.green] = sums[1][src.green] + dst.green
-                counts[1][src.green]++
-                sums[2][src.blue] = sums[2][src.blue] + dst.blue
-                counts[2][src.blue]++
+                fun update(channelIdx: Int, srcVal: Int, dstVal: Int) {
+                    sums[channelIdx][srcVal] += dstVal.toLong()
+                    counts[channelIdx][srcVal]++
+                }
 
-                // Luminosity channel
-                val srcLum = luminosity(src)
-                val dstLum = luminosity(dst)
-
-                sums[3][srcLum] = sums[3][srcLum] + dstLum
-                counts[3][srcLum]++
+                update(0, src.red, dst.red)
+                update(1, src.green, dst.green)
+                update(2, src.blue, dst.blue)
+                update(3, luminosity(src), luminosity(dst))
             }
         }
 
-        val luts = Array(4) { IntArray(256) { -1 } }
-        for (c in 0..3) {
-            for (i in 0..255) {
-                if (counts[c][i] > 0) {
-                    luts[c][i] = (sums[c][i] / counts[c][i]).toInt()
-                }
+        val keys = listOf('R', 'G', 'B', 'L')
+        return keys.mapIndexed { c, char ->
+            val lut = IntArray(256) { i ->
+                if (counts[c][i] > 0) (sums[c][i] / counts[c][i]).toInt() else -1
             }
-            // its VERY important to INTERPOLATE. Because for some images that lack some colors the poitns are missing
-            // this will lead to a wrong line graph when displaying it
-            interpolate(luts[c])
-        }
-
-        return mapOf(
-            'R' to luts[0],
-            'G' to luts[1],
-            'B' to luts[2],
-            'L' to luts[3]
-        )
-    }
-
-    // this function is used to interpolate the LUT table onn the tonal curve. The smaller and more colorful the image,
-    // the better the tonal curve will look like.  The less colors it has the more spikes and weird details it will have
-    private fun interpolate(lut: IntArray) {
-        var i = 0
-        while (i < lut.size) {
-            if (lut[i] == -1) {
-                val prevX = i - 1
-                var nextX = i + 1
-                // interpolation is to fill gaps, so we run from the last known point to the next known point
-                while (nextX < lut.size && lut[nextX] == -1) {
-                    nextX++
-                }
-
-                // then we interpolate points in the middle based on their distance
-                val prevY = if (prevX < 0) {
-                    lut[nextX]
-                } else {
-                    lut[prevX]
-                }
-                val nextY = if (nextX >= lut.size) {
-                    lut[prevX]
-                } else {
-                    lut[nextX]
-                }
-                for (j in i until nextX) {
-                    // distance based "t"
-                    val t = (j - prevX).toFloat() / (nextX - prevX)
-                    // interpolation
-                    lut[j] = (prevY * (1 - t) + nextY * t).roundToInt()
-                }
-                i = nextX
-            } else {
-                i++
-            }
-        }
+            interpolate(lut)
+            char to lut
+        }.toMap()
     }
 
     // applies a kernel to the current image and returns its result
@@ -267,91 +205,50 @@ class Image(val image: Mat) {
     }
 
     fun makeThreshold(type: Int): Image {
-        val src = this.image
-        val gray = Mat()
-        val binary = Mat()
+        val result = Mat()
 
-        // 1. Ensure we are working with Grayscale
-        if (src.channels() > 1) {
-            Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY)
+        if (this.image.channels() > 1) {
+            Imgproc.cvtColor(this.image, result, Imgproc.COLOR_BGR2GRAY)
         } else {
-            src.copyTo(gray)
+            this.image.copyTo(result)
         }
 
         if (type == 0) {
-            // --- OTSU IMPLEMENTATION ---
-            Imgproc.threshold(gray, binary, 0.0, 255.0, Imgproc.THRESH_BINARY or Imgproc.THRESH_OTSU)
+            Imgproc.threshold(result, result, 0.0, 255.0, Imgproc.THRESH_BINARY or Imgproc.THRESH_OTSU)
         } else {
-            // --- TRIANGLE IMPLEMENTATION ---
-            // Assuming channel 0 is the one used for the grayscale histogram
-            val histData = histogram[0] ?: IntArray(256) { 0 }
-            val threshold = calculateTriangleThreshold(histData)
-
-            Imgproc.threshold(gray, binary, threshold.toDouble(), 255.0, Imgproc.THRESH_BINARY)
+            val threshold = calculateTriangleThreshold(histogram)
+            Imgproc.threshold(result, result, threshold.toDouble(), 255.0, Imgproc.THRESH_BINARY)
         }
 
-        // Convert back to 3-channel BGR to avoid the IndexOutOfBounds error
-        val resultBGR = Mat()
-        Imgproc.cvtColor(binary, resultBGR, Imgproc.COLOR_GRAY2BGR)
+        Imgproc.cvtColor(result, result, Imgproc.COLOR_GRAY2BGR)
 
-        return Image(resultBGR)
+        return Image(result)
     }
 
-    private fun calculateTriangleThreshold(hist: IntArray): Int {
-        // 1. Find boundaries: First and last non-zero bins
-        var min = 0
-        while (min < 255 && hist[min] == 0) min++
+    //function assumes the image is grayscaled. So picks channel 1 on histogram
+    private fun calculateTriangleThreshold(hist: Histogram): Int {
+        val min = hist.mins[0] ?: 0
+        val max = hist.maxs[0] ?: 255
+        val peak = hist.peaks[0] ?: 255
 
-        var max = 255
-        while (max > 0 && hist[max] == 0) max--
+        val topAtRightHalf = (peak - min) > (max - peak)
+        val tail = if (topAtRightHalf) min else max
 
-        // 2. Find the peak (highest frequency)
-        var maxFreq = -1
-        var peakIndex = -1
-        for (i in min..max) {
-            if (hist[i] > maxFreq) {
-                maxFreq = hist[i]
-                peakIndex = i
-            }
-        }
+        val x0 = peak.toDouble()
+        val y0 = hist[0,peak].toDouble()
+        val x1 = tail.toDouble()
+        val y1 = hist[0,tail].toDouble()
 
-        // 3. Determine the tail side.
-        // If peak is closer to min, tail is at max. If closer to max, tail is at min.
-        val isTailAtMax = (peakIndex - min) > (max - peakIndex)
+        //vector from peak to tail (easier than line equation)
+        val dx = x1 - x0
+        val dy = y1 - y0
 
-        // We only iterate between the peak and the chosen tail
-        val rangeStart = if (isTailAtMax) min else peakIndex
-        val rangeEnd = if (isTailAtMax) peakIndex else max
-
-        var bestThreshold = peakIndex
-        var maxDistance = -1.0
-
-        // Coordinates of the two points defining our line
-        val x0 = peakIndex.toDouble()
-        val y0 = hist[peakIndex].toDouble()
-        val x1 = (if (isTailAtMax) min else max).toDouble()
-        val y1 = hist[if (isTailAtMax) min else max].toDouble()
-
-        // 4. Geometry calculation
-        // Line: ax + by + c = 0
-        val a = y1 - y0
-        val b = x0 - x1
-        val c = x1 * y0 - y1 * x0
-        val denominator = kotlin.math.sqrt(a * a + b * b)
-
-        if (denominator == 0.0) return peakIndex // Safety check
-
-        for (i in rangeStart..rangeEnd) {
-            // Absolute distance from point (i, hist[i]) to the line
-            val dist = kotlin.math.abs(a * i + b * hist[i] + c) / denominator
-
-            if (dist > maxDistance) {
-                maxDistance = dist
-                bestThreshold = i
-            }
-        }
-
-        return bestThreshold
+        return (if (topAtRightHalf) min..peak else peak..max).maxByOrNull { i ->
+            val px = i - x0
+            val py = hist[0, i] - y0
+            // distance
+            kotlin.math.abs(dx * py - dy * px)
+        } ?: peak
     }
 
     fun rotate(angle: Int): Image {
@@ -539,6 +436,106 @@ class Image(val image: Mat) {
         return profile
     }
 
+    fun applyHLSAdjustments(hueFactor: Int, saturationFactor: Float, lightnessFactor: Float): Image {
+        val hlsMat = Mat()
+        Imgproc.cvtColor(image, hlsMat, Imgproc.COLOR_BGR2HLS)
+
+        val channels = mutableListOf<Mat>()
+        Core.split(hlsMat, channels)
+
+        val newHue = rotateHue(channels[0], hueFactor)
+        val newLight = applyChannelFactor(channels[1], lightnessFactor)
+        val newSaturation = applyChannelFactor(channels[2], saturationFactor)
+
+        Core.merge(listOf(newHue, newLight, newSaturation), hlsMat)
+
+        val rgb = Mat()
+        Imgproc.cvtColor(hlsMat, rgb, Imgproc.COLOR_HLS2BGR)
+        listOf(hlsMat, newHue, newLight, newSaturation).release()
+        channels.release()
+
+        return Image(rgb)
+    }
+
+    fun applyYUVAdjustments(yFactor: Float, uFactor: Float, vFactor: Float): Image {
+        val yuvMat = Mat()
+        Imgproc.cvtColor(image, yuvMat, Imgproc.COLOR_BGR2YUV)
+
+        val channels = arrayListOf<Mat>()
+        Core.split(yuvMat, channels)
+
+        val adjustedY = applyChannelFactor(channels[0], yFactor)
+        val adjustedU = applyChannelFactor(channels[1], uFactor)
+        val adjustedV = applyChannelFactor(channels[2], vFactor)
+
+        Core.merge( listOf(adjustedY, adjustedU, adjustedV), yuvMat)
+        Imgproc.cvtColor(yuvMat, yuvMat, Imgproc.COLOR_YUV2BGR)
+
+        listOf(adjustedY,adjustedU,adjustedV).release()
+        channels.release()
+
+        return Image(yuvMat)
+    }
+
+    fun dftImage(): Image {
+        val complexImage = performDFT(this.image)
+        val magnitude = getDFTLogMagnitude(complexImage)
+        complexImage.release()
+
+        return Image(magnitude)
+    }
+
+    fun frequencyFilter(threshold: Double, inverted: Boolean): Image {
+        val yuvChannels = bgrToYuvChannels(image)
+        val filteredPaddedY = applyFrequencyFilter(yuvChannels[0], threshold, inverted)
+        val filteredY = Mat(filteredPaddedY, Rect(0, 0, yuvChannels[1].width(), yuvChannels[1].height()))
+        val resultMat = yuvChannelsToBgr(listOf(filteredY, yuvChannels[1], yuvChannels[2]))
+
+        yuvChannels.forEach { it.release() }
+        filteredPaddedY.release()
+        filteredY.release()
+
+        return Image(resultMat)
+    }
+    
+    fun kMeansQuantization(k: Int): Image {
+        return Image(kMeansQuantization(image, k))
+    }
+
+    fun uniformQuantization(bits: Int): Image {
+        return Image(uniformQuantization(this, bits))
+    }
+
+    fun medianCutQuantization(k: Int): Image {
+        return medianCutQuantization(this, k)
+    }
+
+    // runs a function over all pixels, readonly
+    fun readAllPixels(processor: PixelProcessor<Unit>) {
+        for (y in 0 until image.height()) {
+            for (x in 0 until image.width()) {
+                val pixel = image.getRGB(x, y)
+                processor(x, y, pixel)
+            }
+        }
+    }
+
+    // apply a color modification to each pixel
+    fun applyPerPixel(processor: PixelProcessor<Color>): Image {
+        // Determine the type for the new image.
+        // If the original image had 1 channel (Grayscale), assume the processor returns 1 channel.
+        // Otherwise (3 or 4 channels), assume the processor returns 3 channels (BGR).
+        val newImageType = if (image.channels() == 1) CvType.CV_8UC1 else CvType.CV_8UC3
+        val newImage = Mat.zeros(image.size(), newImageType)
+
+        readAllPixels { x, y, color ->
+            val newRgbValue = processor(x, y, color)
+            newImage.putRGB(x, y, newRgbValue)
+        }
+
+        return Image(newImage)
+    }
+
     // easy, just count how many colors are there
     private fun getUniqueColors(): Int {
         val all: MutableSet<String> = mutableSetOf()
@@ -567,190 +564,5 @@ class Image(val image: Mat) {
             res = res && ((color.red in bin) && (color.green in bin) && (color.blue in bin));
         }
         return res
-    }
-
-    // apply a color modification to each pixel
-    fun applyPerPixel(processor: PixelProcessor<Color>): Image {
-        // Determine the type for the new image.
-        // If the original image had 1 channel (Grayscale), assume the processor returns 1 channel.
-        // Otherwise (3 or 4 channels), assume the processor returns 3 channels (BGR).
-        val newImageType = if (image.channels() == 1) CvType.CV_8UC1 else CvType.CV_8UC3
-        val newImage = Mat.zeros(image.size(), newImageType)
-
-        readAllPixels { x, y, color ->
-            val newRgbValue = processor(x, y, color)
-            newImage.putRGB(x, y, newRgbValue)
-        }
-
-        return Image(newImage)
-    }
-
-    fun applyHLSAdjustments(hueFactor: Int, saturationFactor: Float, lightnessFactor: Float): Image {
-        val hlsMat = Mat()
-        Imgproc.cvtColor(image, hlsMat, Imgproc.COLOR_BGR2HLS)
-
-        val channels = arrayListOf<Mat>()
-        Core.split(hlsMat, channels)
-
-        val hueChannel = channels[0]
-        val lightnessChannel = channels[1]
-        val saturationChannel = channels[2]
-
-        for (y in 0 until hlsMat.rows()) {
-            for (x in 0 until hlsMat.cols()) {
-                // Hue adjustment
-                val currentHue = hueChannel.get(y, x)[0]
-                var newHue = currentHue + hueFactor
-
-                while (newHue < 0) newHue += 180.0
-                newHue %= 180.0
-                hueChannel.put(y, x, newHue)
-
-                // Lightness adjustment
-                val currentLightness = lightnessChannel.get(y, x)[0]
-                val newLightness = (currentLightness + (lightnessFactor * 255)).coerceIn(0.0, 255.0)
-                lightnessChannel.put(y, x, newLightness)
-
-                // Saturation adjustment
-                val currentSaturation = saturationChannel.get(y, x)[0]
-                val newSaturation = (currentSaturation + (saturationFactor * 255)).coerceIn(0.0, 255.0)
-                saturationChannel.put(y, x, newSaturation)
-            }
-        }
-
-        Core.merge(channels, hlsMat)
-        val resultMat = Mat()
-        Imgproc.cvtColor(hlsMat, resultMat, Imgproc.COLOR_HLS2BGR)
-
-        hlsMat.release()
-        channels.forEach { it.release() }
-
-        return Image(resultMat)
-    }
-
-    fun applyYUVAdjustments(yFactor: Float, uFactor: Float, vFactor: Float): Image {
-        val yuvMat = Mat()
-        Imgproc.cvtColor(image, yuvMat, Imgproc.COLOR_BGR2YUV)
-
-        val channels = arrayListOf<Mat>()
-        Core.split(yuvMat, channels)
-
-        // Convert channels to 32-bit float for precise arithmetic
-        val yChannelFloat = Mat()
-        val uChannelFloat = Mat()
-        val vChannelFloat = Mat()
-
-        channels[0].convertTo(yChannelFloat, CvType.CV_32F)
-        channels[1].convertTo(uChannelFloat, CvType.CV_32F)
-        channels[2].convertTo(vChannelFloat, CvType.CV_32F)
-
-        // Apply adjustments using Core.add
-        Core.add(yChannelFloat, Scalar(yFactor * 255.0), yChannelFloat)
-        Core.add(uChannelFloat, Scalar(uFactor * 255.0), uChannelFloat)
-        Core.add(vChannelFloat, Scalar(vFactor * 255.0), vChannelFloat)
-
-        // Clamp values to 0-255 and convert back to 8-bit unsigned
-        val adjustedY = Mat()
-        val adjustedU = Mat()
-        val adjustedV = Mat()
-
-        // convertTo to CV_8U automatically clamps values to 0-255 range.
-        yChannelFloat.convertTo(adjustedY, CvType.CV_8U)
-        uChannelFloat.convertTo(adjustedU, CvType.CV_8U)
-        vChannelFloat.convertTo(adjustedV, CvType.CV_8U)
-
-        // Merge adjusted channels back into a single YUV Mat
-        val adjustedYUVMat = Mat()
-        val adjustedChannelsList = listOf(adjustedY, adjustedU, adjustedV)
-        Core.merge(adjustedChannelsList, adjustedYUVMat)
-
-        val resultMat = Mat()
-        Imgproc.cvtColor(adjustedYUVMat, resultMat, Imgproc.COLOR_YUV2BGR)
-
-        // Release all intermediate Mats
-        yuvMat.release()
-        channels.forEach { it.release() }
-        yChannelFloat.release()
-        uChannelFloat.release()
-        vChannelFloat.release()
-        adjustedY.release()
-        adjustedU.release()
-        adjustedV.release()
-        adjustedYUVMat.release()
-
-        return Image(resultMat)
-    }
-
-    fun dftImage(): Image {
-        val complexImage = performDFT(this.image)
-        val magnitude = getDFTLogMagnitude(complexImage)
-        complexImage.release()
-
-        return Image(magnitude)
-    }
-
-    fun highPass(threshold: Double, preserveColor: Boolean): Image =
-        frequencyFilterWrapper(threshold, preserveColor, inverted = true)
-
-    fun lowPass(threshold: Double, preserveColor: Boolean): Image =
-        frequencyFilterWrapper(threshold, preserveColor, inverted = false)
-
-    private fun frequencyFilterWrapper(threshold: Double, preserveColor: Boolean, inverted: Boolean): Image {
-        if (isGrayscale) {
-            val result = applyFrequencyFilter(this.image, threshold, inverted)
-            return Image(result)
-        } else {
-            val yuvChannels = bgrToYuvChannels()
-            val filteredPaddedY = applyFrequencyFilter(yuvChannels[0], threshold, inverted)
-
-            // Crop back to original size
-            val filteredY = Mat(filteredPaddedY, Rect(0, 0, yuvChannels[1].width(), yuvChannels[1].height()))
-
-            val resultMat = if (preserveColor) {
-                yuvChannelsToBgr(listOf(filteredY, yuvChannels[1], yuvChannels[2]))
-            } else {
-                val grayBgr = Mat()
-                Imgproc.cvtColor(filteredY, grayBgr, Imgproc.COLOR_GRAY2BGR)
-                grayBgr
-            }
-
-            yuvChannels.forEach { it.release() }
-            filteredPaddedY.release()
-            // filteredY is a header, it doesn't strictly need release() but good practice
-            filteredY.release()
-
-            return Image(resultMat)
-        }
-    }
-
-    // Private helper functions for color space conversions
-    private fun bgrToYuvChannels(): List<Mat> {
-        val yuvMat = Mat()
-        Imgproc.cvtColor(image, yuvMat, Imgproc.COLOR_BGR2YUV)
-        val channels = arrayListOf<Mat>()
-        Core.split(yuvMat, channels)
-        yuvMat.release()
-        return channels
-    }
-
-    private fun yuvChannelsToBgr(channels: List<Mat>): Mat {
-        val yuvMat = Mat()
-        Core.merge(channels, yuvMat)
-        val bgrMat = Mat()
-        Imgproc.cvtColor(yuvMat, bgrMat, Imgproc.COLOR_YUV2BGR)
-        yuvMat.release()
-        return bgrMat
-    }
-    
-    fun kMeansQuantization(k: Int): Image {
-        return Image(org.pdi.core.image.kMeansQuantization(image, k))
-    }
-
-    fun uniformQuantization(bits: Int): Image {
-        return Image(org.pdi.core.image.uniformQuantization(this, bits))
-    }
-
-    fun medianCutQuantization(k: Int): Image {
-        return org.pdi.core.image.medianCutQuantization(this, k)
     }
 }
