@@ -15,7 +15,8 @@ fun Mat.getRGB(x:Int,y:Int): Color {
 }
 
 fun Mat.putRGB(x:Int,y:Int,c:Color) {
-    this.put(y,x, floatArrayOf(c.blue.toFloat(),c.green.toFloat(),c.red.toFloat()))
+    val bgrBytes = byteArrayOf(c.blue.toByte(), c.green.toByte(), c.red.toByte())
+    this.put(y,x, bgrBytes)
 }
 
 fun luminosity(c: Color): Int {
