@@ -13,11 +13,6 @@ import kotlin.math.roundToInt
 import kotlin.random.Random
 import org.opencv.core.Core // Import Core for split/merge
 import org.pdi.core.Kernel
-import org.pdi.core.image.kMeansQuantization
-import org.pdi.core.image.medianCutQuantization
-import org.pdi.core.image.uniformQuantization
-import kotlin.math.hypot
-
 
 // zoom algorithm type
 enum class ZoomAlgorithm {
@@ -690,160 +685,39 @@ class Image(val image: Mat) {
         val complexImage = performDFT(this.image)
         val magnitude = getDFTLogMagnitude(complexImage)
         complexImage.release()
+
         return Image(magnitude)
     }
 
-    fun highPass(threshold: Double, preserveColor: Boolean): Image {
+    fun highPass(threshold: Double, preserveColor: Boolean): Image =
+        frequencyFilterWrapper(threshold, preserveColor, inverted = true)
+
+    fun lowPass(threshold: Double, preserveColor: Boolean): Image =
+        frequencyFilterWrapper(threshold, preserveColor, inverted = false)
+
+    private fun frequencyFilterWrapper(threshold: Double, preserveColor: Boolean, inverted: Boolean): Image {
         if (isGrayscale) {
-            val dft = performDFT(this.image)
-            shiftQuadrants(dft) // Shift before filtering
-            val filter = createFilterMask(dft.cols(), dft.rows(), threshold, inverted = true)
-            val filterPlanes = listOf(filter, filter.clone())
-            val filterComplex = Mat()
-            Core.merge(filterPlanes, filterComplex)
-
-            val filteredDft = Mat()
-            Core.multiply(dft, filterComplex, filteredDft)
-
-            shiftQuadrants(filteredDft) // Shift back before inverse DFT
-
-            val inverseDft = Mat()
-            Core.idft(filteredDft, inverseDft, Core.DFT_REAL_OUTPUT + Core.DFT_SCALE)
-
-            val result = Mat()
-            inverseDft.convertTo(result, CvType.CV_8U)
-
-            dft.release()
-            filter.release()
-            filterPlanes.forEach { it.release() }
-            filterComplex.release()
-            filteredDft.release()
-            inverseDft.release()
-
+            val result = applyFrequencyFilter(this.image, threshold, inverted)
             return Image(result)
         } else {
-            // For color images, filter the Y channel
             val yuvChannels = bgrToYuvChannels()
-            val yChannel = yuvChannels[0]
-            val uChannel = yuvChannels[1]
-            val vChannel = yuvChannels[2]
+            val filteredPaddedY = applyFrequencyFilter(yuvChannels[0], threshold, inverted)
 
-            val dft = performDFT(yChannel)
-            shiftQuadrants(dft)
-            val filter = createFilterMask(dft.cols(), dft.rows(), threshold, inverted = true)
-            val filterPlanes = listOf(filter, filter.clone())
-            val filterComplex = Mat()
-            Core.merge(filterPlanes, filterComplex)
-
-            val filteredDft = Mat()
-            Core.multiply(dft, filterComplex, filteredDft)
-
-            shiftQuadrants(filteredDft)
-
-            val inverseDft = Mat()
-            Core.idft(filteredDft, inverseDft, Core.DFT_REAL_OUTPUT + Core.DFT_SCALE)
-
-            val filteredPaddedY = Mat()
-            inverseDft.convertTo(filteredPaddedY, CvType.CV_8U)
-
-            // Crop the filtered Y channel back to the original image size
-            val filteredY = Mat(filteredPaddedY, Rect(0, 0, uChannel.width(), uChannel.height()))
+            // Crop back to original size
+            val filteredY = Mat(filteredPaddedY, Rect(0, 0, yuvChannels[1].width(), yuvChannels[1].height()))
 
             val resultMat = if (preserveColor) {
-                yuvChannelsToBgr(listOf(filteredY, uChannel, vChannel))
+                yuvChannelsToBgr(listOf(filteredY, yuvChannels[1], yuvChannels[2]))
             } else {
                 val grayBgr = Mat()
                 Imgproc.cvtColor(filteredY, grayBgr, Imgproc.COLOR_GRAY2BGR)
                 grayBgr
             }
 
-            // Release all intermediate mats
             yuvChannels.forEach { it.release() }
-            dft.release()
-            filter.release()
-            filterPlanes.forEach { it.release() }
-            filterComplex.release()
-            filteredDft.release()
-            inverseDft.release()
             filteredPaddedY.release()
-
-            return Image(resultMat)
-        }
-    }
-
-    fun lowPass(threshold: Double, preserveColor: Boolean): Image {
-        if (isGrayscale) {
-            val dft = performDFT(this.image)
-            shiftQuadrants(dft) // Shift before filtering
-            val filter = createFilterMask(dft.cols(), dft.rows(), threshold)
-            val filterPlanes = listOf(filter, filter.clone())
-            val filterComplex = Mat()
-            Core.merge(filterPlanes, filterComplex)
-
-            val filteredDft = Mat()
-            Core.multiply(dft, filterComplex, filteredDft)
-
-            shiftQuadrants(filteredDft) // Shift back before inverse DFT
-
-            val inverseDft = Mat()
-            Core.idft(filteredDft, inverseDft, Core.DFT_REAL_OUTPUT + Core.DFT_SCALE)
-
-            val result = Mat()
-            inverseDft.convertTo(result, CvType.CV_8U)
-
-            dft.release()
-            filter.release()
-            filterPlanes.forEach { it.release() }
-            filterComplex.release()
-            filteredDft.release()
-            inverseDft.release()
-
-            return Image(result)
-        } else {
-            // For color images, filter the Y channel
-            val yuvChannels = bgrToYuvChannels()
-            val yChannel = yuvChannels[0]
-            val uChannel = yuvChannels[1]
-            val vChannel = yuvChannels[2]
-
-            val dft = performDFT(yChannel)
-            shiftQuadrants(dft)
-            val filter = createFilterMask(dft.cols(), dft.rows(), threshold)
-            val filterPlanes = listOf(filter, filter.clone())
-            val filterComplex = Mat()
-            Core.merge(filterPlanes, filterComplex)
-
-            val filteredDft = Mat()
-            Core.multiply(dft, filterComplex, filteredDft)
-
-            shiftQuadrants(filteredDft)
-
-            val inverseDft = Mat()
-            Core.idft(filteredDft, inverseDft, Core.DFT_REAL_OUTPUT + Core.DFT_SCALE)
-
-            val filteredPaddedY = Mat()
-            inverseDft.convertTo(filteredPaddedY, CvType.CV_8U)
-
-            // Crop the filtered Y channel back to the original image size
-            val filteredY = Mat(filteredPaddedY, Rect(0, 0, uChannel.width(), uChannel.height()))
-
-            val resultMat = if (preserveColor) {
-                yuvChannelsToBgr(listOf(filteredY, uChannel, vChannel))
-            } else {
-                val grayBgr = Mat()
-                Imgproc.cvtColor(filteredY, grayBgr, Imgproc.COLOR_GRAY2BGR)
-                grayBgr
-            }
-
-            // Release all intermediate mats
-            yuvChannels.forEach { it.release() }
-            dft.release()
-            filter.release()
-            filterPlanes.forEach { it.release() }
-            filterComplex.release()
-            filteredDft.release()
-            inverseDft.release()
-            filteredPaddedY.release()
+            // filteredY is a header, it doesn't strictly need release() but good practice
+            filteredY.release()
 
             return Image(resultMat)
         }
