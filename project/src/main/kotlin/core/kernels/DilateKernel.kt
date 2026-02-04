@@ -1,7 +1,5 @@
 package org.pdi.core.kernels
 
-import org.pdi.core.Kernel
-
 // median kernel, the only kernel where convolution is different
 class DilateKernel(rows: Int, cols: Int) : Kernel(rows, cols) {
 

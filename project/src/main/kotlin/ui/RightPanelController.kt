@@ -9,10 +9,9 @@ import javafx.scene.control.TextField
 import javafx.stage.Modality
 import javafx.stage.Stage
 import org.pdi.core.AppState
-import org.pdi.core.Kernel
-import org.pdi.core.KernelType
+import org.pdi.core.kernels.Kernel
+import org.pdi.core.kernels.KernelType
 import org.pdi.core.kernels.*
-import org.pdi.ui.BorderDetectionType
 import org.pdi.ui.panels.KernelMatrixPanelController
 
 enum class BorderDetectionType {

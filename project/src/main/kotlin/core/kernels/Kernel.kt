@@ -1,4 +1,4 @@
-package org.pdi.core
+package org.pdi.core.kernels
 
 /// all available kernel types
 enum class KernelType {

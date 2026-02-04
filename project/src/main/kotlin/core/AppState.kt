@@ -7,6 +7,7 @@ import org.opencv.core.Point
 import org.pdi.core.image.Histogram
 import org.pdi.core.image.Image
 import org.pdi.core.image.ZoomAlgorithm
+import org.pdi.core.kernels.Kernel
 
 // state context. this class holds values that are used for transition between the initial image and the current one
 // how we decided which values should go here? I wanted those that modify the tonal curve and those that dont interfere with the first ones
@@ -80,7 +81,7 @@ class AppState {
         update(UpdateType.ConvolutionUpdate(kernel))
     }
 
-    fun applyBorderOperator(kernelX:Kernel,kernelY:Kernel) {
+    fun applyBorderOperator(kernelX: Kernel, kernelY: Kernel) {
         update(UpdateType.BorderOperation(kernelX,kernelY))
     }
 

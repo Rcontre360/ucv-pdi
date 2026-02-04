@@ -12,7 +12,7 @@ import kotlin.Int
 import kotlin.math.roundToInt
 import kotlin.random.Random
 import org.opencv.core.Core // Import Core for split/merge
-import org.pdi.core.Kernel
+import org.pdi.core.kernels.Kernel
 
 // zoom algorithm type
 enum class ZoomAlgorithm {
@@ -252,13 +252,23 @@ class Image(val image: Mat) {
     }
 
     fun rotate(angle: Int): Image {
-        val dst = Mat()
+        val newSize = calculateRotatedSize(image.cols(), image.rows(), angle)
         val rotationMatrix = Imgproc.getRotationMatrix2D(
             Point(image.cols() / 2.0, image.rows() / 2.0),
             angle.toDouble(),
             1.0
         )
-        Imgproc.warpAffine(image, dst, rotationMatrix, Size(image.cols().toDouble(), image.rows().toDouble()))
+
+        val currentTx = rotationMatrix.get(0, 2)[0]
+        val currentTy = rotationMatrix.get(1, 2)[0]
+
+        rotationMatrix.put(0, 2, currentTx + (newSize.width - image.cols()) / 2.0)
+        rotationMatrix.put(1, 2, currentTy + (newSize.height - image.rows()) / 2.0)
+
+        val dst = Mat()
+        Imgproc.warpAffine(image, dst, rotationMatrix, newSize)
+
+        rotationMatrix.release()
         return Image(dst)
     }
 

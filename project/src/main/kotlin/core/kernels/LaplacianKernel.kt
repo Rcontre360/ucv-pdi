@@ -1,7 +1,5 @@
 package org.pdi.core.kernels
 
-import org.pdi.core.LinearKernel
-
 //implementation of laplacian taken from: https://github.com/opencv/opencv/blob/4.x/modules/ts/src/ts_func.cpp
 //Decided to use this implementation because I dont find a good practice to just hardcode kernels. Also was hard to come up with
 // a method that created kernels that sum 0 and followed the rules behind the laplacian function.

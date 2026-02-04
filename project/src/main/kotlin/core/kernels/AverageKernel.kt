@@ -1,6 +1,5 @@
 package org.pdi.core.kernels
 
-import org.pdi.core.LinearKernel
 import kotlin.math.pow
 
 // average kernel, is just 1's everywhere forming a CIRCLE instead of a square

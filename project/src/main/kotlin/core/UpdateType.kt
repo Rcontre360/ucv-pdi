@@ -3,6 +3,7 @@ package org.pdi.core
 import java.awt.Color
 import java.io.File
 import org.opencv.core.Point
+import org.pdi.core.kernels.Kernel
 
 enum class FilterType {
     LOW_PASS,
@@ -29,7 +30,7 @@ sealed class UpdateType {
     data class LoadImageUpdate(val file: File) : UpdateType()
     data class ConvolutionUpdate(val kernel: Kernel) : UpdateType()
     // border operations are different from convolution because we calculate the gradient
-    data class BorderOperation(val kernelX: Kernel,val kernelY: Kernel) : UpdateType()
+    data class BorderOperation(val kernelX: Kernel, val kernelY: Kernel) : UpdateType()
     data class RegionGrowingUpdate(
         val seeds: List<Point>,
         val maxDiff: Int,

@@ -1,7 +1,5 @@
 package org.pdi.core.kernels
 
-import org.pdi.core.LinearKernel
-
 // gaussian kernel, generated using the pascal row
 class GaussianKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
     // researched that companion objects are like static functions

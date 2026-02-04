@@ -4,6 +4,7 @@ import org.opencv.core.Core
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.Scalar
+import org.opencv.core.Size
 import java.awt.Color
 import kotlin.math.roundToInt
 
@@ -39,4 +40,16 @@ fun applyChannelFactor(channel:Mat, factor:Float):Mat {
     Core.add(res, Scalar(factor * 255.0), res)
     res.convertTo(res, CvType.CV_8U)
     return res
+}
+
+fun calculateRotatedSize(w: Int, h: Int, angle: Int): Size {
+    val rad = Math.toRadians(angle.toDouble())
+    // Use absolute values to ensure dimensions always represent positive magnitude
+    val sin = Math.abs(Math.sin(rad))
+    val cos = Math.abs(Math.cos(rad))
+
+    val newW = (w * cos + h * sin)
+    val newH = (w * sin + h * cos)
+
+    return Size(newW, newH)
 }

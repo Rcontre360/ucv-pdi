@@ -1,7 +1,5 @@
 package org.pdi.core.kernels
 
-import org.pdi.core.LinearKernel
-
 // same sources as the laplacian kernel
 // https://github.com/opencv/opencv/blob/4.x/modules/ts/src/ts_func.cpp
 // this function generates a gaussian row of size x and applies the derivative "order" times

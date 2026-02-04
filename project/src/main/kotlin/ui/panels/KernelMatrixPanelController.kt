@@ -3,7 +3,7 @@ package org.pdi.ui.panels
 import javafx.fxml.FXML
 import javafx.scene.control.TextField
 import javafx.scene.layout.GridPane
-import org.pdi.core.Kernel
+import org.pdi.core.kernels.Kernel
 
 // kernel matrix panel. Can be updated by the user
 class KernelMatrixPanelController {
