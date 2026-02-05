@@ -13,6 +13,7 @@ import kotlin.math.roundToInt
 import kotlin.random.Random
 import org.opencv.core.Core // Import Core for split/merge
 import org.pdi.core.kernels.Kernel
+import kotlin.io.normalize
 
 // zoom algorithm type
 enum class ZoomAlgorithm {
@@ -518,6 +519,30 @@ class Image(val image: Mat) {
 
     fun medianCutQuantization(k: Int): Image {
         return medianCutQuantization(this, k)
+    }
+
+    fun dctImage(): Image {
+        val dctMat = performDCT(this.image)
+        val magnitude = getDCTLogMagnitude(dctMat)
+        dctMat.release()
+
+        return Image(magnitude)
+    }
+
+    fun dctFrequencyFilter(threshold: Double, inverted: Boolean): Image {
+        // We follow your YUV pattern for consistency
+        val yuvChannels = bgrToYuvChannels(image)
+
+        // Apply DCT filtering to the Y (Luminance) channel
+        val filteredY = applyDCTFrequencyFilter(yuvChannels[0], threshold, inverted)
+
+        // Merge back with original U and V (Chrominance)
+        val resultMat = yuvChannelsToBgr(listOf(filteredY, yuvChannels[1], yuvChannels[2]))
+
+        yuvChannels.release() // Using your extension from earlier
+        filteredY.release()
+
+        return Image(resultMat)
     }
 
     // runs a function over all pixels, readonly
