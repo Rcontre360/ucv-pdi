@@ -93,22 +93,26 @@ class AppState {
 
     private fun updateContextChanges(ctx: StateContext): Image? {
         val base = _currentProcessedBaseImage ?: return null
-        var image = base
-        if (ctx.isNegative) image = image.negative()
-        if (ctx.contrast != 0.0f) image = image.changeContrast(ctx.contrast)
-        if (ctx.brightness != 0.0f) image = image.changeBrightness(ctx.brightness)
-        if (ctx.hueFactor != 0 || ctx.saturationFactor != 0.0f || ctx.lightnessFactor != 0.0f) {
-            image = image.applyHLSAdjustments(ctx.hueFactor, ctx.saturationFactor, ctx.lightnessFactor)
-        }
-        if (ctx.yFactor != 0.0f || ctx.uFactor != 0.0f || ctx.vFactor != 0.0f) {
-            image = image.applyYUVAdjustments(ctx.yFactor, ctx.uFactor, ctx.vFactor)
-        }
-        if (ctx.currentZoomLevelIndex != 9) {
-            image = image.zoom(zoomLevels[ctx.currentZoomLevelIndex], zoomAlgorithm)
-        }
-        if (ctx.rotationApplied != 0) image = image.rotate(ctx.rotationApplied)
-        if (ctx.translationX != 0 || ctx.translationY != 0) image = image.translate(ctx.translationX, ctx.translationY)
-        return image
+        var current = base
+
+        if (ctx.isNegative)
+            current = current.negative()
+        if (ctx.contrast != 0.0f)
+            current = current.changeContrast(ctx.contrast)
+        if (ctx.brightness != 0.0f)
+            current = current.changeBrightness(ctx.brightness)
+        if (ctx.hueFactor != 0 || ctx.saturationFactor != 0.0f || ctx.lightnessFactor != 0.0f)
+            current = current.applyHLSAdjustments(ctx.hueFactor, ctx.saturationFactor, ctx.lightnessFactor)
+        if (ctx.yFactor != 0.0f || ctx.uFactor != 0.0f || ctx.vFactor != 0.0f)
+            current = current.applyYUVAdjustments(ctx.yFactor, ctx.uFactor, ctx.vFactor)
+        if (ctx.currentZoomLevelIndex != 9)
+            current = current.zoom(zoomLevels[ctx.currentZoomLevelIndex], zoomAlgorithm)
+        if (ctx.rotationApplied != 0)
+            current = current.rotate(ctx.rotationApplied)
+        if (ctx.translationX != 0 || ctx.translationY != 0)
+            current = current.translate(ctx.translationX, ctx.translationY)
+
+        return current
     }
 
     private fun update(updateType: UpdateType) {
@@ -119,13 +123,15 @@ class AppState {
             }
             // Context-only updates (Deferred image processing)
             is UpdateType.BrightnessUpdate -> stack.updateCurrent { it.copy(brightness = updateType.newFactor) }
-            is UpdateType.ContrastUpdate -> stack.updateCurrent { it.copy(contrast = updateType.newFactor) }
+            is UpdateType.ContrastUpdate -> stack.updateCurrent {
+                it.copy(contrast = updateType.newFactor)
+            }
             is UpdateType.NegativeUpdate -> stack.updateCurrent { it.copy(isNegative = updateType.isNegative) }
             is UpdateType.RotationUpdate -> stack.updateCurrent { it.copy(rotationApplied = updateType.angle) }
-            UpdateType.ZoomInUpdate -> stack.updateCurrent {
+            is UpdateType.ZoomInUpdate -> stack.updateCurrent {
                 if (it.currentZoomLevelIndex < zoomLevels.size - 1) it.copy(currentZoomLevelIndex = it.currentZoomLevelIndex + 1) else it
             }
-            UpdateType.ZoomOutUpdate -> stack.updateCurrent {
+            is UpdateType.ZoomOutUpdate -> stack.updateCurrent {
                 if (it.currentZoomLevelIndex > 0) it.copy(currentZoomLevelIndex = it.currentZoomLevelIndex - 1) else it
             }
             is UpdateType.PanningModeUpdate -> stack.updateCurrent { it.copy(isPanningMode = updateType.isPanning) }
@@ -141,7 +147,7 @@ class AppState {
 
             // Base Image updates (Reset context to show correct tonal curve)
             is UpdateType.GrayscaleUpdate -> {
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.toGrayscale(updateType.tint)
+                 _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.toGrayscale(updateType.tint)
                 stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
             }
             is UpdateType.ThresholdUpdate -> {

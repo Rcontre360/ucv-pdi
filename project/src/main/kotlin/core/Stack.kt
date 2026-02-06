@@ -19,15 +19,27 @@ data class StateContext(
 )
 
 class Stack {
+    companion object {
+        private const val MAX_HISTORY_SIZE = 10
+    }
+
     private val history = mutableListOf<StateContext>()
     private var currentIndex = -1
 
     fun push(context: StateContext) {
         if (currentIndex < history.size - 1) {
-            history.subList(currentIndex + 1, history.size).clear()
+            val statesToRemove = history.subList(currentIndex + 1, history.size)
+            statesToRemove.clear()
         }
+
         history.add(context)
         currentIndex++
+
+        // Si excedemos el límite, eliminamos el estado más antiguo y liberamos su memoria
+        if (history.size > MAX_HISTORY_SIZE) {
+            history.removeAt(0)
+            currentIndex--
+        }
     }
 
     fun updateCurrent(transform: (StateContext) -> StateContext) {
@@ -57,6 +69,8 @@ class Stack {
     }
 
     fun clear() {
+        // Liberamos absolutamente toda la memoria nativa antes de limpiar la lista
+        history.forEach { it.currentImage?.close() }
         history.clear()
         currentIndex = -1
     }

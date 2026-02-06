@@ -40,7 +40,7 @@ data class Metadata(
 // the image you are creating a new copy of it.
 // I used this approach since inmutability allows me to assume things about variables
 // and have "less" bugs. In the future this should be mutable for more performance
-class Image(val image: Mat) {
+class Image(val image: Mat):AutoCloseable {
     // since this image is inmutable all the related variables can be inmutable
     // histogram is only calculated once, same with all the other fields
     val histogram: Histogram by lazy { Histogram(calculateHistogram()) }
@@ -599,5 +599,11 @@ class Image(val image: Mat) {
             res = res && ((color.red in bin) && (color.green in bin) && (color.blue in bin));
         }
         return res
+    }
+
+    override fun close() {
+        if (!image.empty()) {
+            image.release()
+        }
     }
 }
