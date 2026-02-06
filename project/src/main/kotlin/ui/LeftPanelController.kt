@@ -86,90 +86,106 @@ class LeftPanelController {
 
         brightnessSlider.valueProperty().addListener { _, _, newValue ->
             val brightness = newValue.toFloat() / 100.0f
-            brightnessValueLabel.text = "Brightness: %.2f".format(brightness) // Update label immediately
+            brightnessValueLabel.text = "Brightness: %.2f".format(brightness)
 
-            brightnessTimeline?.stop()
-            brightnessTimeline = Timeline(KeyFrame(Duration.millis(200.0), { // Debounce for 200ms
-                appState.setBrightness(brightness)
-            }))
-            brightnessTimeline?.play()
+            if (appState.context.brightness != brightness) {
+                brightnessTimeline?.stop()
+                brightnessTimeline = Timeline(KeyFrame(Duration.millis(200.0), { // Debounce for 200ms
+                    appState.setBrightness(brightness)
+                }))
+                brightnessTimeline?.play()
+            }
         }
 
         contrastSlider.valueProperty().addListener { _, _, newValue ->
             val contrast = newValue.toFloat() / 100.0f
             contrastValueLabel.text = "Contrast: %.2f".format(contrast) // Update label immediately
 
-            contrastTimeline?.stop()
-            contrastTimeline = Timeline(KeyFrame(Duration.millis(200.0), { // Debounce for 200ms
-                appState.setContrast(contrast)
-            }))
-            contrastTimeline?.play()
+            if (appState.context.contrast != contrast) {
+                contrastTimeline?.stop()
+                contrastTimeline = Timeline(KeyFrame(Duration.millis(200.0), { // Debounce for 200ms
+                    appState.setContrast(contrast)
+                }))
+                contrastTimeline?.play()
+            }
         }
 
         hueSlider.valueProperty().addListener { _, _, newValue ->
             val hue = newValue.toInt()
             hueValueLabel.text = "Matiz: %d".format(hue)
 
-            hueTimeline?.stop()
-            hueTimeline = Timeline(KeyFrame(Duration.millis(200.0), {
-                appState.adjustHue(hue)
-            }))
-            hueTimeline?.play()
+            if (appState.context.hueFactor != hue) {
+                hueTimeline?.stop()
+                hueTimeline = Timeline(KeyFrame(Duration.millis(200.0), {
+                    appState.adjustHue(hue)
+                }))
+                hueTimeline?.play()
+            }
         }
 
         saturationSlider.valueProperty().addListener { _, _, newValue ->
             val saturation = newValue.toFloat() / 100.0f
             saturationValueLabel.text = "Saturación: %.2f".format(saturation)
 
-            saturationTimeline?.stop()
-            saturationTimeline = Timeline(KeyFrame(Duration.millis(200.0), {
-                appState.adjustSaturation(saturation)
-            }))
-            saturationTimeline?.play()
+            if (appState.context.saturationFactor != saturation) {
+                saturationTimeline?.stop()
+                saturationTimeline = Timeline(KeyFrame(Duration.millis(200.0), {
+                    appState.adjustSaturation(saturation)
+                }))
+                saturationTimeline?.play()
+            }
         }
 
         lightnessSlider.valueProperty().addListener { _, _, newValue ->
             val lightness = newValue.toFloat() / 100.0f
             lightnessValueLabel.text = "Luminosidad: %.2f".format(lightness)
 
-            lightnessTimeline?.stop()
-            lightnessTimeline = Timeline(KeyFrame(Duration.millis(200.0), {
-                appState.adjustLightness(lightness)
-            }))
-            lightnessTimeline?.play()
+            if (appState.context.lightnessFactor != lightness) {
+                lightnessTimeline?.stop()
+                lightnessTimeline = Timeline(KeyFrame(Duration.millis(200.0), {
+                    appState.adjustLightness(lightness)
+                }))
+                lightnessTimeline?.play()
+            }
         }
 
         ySlider.valueProperty().addListener { _, _, newValue ->
             val yFactor = newValue.toFloat() / 100.0f
             yValueLabel.text = "Luma (Y): %.2f".format(yFactor)
 
-            yTimeline?.stop()
-            yTimeline = Timeline(KeyFrame(Duration.millis(200.0), {
-                appState.adjustY(yFactor)
-            }))
-            yTimeline?.play()
+            if (appState.context.yFactor != yFactor) {
+                yTimeline?.stop()
+                yTimeline = Timeline(KeyFrame(Duration.millis(200.0), {
+                    appState.adjustY(yFactor)
+                }))
+                yTimeline?.play()
+            }
         }
 
         uSlider.valueProperty().addListener { _, _, newValue ->
             val uFactor = newValue.toFloat() / 100.0f
             uValueLabel.text = "Croma (U): %.2f".format(uFactor)
 
-            uTimeline?.stop()
-            uTimeline = Timeline(KeyFrame(Duration.millis(200.0), {
-                appState.adjustU(uFactor)
-            }))
-            uTimeline?.play()
+            if (appState.context.uFactor != uFactor) {
+                uTimeline?.stop()
+                uTimeline = Timeline(KeyFrame(Duration.millis(200.0), {
+                    appState.adjustU(uFactor)
+                }))
+                uTimeline?.play()
+            }
         }
 
         vSlider.valueProperty().addListener { _, _, newValue ->
             val vFactor = newValue.toFloat() / 100.0f
             vValueLabel.text = "Croma (V): %.2f".format(vFactor)
 
-            vTimeline?.stop()
-            vTimeline = Timeline(KeyFrame(Duration.millis(200.0), {
-                appState.adjustV(vFactor)
-            }))
-            vTimeline?.play()
+            if (appState.context.vFactor != vFactor) {
+                vTimeline?.stop()
+                vTimeline = Timeline(KeyFrame(Duration.millis(200.0), {
+                    appState.adjustV(vFactor)
+                }))
+                vTimeline?.play()
+            }
         }
 
         appState.addContextListener { context ->

@@ -8,6 +8,8 @@
     <padding>
         <Insets top="10" right="10" bottom="10" left="10"/>
     </padding>
+    <Button text="Undo" onAction="#undo"/>
+    <Button text="Redo" onAction="#redo"/>
     <Button text="Save Image" onAction="#saveImage"/>
     <Button text="Select Image" onAction="#selectImage"/>
     <Button text="Show Histogram" onAction="#showHistogram"/>

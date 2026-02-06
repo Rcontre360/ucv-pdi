@@ -195,6 +195,21 @@ class TopPanelController {
         stage.show()
     }
 
+    @FXML
+    fun clearImage() {
+        appState.clear()
+    }
+
+    @FXML
+    fun undo() {
+        appState.undo()
+    }
+
+    @FXML
+    fun redo() {
+        appState.redo()
+    }
+
     // utility alert
     private fun showAlert(title: String, message: String) {
         val alert = Alert(Alert.AlertType.INFORMATION)
@@ -202,10 +217,5 @@ class TopPanelController {
         alert.headerText = null
         alert.contentText = message
         alert.showAndWait()
-    }
-
-    @FXML
-    fun clearImage() {
-        appState.clear()
     }
 }

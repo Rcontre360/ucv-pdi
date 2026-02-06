@@ -116,6 +116,7 @@ class AppState {
     }
 
     private fun update(updateType: UpdateType) {
+        println("IS MAKING UPDATE ${updateType}")
         when (updateType) {
             is UpdateType.Clear -> {
                 _currentProcessedBaseImage = _originalLoadedImage

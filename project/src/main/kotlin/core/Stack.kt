@@ -49,6 +49,7 @@ class Stack {
     }
 
     fun undo(): StateContext? {
+        println("UNDO ${currentIndex}")
         if (currentIndex > 0) {
             currentIndex--
             return history[currentIndex]
@@ -57,6 +58,7 @@ class Stack {
     }
 
     fun redo(): StateContext? {
+        println("REDO ${currentIndex}")
         if (currentIndex < history.size - 1) {
             currentIndex++
             return history[currentIndex]
