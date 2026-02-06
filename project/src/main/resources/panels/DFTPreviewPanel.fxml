@@ -9,8 +9,9 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.geometry.Insets?>
-
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.CheckBox?>
+
 <BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.panels.DFTPreviewPanelController">
     <padding>
         <Insets bottom="10" left="10" right="10" top="10" />
@@ -22,6 +23,11 @@
 
     <right>
         <VBox spacing="10" style="-fx-padding: 0 0 0 10;">
+            <Label text="Frequency Domain:" style="-fx-font-weight: bold;"/>
+            <ComboBox fx:id="domainComboBox" prefWidth="150"/>
+
+            <Separator/>
+
             <Label text="Filter Type:" style="-fx-font-weight: bold;"/>
             <ComboBox fx:id="filterTypeComboBox" prefWidth="150"/>
 

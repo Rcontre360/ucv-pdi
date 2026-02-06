@@ -1,11 +1,7 @@
 package org.pdi.ui.panels
 
 import javafx.fxml.FXML
-import javafx.scene.control.Button
-import javafx.scene.control.CheckBox
-import javafx.scene.control.ComboBox
-import javafx.scene.control.Label
-import javafx.scene.control.Slider
+import javafx.scene.control.*
 import javafx.scene.image.ImageView
 import javafx.stage.Stage
 import org.opencv.core.CvType
@@ -16,33 +12,28 @@ import org.pdi.core.image.Image
 import org.pdi.core.image.createFilterMask
 import org.pdi.core.image.toBufferedImage
 
+enum class FrequencyDomain { DFT, DCT }
+
 class DFTPreviewPanelController {
 
-    @FXML
-    private lateinit var dftImagePanel: ImageView
-
-    @FXML
-    private lateinit var filterMaskPreview: ImageView
-
-    @FXML
-    private lateinit var filterTypeComboBox: ComboBox<FilterType>
-
-    @FXML
-    private lateinit var thresholdSlider: Slider
-
-    @FXML
-    private lateinit var thresholdLabel: Label
-
-    @FXML
-    private lateinit var cancelButton: Button
+    @FXML private lateinit var dftImagePanel: ImageView
+    @FXML private lateinit var filterMaskPreview: ImageView
+    @FXML private lateinit var filterTypeComboBox: ComboBox<FilterType>
+    @FXML private lateinit var domainComboBox: ComboBox<FrequencyDomain> // El nuevo selector
+    @FXML private lateinit var thresholdSlider: Slider
+    @FXML private lateinit var thresholdLabel: Label
+    @FXML private lateinit var cancelButton: Button
 
     private lateinit var appState: AppState
-    private lateinit var dftImage: Image
+    private lateinit var frequencyImage: Image
 
     @FXML
     fun initialize() {
         filterTypeComboBox.items.addAll(FilterType.LOW_PASS, FilterType.HIGH_PASS)
         filterTypeComboBox.selectionModel.select(FilterType.LOW_PASS)
+
+        domainComboBox.items.addAll(FrequencyDomain.DFT, FrequencyDomain.DCT)
+        domainComboBox.selectionModel.select(FrequencyDomain.DFT)
 
         filterTypeComboBox.selectionModel.selectedItemProperty().addListener { _, _, _ ->
             updateFilterPreview()
@@ -52,30 +43,48 @@ class DFTPreviewPanelController {
             thresholdLabel.text = "Threshold: ${newValue.toInt()}%"
             updateFilterPreview()
         }
+
+        domainComboBox.selectionModel.selectedItemProperty().addListener { _, _, _ ->
+            updateFrequencyDisplay()
+        }
     }
 
-    fun setup(appState: AppState, dftImage: Image) {
+    fun setup(appState: AppState) {
         this.appState = appState
-        this.dftImage = dftImage
-
-        dftImagePanel.image = javafx.embed.swing.SwingFXUtils.toFXImage(dftImage.image.toBufferedImage(), null)
+        updateFrequencyDisplay()
         updateFilterPreview()
     }
 
+    private fun updateFrequencyDisplay() {
+        if (::frequencyImage.isInitialized) frequencyImage.close()
+
+        val selectedDomain = domainComboBox.value
+
+        frequencyImage = if (selectedDomain == FrequencyDomain.DFT) {
+            appState.context.currentImage!!.dftImage()
+        } else {
+            appState.context.currentImage!!.dctImage()
+        }
+
+        println("UPDATED FREQUENCY DISPLAY TO $selectedDomain")
+
+        dftImagePanel.image = javafx.embed.swing.SwingFXUtils.toFXImage(frequencyImage.image.toBufferedImage(), null)
+    }
+
     private fun updateFilterPreview() {
-        if (!::dftImage.isInitialized) return
+        if (!::frequencyImage.isInitialized) return
 
         val filterType = filterTypeComboBox.value
         val threshold = thresholdSlider.value / 100.0
         val isInverted = filterType == FilterType.HIGH_PASS
 
-        val mask = createFilterMask(dftImage.metadata.width, dftImage.metadata.height, threshold, isInverted)
+        val width = appState.context.currentImage?.metadata?.width ?: frequencyImage.metadata.width
+        val height = appState.context.currentImage?.metadata?.height ?: frequencyImage.metadata.height
 
+        val mask = createFilterMask(width, height, threshold, isInverted)
         val displayMask = Mat()
-        // Convert the CV_32F mask (with values 0.0 or 1.0) to an 8-bit image for display
-        // We scale by 255.0 to map 1.0 to 255 (white).
-        mask.convertTo(displayMask, CvType.CV_8U, 255.0)
 
+        mask.convertTo(displayMask, CvType.CV_8U, 255.0)
         filterMaskPreview.image = javafx.embed.swing.SwingFXUtils.toFXImage(displayMask.toBufferedImage(), null)
 
         mask.release()
@@ -86,12 +95,14 @@ class DFTPreviewPanelController {
     fun applyFilter() {
         val filterType = filterTypeComboBox.value
         val threshold = thresholdSlider.value / 100.0
+        // Nota: Deberías asegurarte de que appState sepa si aplicar DFT o DCT según el combo
         appState.applyDFTFilter(filterType, threshold)
         cancel()
     }
 
     @FXML
     fun cancel() {
+        if (::frequencyImage.isInitialized) frequencyImage.close()
         val stage = cancelButton.scene.window as Stage
         stage.close()
     }

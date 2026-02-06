@@ -164,7 +164,7 @@ class TopPanelController {
         val loader = FXMLLoader(javaClass.getResource("/panels/DFTPreviewPanel.fxml"))
         val root = loader.load<Parent>()
         val dftPreviewPanelController: DFTPreviewPanelController = loader.getController()
-        dftPreviewPanelController.setup(appState, currentImage.dftImage())
+        dftPreviewPanelController.setup(appState)
 
         val stage = Stage()
         stage.initModality(Modality.APPLICATION_MODAL)
