@@ -4,11 +4,7 @@ import java.awt.Color
 import java.io.File
 import org.opencv.core.Point
 import org.pdi.core.kernels.Kernel
-
-enum class FilterType {
-    LOW_PASS,
-    HIGH_PASS
-}
+import org.pdi.core.transforms.Transform
 
 // this is a utility object using by the app state controller.
 // it defines the different updates we can perform on the state app.
@@ -48,7 +44,7 @@ sealed class UpdateType {
     data class YAdjustment(val newFactor: Float) : UpdateType()
     data class UAdjustment(val newFactor: Float) : UpdateType()
     data class VAdjustment(val newFactor: Float) : UpdateType()
-    data class DFTFilter(val type: FilterType, val threshold: Double) : UpdateType()
+    data class FrequencyFilter(val space: Transform, val threshold: Double, val isHighPass: Boolean) : UpdateType()
     data class KMeansQuantization(val k: Int) : UpdateType()
     data class UniformQuantization(val bits: Int) : UpdateType()
     data class MedianCutQuantization(val k: Int) : UpdateType()

@@ -5,15 +5,14 @@ import org.opencv.core.Mat
 import org.opencv.core.Point
 import org.opencv.core.Rect
 import org.opencv.core.Scalar
-import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 import java.awt.Color
 import kotlin.Int
 import kotlin.math.roundToInt
 import kotlin.random.Random
-import org.opencv.core.Core // Import Core for split/merge
+import org.opencv.core.Core
 import org.pdi.core.kernels.Kernel
-import kotlin.io.normalize
+import org.pdi.core.transforms.Transform
 
 // zoom algorithm type
 enum class ZoomAlgorithm {
@@ -488,17 +487,13 @@ class Image(val image: Mat):AutoCloseable {
         return Image(yuvMat)
     }
 
-    fun dftImage(): Image {
-        val complexImage = performDFT(this.image)
-        val magnitude = getDFTLogMagnitude(complexImage)
-        complexImage.release()
-
-        return Image(magnitude)
+    fun frequencyImage(space: Transform): Image {
+        return Image(space.generateFrequencyMat(this.image))
     }
 
-    fun frequencyFilter(threshold: Double, inverted: Boolean): Image {
+    fun frequencyFilter(space:Transform, threshold: Double, inverted: Boolean): Image {
         val yuvChannels = bgrToYuvChannels(image)
-        val filteredPaddedY = applyFrequencyFilter(yuvChannels[0], threshold, inverted)
+        val filteredPaddedY = space.apply(yuvChannels[0], threshold, inverted)
         val filteredY = Mat(filteredPaddedY, Rect(0, 0, yuvChannels[1].width(), yuvChannels[1].height()))
         val resultMat = yuvChannelsToBgr(listOf(filteredY, yuvChannels[1], yuvChannels[2]))
 
@@ -519,30 +514,6 @@ class Image(val image: Mat):AutoCloseable {
 
     fun medianCutQuantization(k: Int): Image {
         return medianCutQuantization(this, k)
-    }
-
-    fun dctImage(): Image {
-        val dctMat = performDCT(this.image)
-        val magnitude = getDCTLogMagnitude(dctMat)
-        dctMat.release()
-
-        return Image(magnitude)
-    }
-
-    fun dctFrequencyFilter(threshold: Double, inverted: Boolean): Image {
-        // We follow your YUV pattern for consistency
-        val yuvChannels = bgrToYuvChannels(image)
-
-        // Apply DCT filtering to the Y (Luminance) channel
-        val filteredY = applyDCTFrequencyFilter(yuvChannels[0], threshold, inverted)
-
-        // Merge back with original U and V (Chrominance)
-        val resultMat = yuvChannelsToBgr(listOf(filteredY, yuvChannels[1], yuvChannels[2]))
-
-        yuvChannels.release() // Using your extension from earlier
-        filteredY.release()
-
-        return Image(resultMat)
     }
 
     // runs a function over all pixels, readonly

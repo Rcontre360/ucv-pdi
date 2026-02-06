@@ -7,12 +7,19 @@ import javafx.stage.Stage
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.pdi.core.AppState
-import org.pdi.core.FilterType
 import org.pdi.core.image.Image
 import org.pdi.core.image.createFilterMask
 import org.pdi.core.image.toBufferedImage
+import org.pdi.core.transforms.DCT
+import org.pdi.core.transforms.DFT
+import org.pdi.core.transforms.Transform
 
 enum class FrequencyDomain { DFT, DCT }
+
+enum class FilterType {
+    LOW_PASS,
+    HIGH_PASS
+}
 
 class DFTPreviewPanelController {
 
@@ -61,9 +68,9 @@ class DFTPreviewPanelController {
         val selectedDomain = domainComboBox.value
 
         frequencyImage = if (selectedDomain == FrequencyDomain.DFT) {
-            appState.context.currentImage!!.dftImage()
+            appState.context.currentImage!!.frequencyImage(DFT())
         } else {
-            appState.context.currentImage!!.dctImage()
+            appState.context.currentImage!!.frequencyImage(DCT())
         }
 
         println("UPDATED FREQUENCY DISPLAY TO $selectedDomain")
@@ -93,10 +100,15 @@ class DFTPreviewPanelController {
 
     @FXML
     fun applyFilter() {
-        val filterType = filterTypeComboBox.value
+        val isHighPass = filterTypeComboBox.value == FilterType.HIGH_PASS
+        val space: Transform = if (domainComboBox.value == FrequencyDomain.DFT){
+            DFT()
+        } else {
+            DCT()
+        }
         val threshold = thresholdSlider.value / 100.0
-        // Nota: Deberías asegurarte de que appState sepa si aplicar DFT o DCT según el combo
-        appState.applyDFTFilter(filterType, threshold)
+
+        appState.applyDFTFilter(space, threshold, isHighPass)
         cancel()
     }
 
