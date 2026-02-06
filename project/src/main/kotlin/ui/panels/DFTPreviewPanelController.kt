@@ -8,7 +8,6 @@ import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.pdi.core.AppState
 import org.pdi.core.image.Image
-import org.pdi.core.image.createFilterMask
 import org.pdi.core.image.toBufferedImage
 import org.pdi.core.transforms.DCT
 import org.pdi.core.transforms.DFT
@@ -88,7 +87,11 @@ class DFTPreviewPanelController {
         val width = appState.context.currentImage?.metadata?.width ?: frequencyImage.metadata.width
         val height = appState.context.currentImage?.metadata?.height ?: frequencyImage.metadata.height
 
-        val mask = createFilterMask(width, height, threshold, isInverted)
+        val mask = if (domainComboBox.value == FrequencyDomain.DFT){
+            DFT().createFilter(width,height,threshold,isInverted)
+        } else {
+            DCT().createFilter(width,height,threshold,isInverted)
+        }
         val displayMask = Mat()
 
         mask.convertTo(displayMask, CvType.CV_8U, 255.0)

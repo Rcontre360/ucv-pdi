@@ -491,9 +491,9 @@ class Image(val image: Mat):AutoCloseable {
         return Image(space.generateFrequencyMat(this.image))
     }
 
-    fun frequencyFilter(space:Transform, threshold: Double, inverted: Boolean): Image {
+    fun frequencyFilter(space:Transform, threshold: Double, isHighPass: Boolean): Image {
         val yuvChannels = bgrToYuvChannels(image)
-        val filteredPaddedY = space.apply(yuvChannels[0], threshold, inverted)
+        val filteredPaddedY = space.applyFilter(yuvChannels[0], threshold, isHighPass)
         val filteredY = Mat(filteredPaddedY, Rect(0, 0, yuvChannels[1].width(), yuvChannels[1].height()))
         val resultMat = yuvChannelsToBgr(listOf(filteredY, yuvChannels[1], yuvChannels[2]))
 

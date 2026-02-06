@@ -2,24 +2,54 @@ package org.pdi.core.transforms
 
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
+import org.pdi.core.image.release
 
-class DFT : Transform {
-    override fun generateFrequencyMat(mat: Mat): Mat {
-        val complexImage = performDFT(mat)
-        val magnitude = getDFTLogMagnitude(complexImage)
-        complexImage.release()
-        return magnitude
-    }
+class DFT : Transform() {
+    override fun applyFilter(mat: Mat, threshold: Double, highPass: Boolean): Mat {
+        val dft = toFrequency(mat)
+        shiftQuadrants(dft)
 
-    override fun apply(mat: Mat, threshold: Double, highPass: Boolean): Mat {
-        return applyFrequencyFilter(mat, threshold, highPass)
+        val filter = createFilter(dft.cols(), dft.rows(), threshold, highPass)
+        val filterPlanes = listOf(filter, filter.clone())
+        val filterComplex = Mat()
+        Core.merge(filterPlanes, filterComplex)
+
+        val filteredDft = Mat()
+        Core.multiply(dft, filterComplex, filteredDft)
+        shiftQuadrants(filteredDft)
+
+        val inverseDft = Mat()
+        Core.idft(filteredDft, inverseDft, Core.DFT_REAL_OUTPUT + Core.DFT_SCALE)
+
+        val result = Mat()
+        inverseDft.convertTo(result, CvType.CV_8U)
+
+        listOf(dft,filter,filterComplex,filteredDft,inverseDft).release()
+        filterPlanes.release()
+
+        return result
     }
 
     override fun createFilter(rows: Int, cols: Int, threshold: Double, highPass: Boolean): Mat {
-        return createFilterMask(cols, rows, threshold, highPass)
+        val baseValue = if (highPass) 1.0 else 0.0
+        val rectValue = if (highPass) 0.0 else 1.0
+        val mask = Mat(rows, cols, CvType.CV_32F, Scalar(baseValue))
+
+        val filterW = (cols * threshold).toInt()
+        val filterH = (rows * threshold).toInt()
+        val x = (cols - filterW) / 2
+        val y = (rows - filterH) / 2
+
+        if (filterW > 0 && filterH > 0) {
+            val roi = mask.submat(Rect(x, y, filterW, filterH))
+            roi.setTo(Scalar(rectValue))
+            roi.release()
+        }
+
+        return mask
     }
 
-    private fun performDFT(image: Mat): Mat {
+    override fun toFrequency(image: Mat): Mat {
         // we always have 3 channel images even if they are gray
         val gray = Mat()
         if (image.channels() == 1) {
@@ -40,7 +70,7 @@ class DFT : Transform {
         return complexImage
     }
 
-    private fun getDFTLogMagnitude(complexImage: Mat): Mat {
+    override fun logMagnitude(complexImage: Mat): Mat {
         val planes = mutableListOf<Mat>()
         Core.split(complexImage, planes)
         val magnitude = Mat()
@@ -82,55 +112,4 @@ class DFT : Transform {
         return mat
     }
 
-    private fun applyFrequencyFilter(
-        source: Mat,
-        threshold: Double,
-        inverted: Boolean
-    ): Mat {
-        val dft = performDFT(source)
-        shiftQuadrants(dft)
-
-        val filter = createFilterMask(dft.cols(), dft.rows(), threshold, inverted)
-        val filterPlanes = listOf(filter, filter.clone())
-        val filterComplex = Mat()
-        Core.merge(filterPlanes, filterComplex)
-
-        val filteredDft = Mat()
-        Core.multiply(dft, filterComplex, filteredDft)
-        shiftQuadrants(filteredDft)
-
-        val inverseDft = Mat()
-        Core.idft(filteredDft, inverseDft, Core.DFT_REAL_OUTPUT + Core.DFT_SCALE)
-
-        val result = Mat()
-        inverseDft.convertTo(result, CvType.CV_8U)
-
-        dft.release()
-        filter.release()
-        filterComplex.release()
-        filteredDft.release()
-        inverseDft.release()
-        filterPlanes.forEach { it.release() }
-
-        return result
-    }
-
-    private fun createFilterMask(width: Int, height: Int, threshold: Double, inverted: Boolean = false): Mat {
-        val baseValue = if (inverted) 1.0 else 0.0
-        val rectValue = if (inverted) 0.0 else 1.0
-        val mask = Mat(height, width, CvType.CV_32F, Scalar(baseValue))
-
-        val filterW = (width * threshold).toInt()
-        val filterH = (height * threshold).toInt()
-        val x = (width - filterW) / 2
-        val y = (height - filterH) / 2
-
-        if (filterW > 0 && filterH > 0) {
-            val roi = mask.submat(Rect(x, y, filterW, filterH))
-            roi.setTo(Scalar(rectValue))
-            roi.release()
-        }
-
-        return mask
-    }
 }
