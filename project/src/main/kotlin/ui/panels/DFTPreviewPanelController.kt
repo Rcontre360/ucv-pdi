@@ -25,7 +25,7 @@ class DFTPreviewPanelController {
     @FXML private lateinit var dftImagePanel: ImageView
     @FXML private lateinit var filterMaskPreview: ImageView
     @FXML private lateinit var filterTypeComboBox: ComboBox<FilterType>
-    @FXML private lateinit var domainComboBox: ComboBox<FrequencyDomain> // El nuevo selector
+    @FXML private lateinit var domainComboBox: ComboBox<FrequencyDomain>
     @FXML private lateinit var thresholdSlider: Slider
     @FXML private lateinit var thresholdLabel: Label
     @FXML private lateinit var cancelButton: Button
@@ -65,12 +65,9 @@ class DFTPreviewPanelController {
         if (::frequencyImage.isInitialized) frequencyImage.close()
 
         val selectedDomain = domainComboBox.value
+        val space = if (selectedDomain == FrequencyDomain.DFT) DFT() else DCT()
 
-        frequencyImage = if (selectedDomain == FrequencyDomain.DFT) {
-            appState.context.currentImage!!.frequencyImage(DFT())
-        } else {
-            appState.context.currentImage!!.frequencyImage(DCT())
-        }
+        frequencyImage = appState.context.currentImage!!.frequencyImage(space)
 
         println("UPDATED FREQUENCY DISPLAY TO $selectedDomain")
 
@@ -80,38 +77,39 @@ class DFTPreviewPanelController {
     private fun updateFilterPreview() {
         if (!::frequencyImage.isInitialized) return
 
-        val filterType = filterTypeComboBox.value
         val threshold = thresholdSlider.value / 100.0
-        val isInverted = filterType == FilterType.HIGH_PASS
+        val isHighPass = filterTypeComboBox.value == FilterType.HIGH_PASS
 
         val width = appState.context.currentImage?.metadata?.width ?: frequencyImage.metadata.width
         val height = appState.context.currentImage?.metadata?.height ?: frequencyImage.metadata.height
 
-        val mask = if (domainComboBox.value == FrequencyDomain.DFT){
-            DFT().createFilter(width,height,threshold,isInverted)
-        } else {
-            DCT().createFilter(width,height,threshold,isInverted)
-        }
-        val displayMask = Mat()
+        val space = if (domainComboBox.value == FrequencyDomain.DFT) DFT() else DCT()
 
-        mask.convertTo(displayMask, CvType.CV_8U, 255.0)
+        // Obtenemos la instancia del filtro desde la Transform
+        val filter = space.createFilter(height, width, threshold, isHighPass)
+
+        // Usamos getAsImage() de la clase base FrequencyFilter
+        val displayMask = filter.getAsImage()
+
         filterMaskPreview.image = javafx.embed.swing.SwingFXUtils.toFXImage(displayMask.toBufferedImage(), null)
 
-        mask.release()
         displayMask.release()
     }
 
     @FXML
     fun applyFilter() {
-        val isHighPass = filterTypeComboBox.value == FilterType.HIGH_PASS
-        val space: Transform = if (domainComboBox.value == FrequencyDomain.DFT){
-            DFT()
-        } else {
-            DCT()
-        }
         val threshold = thresholdSlider.value / 100.0
+        val isHighPass = filterTypeComboBox.value == FilterType.HIGH_PASS
 
-        appState.applyDFTFilter(space, threshold, isHighPass)
+        val space = if (domainComboBox.value == FrequencyDomain.DFT) DFT() else DCT()
+
+        val width = appState.context.currentImage?.metadata?.width ?: 0
+        val height = appState.context.currentImage?.metadata?.height ?: 0
+
+        // Instanciamos el filtro final
+        val filter = space.createFilter(height, width, threshold, isHighPass)
+
+        appState.applyFrequencyFilter(space, filter)
         cancel()
     }
 

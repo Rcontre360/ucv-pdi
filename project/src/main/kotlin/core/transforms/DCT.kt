@@ -14,21 +14,18 @@ class DCT : Transform() {
         }
 
         val floatGray = Mat()
-        gray.convertTo(gray, CvType.CV_32F)
+        gray.convertTo(floatGray, CvType.CV_32F)
 
         val dctMat = Mat()
         Core.dct(floatGray, dctMat)
 
-        listOf(gray,floatGray).release()
+        listOf(gray, floatGray).release()
         return dctMat
     }
 
-    override fun applyFilter(mat: Mat, threshold: Double, highPass: Boolean): Mat {
+    override fun applyFilter(mat: Mat, filter: FrequencyFilter): Mat {
         val dct = toFrequency(mat)
-        val mask = createFilter(dct.cols(), dct.rows(), threshold, highPass)
-
-        val filteredDct = Mat()
-        Core.multiply(dct, mask, filteredDct)
+        val filteredDct = filter.apply(dct)
 
         val inverseDct = Mat()
         Core.idct(filteredDct, inverseDct)
@@ -36,30 +33,20 @@ class DCT : Transform() {
         val result = Mat()
         inverseDct.convertTo(result, CvType.CV_8U)
 
-        listOf(dct,mask,filteredDct,inverseDct).release()
+        listOf(dct, filteredDct, inverseDct).release()
         return result
     }
 
-    override fun createFilter(rows: Int, cols: Int, threshold: Double, highPass: Boolean): Mat {
-        val baseValue = if (highPass) 1.0 else 0.0
-        val rectValue = if (highPass) 0.0 else 1.0
-        val mask = Mat(rows, cols, CvType.CV_32F, Scalar(baseValue))
-
-        val filterW = (cols * threshold).toInt()
-        val filterH = (rows * threshold).toInt()
-
-        if (filterW > 0 && filterH > 0) {
-            val roi = mask.submat(Rect(0, 0, filterW, filterH))
-            roi.setTo(Scalar(rectValue))
-            roi.release()
+    override fun createFilter(rows: Int, cols: Int, threshold: Double, highPass: Boolean): FrequencyFilter {
+        return if (highPass) {
+            HighPassDCT(rows, cols, threshold)
+        } else {
+            LowPassDCT(rows, cols, threshold)
         }
-
-        return mask
     }
 
     override fun logMagnitude(dctMat: Mat): Mat {
         val magnitude = Mat()
-        // DCT can have negative values; use absolute to avoid log(negative)
         Core.absdiff(dctMat, Scalar.all(0.0), magnitude)
 
         Core.add(magnitude, Scalar.all(1.0), magnitude)

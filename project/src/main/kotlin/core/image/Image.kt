@@ -12,6 +12,7 @@ import kotlin.math.roundToInt
 import kotlin.random.Random
 import org.opencv.core.Core
 import org.pdi.core.kernels.Kernel
+import org.pdi.core.transforms.FrequencyFilter
 import org.pdi.core.transforms.Transform
 
 // zoom algorithm type
@@ -491,13 +492,14 @@ class Image(val image: Mat):AutoCloseable {
         return Image(space.generateFrequencyMat(this.image))
     }
 
-    fun frequencyFilter(space:Transform, threshold: Double, isHighPass: Boolean): Image {
+    fun frequencyFilter(space: Transform, filter: FrequencyFilter): Image {
         val yuvChannels = bgrToYuvChannels(image)
-        val filteredPaddedY = space.applyFilter(yuvChannels[0], threshold, isHighPass)
-        val filteredY = Mat(filteredPaddedY, Rect(0, 0, yuvChannels[1].width(), yuvChannels[1].height()))
+        val filteredPaddedY = space.applyFilter(yuvChannels[0], filter)
+
+        val filteredY = Mat(filteredPaddedY, Rect(0, 0, yuvChannels[0].cols(), yuvChannels[0].rows()))
         val resultMat = yuvChannelsToBgr(listOf(filteredY, yuvChannels[1], yuvChannels[2]))
 
-        yuvChannels.forEach { it.release() }
+        yuvChannels.release()
         filteredPaddedY.release()
         filteredY.release()
 

@@ -8,6 +8,7 @@ import org.pdi.core.image.Histogram
 import org.pdi.core.image.Image
 import org.pdi.core.image.ZoomAlgorithm
 import org.pdi.core.kernels.Kernel
+import org.pdi.core.transforms.FrequencyFilter
 import org.pdi.core.transforms.Transform
 
 class AppState {
@@ -69,7 +70,7 @@ class AppState {
     fun adjustY(newFactor: Float) = update(UpdateType.YAdjustment(newFactor))
     fun adjustU(newFactor: Float) = update(UpdateType.UAdjustment(newFactor))
     fun adjustV(newFactor: Float) = update(UpdateType.VAdjustment(newFactor))
-    fun applyDFTFilter(space: Transform, threshold: Double, isHighPass: Boolean) = update(UpdateType.FrequencyFilter(space, threshold, isHighPass))
+    fun applyFrequencyFilter(space: Transform, filter: FrequencyFilter) = update(UpdateType.FrequencyFilter(space, filter))
     fun applyKMeansQuantization(k: Int) = update(UpdateType.KMeansQuantization(k))
     fun applyUniformQuantization(bits: Int) = update(UpdateType.UniformQuantization(bits))
     fun applyMedianCutQuantization(k: Int) = update(UpdateType.MedianCutQuantization(k))
@@ -117,7 +118,6 @@ class AppState {
     }
 
     private fun update(updateType: UpdateType) {
-        println("IS MAKING UPDATE ${updateType}")
         when (updateType) {
             is UpdateType.Clear -> {
                 _currentProcessedBaseImage = _originalLoadedImage
@@ -177,7 +177,7 @@ class AppState {
                 stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
             }
             is UpdateType.FrequencyFilter -> {
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.frequencyFilter(updateType.space, updateType.threshold, updateType.isHighPass)
+                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.frequencyFilter(updateType.space, updateType.filter)
                 stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
             }
             is UpdateType.KMeansQuantization -> {

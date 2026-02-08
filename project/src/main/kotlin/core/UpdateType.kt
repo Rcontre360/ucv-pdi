@@ -44,7 +44,7 @@ sealed class UpdateType {
     data class YAdjustment(val newFactor: Float) : UpdateType()
     data class UAdjustment(val newFactor: Float) : UpdateType()
     data class VAdjustment(val newFactor: Float) : UpdateType()
-    data class FrequencyFilter(val space: Transform, val threshold: Double, val isHighPass: Boolean) : UpdateType()
+    data class FrequencyFilter(val space: Transform, val filter: org.pdi.core.transforms.FrequencyFilter) : UpdateType()
     data class KMeansQuantization(val k: Int) : UpdateType()
     data class UniformQuantization(val bits: Int) : UpdateType()
     data class MedianCutQuantization(val k: Int) : UpdateType()
