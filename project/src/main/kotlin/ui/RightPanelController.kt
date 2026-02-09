@@ -16,7 +16,6 @@ enum class BorderDetectionType {
     SOBEL, ROBERTS, PREWITT
 }
 
-// Representamos las operaciones compuestas localmente para la UI
 enum class MorphOp {
     ERODE, DILATE, OPEN, CLOSE
 }
@@ -30,7 +29,6 @@ class RightPanelController {
 
     @FXML private lateinit var bordersComboBox: ComboBox<BorderDetectionType>
 
-    // Usamos un String o un enum local para incluir Open y Close sin tocar KernelType
     @FXML private lateinit var morphComboBox: ComboBox<MorphOp>
     @FXML private lateinit var morphRowsField: TextField
     @FXML private lateinit var morphColsField: TextField
@@ -39,7 +37,10 @@ class RightPanelController {
     private lateinit var primaryStage: Stage
     private val laplacianProfiling = LaplacianKernelProfiling()
     private val kernelManager = KernelConfigManager(laplacianProfiling)
+
+    // Variables persistentes (Referencia única para el editor y la aplicación)
     private var currentKernel: Kernel = CustomKernel(3, 3)
+    private var currentMorphKernel: Kernel = ErodeKernel(3, 3)
 
     fun setAppState(appState: AppState, primaryStage: Stage) {
         this.appState = appState
@@ -50,6 +51,7 @@ class RightPanelController {
         setupMorphologySection()
 
         updateCurrentKernel()
+        updateCurrentMorphKernel()
     }
 
     private fun setupKernelSection() {
@@ -77,13 +79,17 @@ class RightPanelController {
     private fun setupMorphologySection() {
         morphComboBox.items.addAll(MorphOp.entries.toList())
         morphComboBox.selectionModel.selectFirst()
+
+        val updateListener = { _: Any?, _: Any?, _: Any? -> updateCurrentMorphKernel() }
+        morphRowsField.textProperty().addListener(updateListener)
+        morphColsField.textProperty().addListener(updateListener)
+        morphComboBox.valueProperty().addListener(updateListener)
     }
 
     private fun updateCurrentKernel() {
         val r = rowsField.text.toIntOrNull() ?: 3
         val c = colsField.text.toIntOrNull() ?: 3
         val selected = typeComboBox.value ?: KernelType.CUSTOM
-
         currentKernel = kernelManager.createInstance(r, c, selected)
 
         val (customR, customC) = currentKernel.isCustomizable()
@@ -91,8 +97,17 @@ class RightPanelController {
         colsField.isEditable = customC
     }
 
-    @FXML fun showKernel() = openKernelMatrixWindow(currentKernel, false)
+    private fun updateCurrentMorphKernel() {
+        val r = morphRowsField.text.toIntOrNull() ?: 3
+        val c = morphColsField.text.toIntOrNull() ?: 3
+        val op = morphComboBox.value ?: MorphOp.ERODE
 
+        // Mapeamos a ERODE o DILATE para inicializar el objeto base
+        val baseType = if (op == MorphOp.DILATE || op == MorphOp.CLOSE) KernelType.DILATE else KernelType.ERODE
+        currentMorphKernel = kernelManager.createInstance(r, c, baseType)
+    }
+
+    @FXML fun showKernel() = openKernelMatrixWindow(currentKernel, false)
     @FXML fun applyFilter() = appState.applyConvolution(currentKernel)
 
     @FXML
@@ -106,43 +121,26 @@ class RightPanelController {
         appState.applyBorderOperator(kX, kY)
     }
 
-    @FXML
-    fun showMorphologyEditor() {
-        val r = morphRowsField.text.toIntOrNull() ?: 3
-        val c = morphColsField.text.toIntOrNull() ?: 3
-
-        // Mapeamos la selección de la UI a un KernelType básico para el editor
-        val type = when (morphComboBox.value) {
-            MorphOp.DILATE, MorphOp.CLOSE -> KernelType.DILATE
-            else -> KernelType.ERODE
-        }
-
-        val morphKernel = kernelManager.createInstance(r, c, type)
-        openKernelMatrixWindow(morphKernel, true)
-    }
+    @FXML fun showMorphologyEditor() = openKernelMatrixWindow(currentMorphKernel, true)
 
     @FXML
     fun applyMorphology() {
-        val r = morphRowsField.text.toIntOrNull() ?: 3
-        val c = morphColsField.text.toIntOrNull() ?: 3
         val op = morphComboBox.value ?: MorphOp.ERODE
 
-        // Preparamos las instancias de kernel (ambas con las mismas dimensiones)
-        val erodeKernel = kernelManager.createInstance(r, c, KernelType.ERODE)
-        val dilateKernel = kernelManager.createInstance(r, c, KernelType.DILATE)
-
         when (op) {
-            MorphOp.ERODE -> appState.applyConvolution(erodeKernel)
-            MorphOp.DILATE -> appState.applyConvolution(dilateKernel)
+            MorphOp.ERODE, MorphOp.DILATE -> {
+                // Usamos la instancia persistente que fue editada
+                appState.applyConvolution(currentMorphKernel)
+            }
             MorphOp.OPEN -> {
-                // Apertura = Erosion -> Dilatacion
-                appState.applyConvolution(erodeKernel)
-                appState.applyConvolution(dilateKernel)
+                // Para Open/Close, usamos la misma instancia dos veces (Erosión -> Dilatación)
+                appState.applyConvolution(currentMorphKernel)
+                appState.applyConvolution(currentMorphKernel)
             }
             MorphOp.CLOSE -> {
-                // Cierre = Dilatacion -> Erosion
-                appState.applyConvolution(dilateKernel)
-                appState.applyConvolution(erodeKernel)
+                // Cierre (Dilatación -> Erosión)
+                appState.applyConvolution(currentMorphKernel)
+                appState.applyConvolution(currentMorphKernel)
             }
         }
     }
@@ -151,7 +149,6 @@ class RightPanelController {
         val loader = FXMLLoader(javaClass.getResource("/panels/KernelMatrixPanel.fxml"))
         val root = loader.load<Parent>()
         val controller: KernelMatrixPanelController = loader.getController()
-
         controller.setKernel(kernel)
 
         Stage().apply {
