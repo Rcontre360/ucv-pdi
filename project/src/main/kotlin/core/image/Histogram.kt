@@ -29,29 +29,23 @@ class Histogram(private val image: Mat) {
         }
     }
 
-    fun stretch(min: Int, max: Int): Mat {
-        val yuvChannels = bgrToYuvChannels(image)
-        val yChannel = yuvChannels[0]
+    fun equalize(threshold: Float = 0.0f): Mat {
+        val yuv = bgrToYuvChannels(image)
+        val yChannel = yuv[0]
 
-        val range = (max - min).toDouble().coerceAtLeast(1.0)
-        val alpha = 255.0 / range
-        val beta = -min * alpha
+        val equalized = Imgproc.createCLAHE(threshold.toDouble(), Size(8.0, 8.0))
+        equalized.apply(yChannel, yChannel)
 
-        val stretchedY = Mat()
-        yChannel.convertTo(stretchedY, yChannel.type(), alpha, beta)
+        val result = Mat()
+        Core.merge(yuv, result)
 
-        val resultYuv = Mat()
-        val combined = listOf(stretchedY, yuvChannels[1], yuvChannels[2])
-        Core.merge(combined, resultYuv)
+        val finalBgr = Mat()
+        Imgproc.cvtColor(result, finalBgr, Imgproc.COLOR_YUV2BGR)
 
-        val resultBgr = Mat()
-        Imgproc.cvtColor(resultYuv, resultBgr, Imgproc.COLOR_YUV2BGR)
+        yuv.release()
+        result.release()
 
-        yuvChannels.forEach { it.release() }
-        stretchedY.release()
-        resultYuv.release()
-
-        return resultBgr
+        return finalBgr
     }
 
     private fun calculate(mat: Mat): Map<Int, IntArray> {

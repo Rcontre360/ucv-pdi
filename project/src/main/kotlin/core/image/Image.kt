@@ -193,9 +193,7 @@ class Image(val image: Mat):AutoCloseable {
     // to pick the min/max limits we allow the user to do it on will. Since most apps allow the user to change the
     // contrast "level". We use a factor between 0-1. 0.1 would be stretching the histogram from 12.7 to 255-12.7
     fun changeContrast(factor: Float): Image {
-        val min = (127 * factor)
-        val max = 255 - (127 * factor)
-        return Image(histogram.stretch(min.toInt(), max.toInt()))
+        return Image(histogram.equalize(factor * 50))
     }
 
     fun makeThreshold(type: Int): Image {
