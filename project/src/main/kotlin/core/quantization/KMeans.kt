@@ -2,6 +2,7 @@ package org.pdi.core.quantization
 
 import org.opencv.core.*
 import org.pdi.core.image.Image
+import kotlin.collections.forEach
 
 class KMeansQuantizer(k: Int) : Quantizer(k) {
     override fun apply(image: Image): Mat {
