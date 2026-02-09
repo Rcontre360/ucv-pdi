@@ -5,7 +5,6 @@ import javafx.scene.control.*
 import javafx.stage.Stage
 import org.pdi.core.AppState
 import org.pdi.core.quantization.*
-import kotlin.math.ln
 
 enum class QuantizationMethod(val displayName: String) {
     K_MEANS("K-Means"),
@@ -31,8 +30,7 @@ class QuantizationPanelController {
             if (!isFocused) colorsSpinner.increment(0)
         }
 
-        // Llenamos el ComboBox usando el Enum
-        methodComboBox.items.addAll(QuantizationMethod.values())
+        methodComboBox.items.addAll(QuantizationMethod.entries)
         methodComboBox.selectionModel.select(QuantizationMethod.K_MEANS)
     }
 

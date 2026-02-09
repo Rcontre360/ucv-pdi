@@ -17,7 +17,6 @@ class UmbralizationPanelController {
 
     @FXML
     fun initialize() {
-        // Populate the dropdown with the Otsu and Triangle options
         algorithmComboBox.items.addAll(ThresholdType.entries)
         algorithmComboBox.selectionModel.select(ThresholdType.OTSU)
     }
@@ -29,11 +28,12 @@ class UmbralizationPanelController {
 
     @FXML
     fun applyThresholding() {
-        // Retrieve the selection (0 for Otsu, 1 for Triangle)
-        val selectedType = algorithmComboBox.value
+        val selectedType = when (algorithmComboBox.value) {
+            ThresholdType.OTSU -> 0
+            ThresholdType.TRIANGLE -> 1
+        }
 
-        // Pass the ID to AppState which will call the makeThreshold(type) logic
-        appState.applyThresholding(1)
+        appState.applyThresholding(selectedType)
 
         onApply?.invoke()
         close()
