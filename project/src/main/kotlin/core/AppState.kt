@@ -26,7 +26,16 @@ class AppState {
 
     fun isCurrentImageGrayscale(): Boolean = stack.getCurrent()?.currentImage?.isGrayscale ?: false
     fun getHistogram(): Histogram? = stack.getCurrent()?.currentImage?.histogram
-    fun getImage(): Mat? = stack.getCurrent()?.currentImage?.image
+
+    fun getImage(): Mat? {
+        val ctx = stack.getCurrent() ?: return null
+
+        if (ctx.currentZoomLevelIndex == 9) {
+            return ctx.currentImage?.image
+        }
+        val contextWithoutZoom = ctx.copy(currentZoomLevelIndex = 9)
+        return updateContextChanges(contextWithoutZoom)?.image
+    }
 
     fun getTonalCurve(): Map<Char, IntArray>? {
         return _currentProcessedBaseImage?.let { initial ->

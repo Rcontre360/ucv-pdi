@@ -303,7 +303,7 @@ class Image(val image: Mat):AutoCloseable {
                         val srcX = (x / factor).toInt().coerceIn(0, metadata.width - 1)
                         val srcY = (y / factor).toInt().coerceIn(0, metadata.height - 1)
                         val pixel = image.getRGB(srcX,srcY)
-                        newImg.putRGB(y, x, pixel)
+                        newImg.putRGB(x, y, pixel)
                     }
 
                     ZoomAlgorithm.LINEAR_INTERPOLATION -> {
@@ -329,7 +329,7 @@ class Image(val image: Mat):AutoCloseable {
                             interpolateChannel(pIs.blue, pDs.blue, pIr.blue, pDr.blue),
                         )
 
-                        newImg.putRGB(y, x, res)
+                        newImg.putRGB(x, y, res)
                     }
                 }
             }

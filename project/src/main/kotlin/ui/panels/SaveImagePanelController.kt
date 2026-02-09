@@ -7,6 +7,8 @@ import javafx.scene.control.TextField
 import javafx.stage.DirectoryChooser
 import javafx.stage.Stage
 import org.pdi.core.AppState
+import org.pdi.core.image.Image
+import org.pdi.io.lastUsedDirectory
 import org.pdi.io.saveImage
 import java.io.File
 
@@ -40,6 +42,11 @@ class SaveImagePanelController {
     @FXML
     fun selectDirectory() {
         val directoryChooser = DirectoryChooser()
+
+        lastUsedDirectory?.takeIf { it.exists() }?.let {
+            directoryChooser.initialDirectory = it
+        }
+
         directoryChooser.title = "Select a directory"
         val stage = directoryLabel.scene.window as Stage
         selectedDirectory = directoryChooser.showDialog(stage)
@@ -50,7 +57,7 @@ class SaveImagePanelController {
 
     @FXML
     fun saveImage() {
-        val currentImage = appState.context.currentImage
+        val currentImage = appState.getImage()
         if (currentImage == null) {
             showAlert("No Image Selected", "No image loaded.")
             return
@@ -71,7 +78,7 @@ class SaveImagePanelController {
         val fullPath = "${selectedDirectory!!.absolutePath}/$fileName.$format"
 
         try {
-            saveImage(fullPath, format, currentImage)
+            saveImage(fullPath, format, Image(currentImage))
             showAlert("Success", "Image saved successfully!")
             onSave?.invoke()
         } catch (e: Exception) {

@@ -15,9 +15,13 @@ import java.util.Locale
 import java.util.Scanner
 import javax.imageio.ImageIO
 
+var lastUsedDirectory: File? = null
+
 // this save image is the entry point of this module
 fun saveImage(dir: String, format: String, image: Image) {
     val output = File(dir)
+    lastUsedDirectory = output.parentFile
+
     // we check the target type using the image fields
     val targetType = when (Pair(image.isGrayscale, image.isBinary)) {
         Pair(true, true) -> BufferedImage.TYPE_BYTE_BINARY
@@ -37,6 +41,8 @@ fun saveImage(dir: String, format: String, image: Image) {
 // entry point to load an image
 fun loadImage(file: File): Image {
     val extension = file.extension.lowercase(Locale.getDefault())
+    lastUsedDirectory = file.parentFile
+
     val bufferedImage = when {
         // usually we should check the HEADER to ensure the file is correct
         extension in listOf("pbm", "pgm", "ppm", "netpbm") -> NetpbmIO.read(file).image.toBufferedImage()

@@ -19,13 +19,9 @@ class TonalCurvePanelController {
     private lateinit var appState: AppState
     private var selectedChannel: Char = 'L' // Default to Luminosity
 
-    fun setAppState(appState: AppState) {
-        this.appState = appState
-        drawTonalCurve()
-    }
-
     @FXML
-    fun initialize() {
+    fun initialize(_appState: AppState) {
+        appState = _appState
         val toggleGroup = (tonalCurveCanvas.scene?.lookup("#luminosityRadioButton") as? RadioButton)?.toggleGroup
             ?: (tonalCurveCanvas.scene?.lookup("#redRadioButton") as? RadioButton)?.toggleGroup
 
@@ -33,6 +29,11 @@ class TonalCurvePanelController {
             selectedChannel = (newToggle as RadioButton).userData as Char
             drawTonalCurve()
         }
+
+        appState.addContextListener {
+            drawTonalCurve()
+        }
+        drawTonalCurve()
     }
 
     private fun drawTonalCurve() {

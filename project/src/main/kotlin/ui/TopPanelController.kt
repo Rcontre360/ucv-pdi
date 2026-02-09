@@ -8,48 +8,64 @@ import javafx.scene.control.Alert
 import javafx.stage.Modality
 import javafx.stage.Stage
 import org.pdi.core.AppState
-import org.pdi.ui.panels.DFTPreviewPanelController // New import
-import org.pdi.ui.panels.HistogramPanelController
-import org.pdi.ui.panels.LineProfilePanelController
-import org.pdi.ui.panels.QuantizationPanelController
-import org.pdi.ui.panels.RegionGrowingPanelController
-import org.pdi.ui.panels.SaveImagePanelController
-import org.pdi.ui.panels.TonalCurvePanelController
-import org.pdi.ui.panels.UmbralizationPanelController
+import org.pdi.io.lastUsedDirectory
+import org.pdi.ui.panels.*
 import java.awt.Color
 
-// top panel. We added here the buttons that create windows.
-// each function here creates a given window performing x functionality. The names are self explanatory
 class TopPanelController {
 
     private lateinit var appState: AppState
     private lateinit var primaryStage: Stage
+
+    // Caché para evitar duplicar ventanas abiertas
+    private val activePanels = mutableMapOf<String, Stage>()
 
     fun setAppState(appState: AppState, primaryStage: Stage) {
         this.appState = appState
         this.primaryStage = primaryStage
     }
 
-    fun saveImage() {
-        val loader = FXMLLoader(javaClass.getResource("/panels/SaveImagePanel.fxml"))
-        val root = loader.load<Parent>()
-        val saveImagePanelController: SaveImagePanelController = loader.getController()
-        saveImagePanelController.setup(appState) {
-            (root.scene.window as Stage).close()
+    private fun showPanel(fxmlPath: String, title: String, setupController: (Any) -> Unit) {
+        // Si la ventana ya existe y está visible, traerla al frente
+        activePanels[fxmlPath]?.let {
+            if (it.isShowing) {
+                it.toFront()
+                return
+            }
         }
 
+        val loader = FXMLLoader(javaClass.getResource(fxmlPath))
+        val root = loader.load<Parent>()
+        setupController(loader.getController())
+
         val stage = Stage()
-        stage.initModality(Modality.APPLICATION_MODAL)
-        stage.initOwner(primaryStage) // Use primaryStage as owner
-        stage.title = "Save Image"
+        stage.initOwner(primaryStage)
+        stage.initModality(Modality.NONE) // No bloquea la ventana principal
+        stage.title = title
         stage.scene = Scene(root)
+
+        // Limpiar del mapa cuando se cierre
+        stage.setOnCloseRequest { activePanels.remove(fxmlPath) }
+
+        activePanels[fxmlPath] = stage
         stage.show()
+    }
+
+    fun saveImage() {
+        showPanel("/panels/SaveImagePanel.fxml", "Save Image") { controller ->
+            (controller as SaveImagePanelController).setup(appState) {
+                activePanels["/panels/SaveImagePanel.fxml"]?.close()
+            }
+        }
     }
 
     fun selectImage() {
         val fileChooser = javafx.stage.FileChooser()
+        lastUsedDirectory?.takeIf { it.exists() }?.let {
+            fileChooser.initialDirectory = it
+        }
         fileChooser.title = "Select Image"
-        val file = fileChooser.showOpenDialog(primaryStage) // Use primaryStage as owner
+        val file = fileChooser.showOpenDialog(primaryStage)
         if (file != null) {
             appState.loadImage(file)
         }
@@ -60,18 +76,9 @@ class TopPanelController {
             showAlert("No Image Selected", "No image loaded.")
             return
         }
-        val loader = FXMLLoader(javaClass.getResource("/panels/HistogramPanel.fxml"))
-        val root = loader.load<Parent>()
-        println("show histogram section")
-        val histogramPanelController: HistogramPanelController = loader.getController()
-        histogramPanelController.setAppState(appState)
-
-        val stage = Stage()
-        stage.initModality(Modality.APPLICATION_MODAL)
-        stage.initOwner(primaryStage) // Use primaryStage as owner
-        stage.title = "Histogram"
-        stage.scene = Scene(root)
-        stage.show()
+        showPanel("/panels/HistogramPanel.fxml", "Histogram") {
+            (it as HistogramPanelController).setAppState(appState)
+        }
     }
 
     fun showTonalCurve() {
@@ -79,17 +86,9 @@ class TopPanelController {
             showAlert("No Image Selected", "No image loaded or curve data unavailable.")
             return
         }
-        val loader = FXMLLoader(javaClass.getResource("/panels/TonalCurvePanel.fxml"))
-        val root = loader.load<Parent>()
-        val tonalCurvePanelController: TonalCurvePanelController = loader.getController()
-        tonalCurvePanelController.setAppState(appState)
-
-        val stage = Stage()
-        stage.initModality(Modality.APPLICATION_MODAL)
-        stage.initOwner(primaryStage) // Use primaryStage as owner
-        stage.title = "Tonal Curve Viewer"
-        stage.scene = Scene(root)
-        stage.show()
+        showPanel("/panels/TonalCurvePanel.fxml", "Tonal Curve Viewer") {
+            (it as TonalCurvePanelController).initialize(appState)
+        }
     }
 
     fun showUmbralization() {
@@ -97,19 +96,11 @@ class TopPanelController {
             showAlert("Grayscale Required", "Please apply grayscale filter first.")
             return
         }
-        val loader = FXMLLoader(javaClass.getResource("/panels/UmbralizationPanel.fxml"))
-        val root = loader.load<Parent>()
-        val umbralizationPanelController: UmbralizationPanelController = loader.getController()
-        umbralizationPanelController.setup(appState) {
-            (root.scene.window as Stage).close()
+        showPanel("/panels/UmbralizationPanel.fxml", "Umbralization") { controller ->
+            (controller as UmbralizationPanelController).setup(appState) {
+                activePanels["/panels/UmbralizationPanel.fxml"]?.close()
+            }
         }
-
-        val stage = Stage()
-        stage.initModality(Modality.APPLICATION_MODAL)
-        stage.initOwner(primaryStage) // Use primaryStage as owner
-        stage.title = "Umbralization"
-        stage.scene = Scene(root)
-        stage.show()
     }
 
     fun showLineProfile() {
@@ -117,100 +108,41 @@ class TopPanelController {
             showAlert("No Image Selected", "No image loaded.")
             return
         }
-        val loader = FXMLLoader(javaClass.getResource("/panels/LineProfilePanel.fxml"))
-        val root = loader.load<Parent>()
-        val lineProfilePanelController: LineProfilePanelController = loader.getController()
-        lineProfilePanelController.setAppState(appState)
-
-        val stage = Stage()
-        stage.initModality(Modality.APPLICATION_MODAL)
-        stage.initOwner(primaryStage) // Use primaryStage as owner
-        stage.title = "Line Profile"
-        stage.scene = Scene(root)
-        stage.show()
+        showPanel("/panels/LineProfilePanel.fxml", "Line Profile") {
+            (it as LineProfilePanelController).setAppState(appState)
+        }
     }
 
     @FXML
     fun showRegionGrowingPanel() {
-        val currentImage = appState.context.currentImage
-        if (currentImage == null) {
-            showAlert("No Image Selected", "No image loaded.")
-            return
-        }
-
+        val currentImage = appState.context.currentImage ?: return showAlert("No Image", "No image loaded.")
         val grayscaleImage = currentImage.toGrayscale(Color.WHITE)
 
-        val loader = FXMLLoader(javaClass.getResource("/panels/RegionGrowingPanel.fxml"))
-        val root = loader.load<Parent>()
-        val regionGrowingPanelController: RegionGrowingPanelController = loader.getController()
-        regionGrowingPanelController.initialize(appState, grayscaleImage)
-
-        val stage = Stage()
-        stage.initModality(Modality.APPLICATION_MODAL)
-        stage.initOwner(primaryStage)
-        stage.title = "Region Growing"
-        stage.scene = Scene(root)
-        stage.show()
+        showPanel("/panels/RegionGrowingPanel.fxml", "Region Growing") {
+            (it as RegionGrowingPanelController).initialize(appState, grayscaleImage)
+        }
     }
 
     @FXML
     fun applyDFT() {
-        val currentImage = appState.context.currentImage
-        if (currentImage == null) {
-            showAlert("No Image Selected", "No image loaded.")
-            return
+        if (appState.context.currentImage == null) return showAlert("No Image", "No image loaded.")
+        showPanel("/panels/DFTPreviewPanel.fxml", "DFT Preview and Filter") {
+            (it as DFTPreviewPanelController).setup(appState)
         }
-
-        val loader = FXMLLoader(javaClass.getResource("/panels/DFTPreviewPanel.fxml"))
-        val root = loader.load<Parent>()
-        val dftPreviewPanelController: DFTPreviewPanelController = loader.getController()
-        dftPreviewPanelController.setup(appState)
-
-        val stage = Stage()
-        stage.initModality(Modality.APPLICATION_MODAL)
-        stage.initOwner(primaryStage)
-        stage.title = "DFT Preview and Filter"
-        stage.scene = Scene(root)
-        stage.show()
     }
 
     @FXML
     fun showQuantizationPanel() {
-        val currentImage = appState.context.currentImage
-        if (currentImage == null) {
-            showAlert("No Image Selected", "No image loaded.")
-            return
+        if (appState.context.currentImage == null) return showAlert("No Image", "No image loaded.")
+        showPanel("/panels/QuantizationPanel.fxml", "Quantization") {
+            (it as QuantizationPanelController).setup(appState)
         }
-
-        val loader = FXMLLoader(javaClass.getResource("/panels/QuantizationPanel.fxml"))
-        val root = loader.load<Parent>()
-        val quantizationPanelController: QuantizationPanelController = loader.getController()
-        quantizationPanelController.setup(appState)
-
-        val stage = Stage()
-        stage.initModality(Modality.APPLICATION_MODAL)
-        stage.initOwner(primaryStage)
-        stage.title = "Quantization"
-        stage.scene = Scene(root)
-        stage.show()
     }
 
-    @FXML
-    fun clearImage() {
-        appState.clear()
-    }
+    @FXML fun clearImage() = appState.clear()
+    @FXML fun undo() = appState.undo()
+    @FXML fun redo() = appState.redo()
 
-    @FXML
-    fun undo() {
-        appState.undo()
-    }
-
-    @FXML
-    fun redo() {
-        appState.redo()
-    }
-
-    // utility alert
     private fun showAlert(title: String, message: String) {
         val alert = Alert(Alert.AlertType.INFORMATION)
         alert.title = title
