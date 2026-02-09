@@ -31,6 +31,9 @@ class HistogramPanelController {
                 drawHistogram()
             }
         }
+        appState.addContextListener {
+            drawHistogram()
+        }
         drawHistogram()
     }
 
@@ -40,7 +43,7 @@ class HistogramPanelController {
         val gc: GraphicsContext = histogramCanvas.graphicsContext2D
         gc.clearRect(0.0, 0.0, histogramCanvas.width, histogramCanvas.height)
 
-        if (histogramData == null || histogramData.isEmpty()) {
+        if (histogramData == null || histogramData.data.isEmpty()) {
             return
         }
 
@@ -53,15 +56,15 @@ class HistogramPanelController {
 
         when (selectedChannel) {
             "Red" -> {
-                dataToDraw = histogramData[0] ?: IntArray(256)
+                dataToDraw = histogramData.data[0] ?: IntArray(256)
                 colorToDraw = Color.RED
             }
             "Green" -> {
-                dataToDraw = histogramData[1] ?: IntArray(256)
+                dataToDraw = histogramData.data[1] ?: IntArray(256)
                 colorToDraw = Color.GREEN
             }
             "Blue" -> {
-                dataToDraw = histogramData[2] ?: IntArray(256)
+                dataToDraw = histogramData.data[2] ?: IntArray(256)
                 colorToDraw = Color.BLUE
             }
             else -> {

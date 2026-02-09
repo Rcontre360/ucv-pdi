@@ -44,7 +44,7 @@ data class Metadata(
 class Image(val image: Mat):AutoCloseable {
     // since this image is inmutable all the related variables can be inmutable
     // histogram is only calculated once, same with all the other fields
-    val histogram: Histogram by lazy { Histogram(calculateHistogram()) }
+    val histogram: Histogram by lazy { Histogram(image) }
     val isGrayscale = getIsGrayscale()
     val isBinary = getIsBinary()
     val metadata = Metadata(
@@ -195,15 +195,7 @@ class Image(val image: Mat):AutoCloseable {
     fun changeContrast(factor: Float): Image {
         val min = (127 * factor)
         val max = 255 - (127 * factor)
-        val newHistogram = histogram.stretch(min.toInt(), max.toInt())
-
-        return applyPerPixel { _, _, color ->
-            val rMap = newHistogram[0]!!
-            val gMap = newHistogram[1]!!
-            val bMap = newHistogram[2]!!
-
-            Color(rMap[color.red], gMap[color.green], bMap[color.blue])
-        }
+        return Image(histogram.stretch(min.toInt(), max.toInt()))
     }
 
     fun makeThreshold(type: Int): Image {
