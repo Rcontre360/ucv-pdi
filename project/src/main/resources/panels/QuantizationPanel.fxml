@@ -19,19 +19,16 @@
     </padding>
 
     <VBox spacing="5" alignment="CENTER_LEFT">
-        <Label text="Quantization Method:" style="-fx-font-weight: bold;"/>
+        <Label text="Method:" style="-fx-font-weight: bold;"/>
         <ComboBox fx:id="methodComboBox" prefWidth="260"/>
     </VBox>
 
     <VBox spacing="8" alignment="CENTER_LEFT">
-        <Label text="Target Number of Colors:" style="-fx-font-weight: bold;"/>
+        <Label text="Num of Colors:" style="-fx-font-weight: bold;"/>
         <HBox spacing="10" alignment="CENTER_LEFT">
             <Spinner fx:id="colorsSpinner" prefWidth="100" editable="true"/>
             <Label fx:id="uniqueColorsLabel" text="Original: 256 colors" style="-fx-font-size: 11; -fx-text-fill: #666;"/>
         </HBox>
-        <Label text="Note: For Uniform Quantization, this will be rounded to the nearest power of 2."
-               wrapText="true"
-               style="-fx-font-size: 10; -fx-text-fill: #888;"/>
     </VBox>
 
     <HBox spacing="15" alignment="CENTER">
