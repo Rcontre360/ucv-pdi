@@ -1,38 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.geometry.Pos?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.RightPanelController" spacing="10" alignment="TOP_RIGHT" style="-fx-background-color: #CCCCCC;">
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.pdi.ui.RightPanelController" spacing="15" alignment="TOP_RIGHT" style="-fx-background-color: #CCCCCC; -fx-min-width: 220;">
     <padding>
         <Insets top="10" right="10" bottom="10" left="10"/>
     </padding>
-    <VBox spacing="5" alignment="TOP_RIGHT">
-        <Label text="Filter Type:"/>
-        <ComboBox fx:id="typeComboBox"/>
-        <HBox spacing="10" alignment="TOP_RIGHT">
-            <Label text="Kernel Rows:"/>
+
+    <VBox spacing="8" alignment="TOP_RIGHT" style="-fx-border-color: #AAAAAA; -fx-border-width: 0 0 1 0; -fx-padding: 0 0 10 0;">
+        <Label text="Convolution Filters" style="-fx-font-weight: bold;"/>
+        <ComboBox fx:id="typeComboBox" prefWidth="150"/>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Label text="Rows:"/>
             <TextField fx:id="rowsField" text="3" prefWidth="40"/>
         </HBox>
-        <HBox spacing="10" alignment="TOP_RIGHT">
-            <Label text="Kernel Cols:"/>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Label text="Cols:"/>
             <TextField fx:id="colsField" text="3" prefWidth="40"/>
         </HBox>
-        <Label text="Profiling Factor"/>
-        <fx:include fx:id="profilingFactorAdjuster" source="ValueAdjuster.fxml"/>
-        <Button text="Show Kernel" onAction="#showKernel"/>
-        <Button text="Apply Filter" onAction="#applyFilter"/>
+        <Label text="Profiling Factor:"/>
+        <HBox alignment="CENTER_RIGHT">
+            <fx:include fx:id="profilingFactorAdjuster" source="ValueAdjuster.fxml"/>
+        </HBox>
+        <Button text="Edit Kernel Matrix" onAction="#showKernel" maxWidth="150"/>
+        <Button text="Apply Filter" onAction="#applyFilter" maxWidth="150"/>
     </VBox>
 
-    <VBox spacing="5" alignment="TOP_RIGHT">
-        <Label text="Border Detection:"/>
-        <ComboBox fx:id="operationsComboBox"/>
-        <Button text="Apply Border Op" onAction="#applyOperation"/>
+    <VBox spacing="8" alignment="TOP_RIGHT" style="-fx-border-color: #AAAAAA; -fx-border-width: 0 0 1 0; -fx-padding: 0 0 10 0;">
+        <Label text="Apply Borders" style="-fx-font-weight: bold;"/>
+        <ComboBox fx:id="bordersComboBox" prefWidth="150"/>
+        <Button text="Detect Borders" onAction="#applyBorders" maxWidth="150"/>
+    </VBox>
+
+    <VBox spacing="8" alignment="TOP_RIGHT">
+        <Label text="Morphology" style="-fx-font-weight: bold;"/>
+        <ComboBox fx:id="morphComboBox" prefWidth="150"/>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Label text="Rows:"/>
+            <TextField fx:id="morphRowsField" text="3" prefWidth="40"/>
+        </HBox>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Label text="Cols:"/>
+            <TextField fx:id="morphColsField" text="3" prefWidth="40"/>
+        </HBox>
+        <Button text="Edit Structuring Element" onAction="#showMorphologyEditor" maxWidth="150"/>
+        <Button text="Apply Morphology" onAction="#applyMorphology" maxWidth="150"/>
     </VBox>
 </VBox>

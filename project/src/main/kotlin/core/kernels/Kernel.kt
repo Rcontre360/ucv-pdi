@@ -18,6 +18,31 @@ enum class KernelType {
     DILATE
 }
 
+class KernelConfigManager(private val laplacianProfiling: LaplacianKernelProfiling) {
+    fun createInstance(rows: Int, cols: Int, type: KernelType): Kernel {
+        val kernel = when (type) {
+            KernelType.CUSTOM -> CustomKernel(rows, cols)
+            KernelType.AVERAGE -> AverageKernel(rows, cols)
+            KernelType.MEDIAN -> MedianKernel(rows, cols)
+            KernelType.GAUSSIAN -> GaussianKernel(rows, cols)
+            KernelType.LAPLACIAN -> LaplacianKernel(rows)
+            KernelType.LAPLACIAN_PROFILING -> laplacianProfiling.apply {
+                this.rows = rows; this.cols = cols; generateKernel()
+            }
+            KernelType.SOBEL_X -> SobelXKernel(rows)
+            KernelType.SOBEL_Y -> SobelYKernel(rows)
+            KernelType.ROBERTS_X -> RobertsXKernel()
+            KernelType.ROBERTS_Y -> RobertsYKernel()
+            KernelType.PREWITT_X -> PrewittXKernel()
+            KernelType.PREWITT_Y -> PrewittYKernel()
+            KernelType.ERODE -> ErodeKernel(rows, cols)
+            KernelType.DILATE -> DilateKernel(rows, cols)
+        }
+        if (type != KernelType.LAPLACIAN_PROFILING) kernel.generateKernel()
+        return kernel
+    }
+}
+
 // abstract kernel class, initializes with its size
 abstract class Kernel(var rows: Int, var cols: Int) {
     var kernel: Array<FloatArray> = Array(rows) { FloatArray(cols) }
