@@ -12,18 +12,24 @@
     <VBox spacing="8" alignment="TOP_RIGHT" style="-fx-border-color: #AAAAAA; -fx-border-width: 0 0 1 0; -fx-padding: 0 0 10 0;">
         <Label text="Convolution Filters" style="-fx-font-weight: bold;"/>
         <ComboBox fx:id="typeComboBox" prefWidth="150"/>
+
         <HBox spacing="10" alignment="CENTER_RIGHT">
             <Label text="Rows:"/>
             <TextField fx:id="rowsField" text="3" prefWidth="40"/>
         </HBox>
+
         <HBox spacing="10" alignment="CENTER_RIGHT">
             <Label text="Cols:"/>
             <TextField fx:id="colsField" text="3" prefWidth="40"/>
         </HBox>
-        <Label text="Profiling Factor:"/>
-        <HBox alignment="CENTER_RIGHT">
-            <fx:include fx:id="profilingFactorAdjuster" source="ValueAdjuster.fxml"/>
-        </HBox>
+
+        <VBox spacing="4" alignment="TOP_RIGHT">
+            <Label text="Profiling Factor:"/>
+            <HBox alignment="CENTER_RIGHT">
+                <fx:include fx:id="profilingFactorAdjuster" source="ValueAdjuster.fxml"/>
+            </HBox>
+        </VBox>
+
         <Button text="Edit Kernel Matrix" onAction="#showKernel" maxWidth="150"/>
         <Button text="Apply Filter" onAction="#applyFilter" maxWidth="150"/>
     </VBox>
@@ -37,14 +43,17 @@
     <VBox spacing="8" alignment="TOP_RIGHT">
         <Label text="Morphology" style="-fx-font-weight: bold;"/>
         <ComboBox fx:id="morphComboBox" prefWidth="150"/>
+
         <HBox spacing="10" alignment="CENTER_RIGHT">
             <Label text="Rows:"/>
             <TextField fx:id="morphRowsField" text="3" prefWidth="40"/>
         </HBox>
+
         <HBox spacing="10" alignment="CENTER_RIGHT">
             <Label text="Cols:"/>
             <TextField fx:id="morphColsField" text="3" prefWidth="40"/>
         </HBox>
+
         <Button text="Edit Structuring Element" onAction="#showMorphologyEditor" maxWidth="150"/>
         <Button text="Apply Morphology" onAction="#applyMorphology" maxWidth="150"/>
     </VBox>
