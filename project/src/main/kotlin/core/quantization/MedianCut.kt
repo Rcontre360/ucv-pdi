@@ -2,53 +2,51 @@ package org.pdi.core.quantization
 
 import org.opencv.core.Mat
 import org.pdi.core.image.Image
+import org.pdi.core.image.euclidean
 import org.pdi.core.image.putRGB
 import java.awt.Color
-import kotlin.math.hypot
 
 data class ColorBucket(val pixels: MutableList<Color>) {
-    var minB = 256
-    var maxB = -1
-    var minG = 256
-    var maxG = -1
-    var minR = 256
-    var maxR = -1
+    data class MinMax(var min: Int, var max: Int){
+        fun update(n:Int){
+            min = minOf(n,min)
+            max = maxOf(n, max)
+        }
+        fun range() = max - min
+    }
+
+    var blue = MinMax(256,-1)
+    var red = MinMax(256,-1)
+    var green = MinMax(256,-1)
 
     init {
-        if (pixels.isNotEmpty()) {
-            updateBounds()
-        }
+        updateBounds()
     }
 
     fun updateBounds() {
-        minB = 256; maxB = -1
-        minG = 256; maxG = -1
-        minR = 256; maxR = -1
+        blue = MinMax(256,-1)
+        red = MinMax(256,-1)
+        green = MinMax(256,-1)
         pixels.forEach { pixel ->
-            minR = minOf(minR, pixel.red)
-            maxR = maxOf(maxR, pixel.red)
-            minG = minOf(minG, pixel.green)
-            maxG = maxOf(maxG, pixel.green)
-            minB = minOf(minB, pixel.blue)
-            maxB = maxOf(maxB, pixel.blue)
+            blue.update(pixel.blue)
+            red.update(pixel.blue)
+            green.update(pixel.blue)
         }
     }
 
     fun getLongestDimension(): Int {
-        val rangeB = maxB - minB
-        val rangeG = maxG - minG
-        val rangeR = maxR - minR
+        val rangeB = blue.range()
+        val rangeG = green.range()
+        val rangeR = red.range()
 
         return when {
-            rangeR >= rangeG && rangeR >= rangeB -> 0 // Red is longest
-            rangeG >= rangeR && rangeG >= rangeB -> 1 // Green is longest
-            else -> 2 // Blue is longest or equal
+            rangeR >= rangeG && rangeR >= rangeB -> 0
+            rangeG >= rangeR && rangeG >= rangeB -> 1
+            else -> 2
         }
     }
 
     fun getAverageColor(): Color {
-        if (pixels.isEmpty()) return Color.black
-
         val sum = pixels.fold(intArrayOf(0,0,0)) { acc, pixel ->
             intArrayOf(
                 acc[0] + pixel.red,
@@ -73,9 +71,9 @@ class MedianCutQuantizer(k: Int) : Quantizer(k) {
         val buckets = mutableListOf(ColorBucket(allPixels))
 
         while (buckets.size < value) {
-            val longestBucket = buckets.maxByOrNull { b ->
-                maxOf(b.maxR - b.minR, b.maxG - b.minG, b.maxB - b.minB)
-            } ?: break
+            val longestBucket = buckets.maxBy { b ->
+                maxOf(b.red.range(), b.green.range(), b.blue.range())
+            }
 
             if (longestBucket.pixels.size < 2) break
             buckets.remove(longestBucket)
@@ -86,6 +84,8 @@ class MedianCutQuantizer(k: Int) : Quantizer(k) {
             }
 
             val median = longestBucket.pixels.size / 2
+
+            buckets.remove(longestBucket)
             buckets.add(ColorBucket(longestBucket.pixels.subList(0, median)))
             buckets.add(ColorBucket(longestBucket.pixels.subList(median, longestBucket.pixels.size)))
         }
@@ -102,9 +102,7 @@ class MedianCutQuantizer(k: Int) : Quantizer(k) {
 
     private fun findClosestColor(pixel: Color, palette: List<Color>): Color {
         return palette.minByOrNull { color ->
-            hypot((pixel.red - color.red).toDouble(),
-                hypot((pixel.green - color.green).toDouble(),
-                    (pixel.blue - color.blue).toDouble()))
+            pixel.euclidean(color)
         } ?: Color.BLACK
     }
 }
