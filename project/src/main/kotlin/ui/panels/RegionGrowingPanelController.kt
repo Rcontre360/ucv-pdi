@@ -14,6 +14,9 @@ import org.pdi.core.image.Image
 import org.opencv.core.Point
 import org.pdi.core.image.toBufferedImage
 import javafx.embed.swing.SwingFXUtils
+import org.opencv.core.Mat
+import org.pdi.core.rg.*
+import org.pdi.core.rg.FixedRegionGrowing
 
 class RegionGrowingPanelController {
 
@@ -26,65 +29,61 @@ class RegionGrowingPanelController {
     @FXML private lateinit var applyButton: Button
 
     private lateinit var appState: AppState
-    private lateinit var image: Image
+    private lateinit var image: Mat
     private val seedPoints = mutableListOf<Point>()
 
-    fun initialize(appState: AppState, image: Image) {
+    fun initialize(appState: AppState) {
         this.appState = appState
-        this.image = image
-        regionGrowingImageView.image = SwingFXUtils.toFXImage(image.image.toBufferedImage(), null)
+        this.image = appState.getImage()!!
+        regionGrowingImageView.image = SwingFXUtils.toFXImage(this.image.toBufferedImage(), null)
 
+        setupComboBoxes()
+        imagePane.setOnMouseClicked(this::handleImageClick)
+    }
+
+    private fun setupComboBoxes() {
         modeComboBox.items = FXCollections.observableArrayList("Fixed Range", "Floating Range")
-        modeComboBox.selectionModel.select("Fixed Range")
-
-        modeComboBox.setCellFactory { _ ->
-            object : ListCell<String>() {
-                override fun updateItem(item: String?, empty: Boolean) {
-                    super.updateItem(item, empty)
-                    text = item
-                    isDisable = item == "Floating Range"
-                }
-            }
-        }
-
-        modeComboBox.valueProperty().addListener { _, _, newValue ->
-            if (newValue == "Floating Range") modeComboBox.selectionModel.select("Fixed Range")
-        }
+        modeComboBox.selectionModel.selectFirst()
 
         connectivityComboBox.items = FXCollections.observableArrayList("4-connectivity", "8-connectivity")
         connectivityComboBox.selectionModel.select("8-connectivity")
-
-        imagePane.setOnMouseClicked(this::handleImageClick)
     }
 
     private fun handleImageClick(event: MouseEvent) {
         val bounds = regionGrowingImageView.boundsInParent
         if (event.x !in bounds.minX..bounds.maxX || event.y !in bounds.minY..bounds.maxY) return
 
-        val meta = image.metadata
-        val scale = minOf(bounds.width / meta.width, bounds.height / meta.height)
-        val offsetX = (bounds.width - (meta.width * scale)) / 2
-        val offsetY = (bounds.height - (meta.height * scale)) / 2
+        val scale = minOf(bounds.width / image.width(), bounds.height / image.height())
+        val offsetX = (bounds.width - (image.width() * scale)) / 2 + bounds.minX
+        val offsetY = (bounds.height - (image.height() * scale)) / 2 + bounds.minY
 
-        val imageX = ((event.x - bounds.minX - offsetX) / scale).toInt()
-        val imageY = ((event.y - bounds.minY - offsetY) / scale).toInt()
+        val imageX = ((event.x - offsetX) / scale).toInt()
+        val imageY = ((event.y - offsetY) / scale).toInt()
 
-        if (imageX in 0 until meta.width && imageY in 0 until meta.height) {
+        if (imageX in 0 until image.width() && imageY in 0 until image.height()) {
             seedPoints.add(Point(imageX.toDouble(), imageY.toDouble()))
-
-            val viewX = (imageX * scale) + bounds.minX + offsetX
-            val viewY = (imageY * scale) + bounds.minY + offsetY
-            imagePane.children.add(Circle(viewX, viewY, meta.width * 0.01, Color.RED))
+            val circle = Circle((imageX * scale) + offsetX, (imageY * scale) + offsetY, 3.0, Color.RED)
+            imagePane.children.add(circle)
         }
     }
 
-    @FXML fun cancel() = (cancelButton.scene.window as Stage).close()
+    @FXML fun cancel() = close()
 
     @FXML fun apply() {
-        val maxDiff = maxAbsDiffTextField.text.toIntOrNull() ?: 20
+        val threshold = maxAbsDiffTextField.text.toDoubleOrNull() ?: 20.0
         val conn = if (connectivityComboBox.value == "4-connectivity") 4 else 8
 
-        if (seedPoints.isNotEmpty()) appState.applyRegionGrowing(seedPoints, maxDiff, conn)
-        (applyButton.scene.window as Stage).close()
+        val algorithm = if (modeComboBox.value == "Fixed Range") {
+            FixedRegionGrowing(threshold, conn)
+        } else {
+            FloatingRegionGrowing(threshold, conn)
+        }
+
+        if (seedPoints.isNotEmpty()) {
+            appState.applyRegionGrowing(algorithm,seedPoints)
+            close()
+        }
     }
+
+    private fun close() = (applyButton.scene.window as Stage).close()
 }

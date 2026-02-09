@@ -9,6 +9,7 @@ import org.pdi.core.image.Image
 import org.pdi.core.image.ZoomAlgorithm
 import org.pdi.core.kernels.Kernel
 import org.pdi.core.quantization.Quantizer
+import org.pdi.core.rg.RegionGrowing
 import org.pdi.core.transforms.FrequencyFilter
 import org.pdi.core.transforms.Transform
 
@@ -71,7 +72,7 @@ class AppState {
     fun zoomOut() = update(UpdateType.ZoomOutUpdate)
     fun loadImage(file: File) = update(UpdateType.LoadImageUpdate(file))
     fun applyThresholding(type: Int) = update(UpdateType.ThresholdUpdate(type))
-    fun applyRegionGrowing(seeds: List<Point>, maxDiff: Int, connectivity: Int) = update(UpdateType.RegionGrowingUpdate(seeds, maxDiff, connectivity))
+    fun applyRegionGrowing(algo: RegionGrowing,seeds: List<Point>) = update(UpdateType.RegionGrowingUpdate(algo,seeds))
     fun setPanningMode(value: Boolean) = update(UpdateType.PanningModeUpdate(value))
     fun applyTranslation(dx: Int, dy: Int) = update(UpdateType.TranslationUpdate(dx, dy))
     fun adjustHue(newFactor: Int) = update(UpdateType.HueAdjustment(newFactor))
@@ -180,7 +181,7 @@ class AppState {
                 stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
             }
             is UpdateType.RegionGrowingUpdate -> {
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.regionGrowing(updateType.seeds, updateType.maxDiff, updateType.connectivity)
+                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.regionGrowing(updateType.algo,updateType.seeds)
                 stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
             }
             is UpdateType.FrequencyFilter -> {

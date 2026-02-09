@@ -5,6 +5,7 @@ import java.io.File
 import org.opencv.core.Point
 import org.pdi.core.kernels.Kernel
 import org.pdi.core.quantization.Quantizer
+import org.pdi.core.rg.RegionGrowing
 import org.pdi.core.transforms.Transform
 
 // this is a utility object using by the app state controller.
@@ -28,11 +29,7 @@ sealed class UpdateType {
     data class ConvolutionUpdate(val kernel: Kernel) : UpdateType()
     // border operations are different from convolution because we calculate the gradient
     data class BorderOperation(val kernelX: Kernel, val kernelY: Kernel) : UpdateType()
-    data class RegionGrowingUpdate(
-        val seeds: List<Point>,
-        val maxDiff: Int,
-        val connectivity: Int
-    ) : UpdateType()
+    data class RegionGrowingUpdate(val algo: RegionGrowing, val seeds: List<Point>) : UpdateType()
     data class PanningModeUpdate(val isPanning: Boolean) : UpdateType()
     data class TranslationUpdate(val dx: Int, val dy: Int) : UpdateType()
 

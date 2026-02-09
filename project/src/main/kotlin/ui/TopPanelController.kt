@@ -115,11 +115,11 @@ class TopPanelController {
 
     @FXML
     fun showRegionGrowingPanel() {
-        val currentImage = appState.context.currentImage ?: return showAlert("No Image", "No image loaded.")
-        val grayscaleImage = currentImage.toGrayscale(Color.WHITE)
-
+        if (appState.context.currentImage == null){
+            return showAlert("No Image", "No image loaded.")
+        }
         showPanel("/panels/RegionGrowingPanel.fxml", "Region Growing") {
-            (it as RegionGrowingPanelController).initialize(appState, grayscaleImage)
+            (it as RegionGrowingPanelController).initialize(appState)
         }
     }
 
