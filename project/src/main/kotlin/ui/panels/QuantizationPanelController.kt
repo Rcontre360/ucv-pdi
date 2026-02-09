@@ -9,7 +9,6 @@ import kotlin.math.ln
 
 enum class QuantizationMethod(val displayName: String) {
     K_MEANS("K-Means"),
-    UNIFORM("Uniform Quantization"),
     MEDIAN_CUT("Median Cut"),
     OCTREE("Octree Quantization");
 
@@ -56,10 +55,6 @@ class QuantizationPanelController {
             QuantizationMethod.K_MEANS -> KMeansQuantizer(targetColors)
             QuantizationMethod.MEDIAN_CUT -> MedianCutQuantizer(targetColors)
             QuantizationMethod.OCTREE -> OctreeQuantizer(targetColors)
-            QuantizationMethod.UNIFORM -> {
-                val bits = (ln(targetColors.toDouble()) / ln(2.0)).toInt().coerceIn(1, 8)
-                UniformQuantizer(bits)
-            }
         }
 
         appState.applyQuantization(quantizer)
