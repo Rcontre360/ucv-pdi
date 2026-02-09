@@ -2,6 +2,7 @@ package org.pdi.core.transforms
 
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
+import org.pdi.core.image.getRGB
 import org.pdi.core.image.release
 
 class DFT : Transform() {
@@ -82,19 +83,32 @@ class DFT : Transform() {
     }
 
     private fun shiftQuadrants(mat: Mat): Mat {
-        val cx = mat.cols() / 2
-        val cy = mat.rows() / 2
-        val tmp = Mat()
+        val (rows, cols) = mat.rows() to mat.cols()
+        val data = FloatArray(rows * cols)
+        mat.get(0, 0, data)
 
-        val q0 = mat.submat(0, cy, 0, cx)
-        val q3 = mat.submat(cy, mat.rows(), cx, mat.cols())
-        q0.copyTo(tmp); q3.copyTo(q0); tmp.copyTo(q3)
+        val cx = cols / 2
+        val cy = rows / 2
 
-        val q1 = mat.submat(0, cy, cx, mat.cols())
-        val q2 = mat.submat(cy, mat.rows(), 0, cx)
-        q1.copyTo(tmp); q2.copyTo(q1); tmp.copyTo(q2)
+        fun idx(x: Int, y: Int) = y * cols + x
 
-        listOf(tmp, q0, q1, q2, q3).release()
+        for (y in 0 until cy) {
+            for (x in 0 until cx) {
+                val p0 = idx(x, y)
+                val p1 = idx(x + cx, y)
+                val p2 = idx(x, y + cy)
+                val p3 = idx(x + cx, y + cy)
+
+                val temp1 = data[p0]
+                data[p0] = data[p3]
+                data[p3] = temp1
+                val temp2 = data[p1]
+                data[p1] = data[p2]
+                data[p2] = temp2
+            }
+        }
+
+        mat.put(0, 0, data)
         return mat
     }
 }
