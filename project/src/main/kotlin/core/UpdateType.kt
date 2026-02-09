@@ -4,6 +4,7 @@ import java.awt.Color
 import java.io.File
 import org.opencv.core.Point
 import org.pdi.core.kernels.Kernel
+import org.pdi.core.quantization.Quantizer
 import org.pdi.core.transforms.Transform
 
 // this is a utility object using by the app state controller.
@@ -45,7 +46,5 @@ sealed class UpdateType {
     data class UAdjustment(val newFactor: Float) : UpdateType()
     data class VAdjustment(val newFactor: Float) : UpdateType()
     data class FrequencyFilter(val space: Transform, val filter: org.pdi.core.transforms.FrequencyFilter) : UpdateType()
-    data class KMeansQuantization(val k: Int) : UpdateType()
-    data class UniformQuantization(val bits: Int) : UpdateType()
-    data class MedianCutQuantization(val k: Int) : UpdateType()
+    data class ApplyQuantization(val algo: Quantizer) : UpdateType()
 }

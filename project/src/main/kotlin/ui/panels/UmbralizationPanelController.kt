@@ -5,12 +5,7 @@ import javafx.scene.control.ComboBox
 import javafx.stage.Stage
 import org.pdi.core.AppState
 
-enum class ThresholdType(val label: String, val id: Int) {
-    OTSU("OpenCV Otsu (Global)", 0),
-    TRIANGLE("Triangle Algorithm (Geometric)", 1); // Renamed from "Custom" to be specific
-
-    override fun toString(): String = label
-}
+enum class ThresholdType { OTSU, TRIANGLE }
 
 class UmbralizationPanelController {
 
@@ -23,7 +18,7 @@ class UmbralizationPanelController {
     @FXML
     fun initialize() {
         // Populate the dropdown with the Otsu and Triangle options
-        algorithmComboBox.items.addAll(ThresholdType.values())
+        algorithmComboBox.items.addAll(ThresholdType.entries)
         algorithmComboBox.selectionModel.select(ThresholdType.OTSU)
     }
 
@@ -35,10 +30,10 @@ class UmbralizationPanelController {
     @FXML
     fun applyThresholding() {
         // Retrieve the selection (0 for Otsu, 1 for Triangle)
-        val selectedType = algorithmComboBox.value?.id ?: 0
+        val selectedType = algorithmComboBox.value
 
         // Pass the ID to AppState which will call the makeThreshold(type) logic
-        appState.applyThresholding(selectedType)
+        appState.applyThresholding(1)
 
         onApply?.invoke()
         close()

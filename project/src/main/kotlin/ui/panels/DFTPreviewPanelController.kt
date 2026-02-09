@@ -29,10 +29,10 @@ class DFTPreviewPanelController {
 
     @FXML
     fun initialize() {
-        filterTypeComboBox.items.addAll(FilterType.values())
+        filterTypeComboBox.items.addAll(FilterType.entries)
         filterTypeComboBox.selectionModel.select(FilterType.LOW_PASS)
 
-        domainComboBox.items.addAll(FrequencyDomain.values())
+        domainComboBox.items.addAll(FrequencyDomain.entries)
         domainComboBox.selectionModel.select(FrequencyDomain.DFT)
 
         filterTypeComboBox.valueProperty().addListener { _, _, _ -> updateFilterPreview() }

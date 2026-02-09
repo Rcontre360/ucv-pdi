@@ -12,6 +12,7 @@ import kotlin.math.roundToInt
 import kotlin.random.Random
 import org.opencv.core.Core
 import org.pdi.core.kernels.Kernel
+import org.pdi.core.quantization.Quantizer
 import org.pdi.core.transforms.FrequencyFilter
 import org.pdi.core.transforms.Transform
 
@@ -505,17 +506,10 @@ class Image(val image: Mat):AutoCloseable {
 
         return Image(resultMat)
     }
-    
-    fun kMeansQuantization(k: Int): Image {
-        return Image(kMeansQuantization(image, k))
-    }
 
-    fun uniformQuantization(bits: Int): Image {
-        return Image(uniformQuantization(this, bits))
-    }
-
-    fun medianCutQuantization(k: Int): Image {
-        return medianCutQuantization(this, k)
+    fun applyQuantization(quantizer: Quantizer): Image {
+        val quantizedMat = quantizer.apply(this)
+        return Image(quantizedMat)
     }
 
     // runs a function over all pixels, readonly

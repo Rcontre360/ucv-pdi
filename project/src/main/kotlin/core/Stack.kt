@@ -18,13 +18,20 @@ data class StateContext(
     val vFactor: Float = 0.0f
 )
 
+// stack allows the user to stack actions.
+// we store the image on each action but have a max history limit to avoid crashing the memory
 class Stack {
     companion object {
         private const val MAX_HISTORY_SIZE = 10
     }
 
+    // history and current index used
     private val history = mutableListOf<StateContext>()
     private var currentIndex = -1
+
+    fun getCurrent(): StateContext? {
+        return if (currentIndex >= 0) history[currentIndex] else null
+    }
 
     fun push(context: StateContext) {
         if (currentIndex < history.size - 1) {
@@ -35,13 +42,14 @@ class Stack {
         history.add(context)
         currentIndex++
 
-        // Si excedemos el límite, eliminamos el estado más antiguo y liberamos su memoria
+        // if we exceed the limit. remove oldest record and free memory
         if (history.size > MAX_HISTORY_SIZE) {
             history.removeAt(0)
             currentIndex--
         }
     }
 
+    // this basically updates the current context given a transformation. cleaner way to add new state
     fun updateCurrent(transform: (StateContext) -> StateContext) {
         val current = getCurrent() ?: StateContext()
         val newContext = transform(current)
@@ -49,7 +57,6 @@ class Stack {
     }
 
     fun undo(): StateContext? {
-        println("UNDO ${currentIndex}")
         if (currentIndex > 0) {
             currentIndex--
             return history[currentIndex]
@@ -58,7 +65,6 @@ class Stack {
     }
 
     fun redo(): StateContext? {
-        println("REDO ${currentIndex}")
         if (currentIndex < history.size - 1) {
             currentIndex++
             return history[currentIndex]
@@ -66,12 +72,8 @@ class Stack {
         return null
     }
 
-    fun getCurrent(): StateContext? {
-        return if (currentIndex >= 0) history[currentIndex] else null
-    }
-
+    // used when loading a new image
     fun clear() {
-        // Liberamos absolutamente toda la memoria nativa antes de limpiar la lista
         history.forEach { it.currentImage?.close() }
         history.clear()
         currentIndex = -1

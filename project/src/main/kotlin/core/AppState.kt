@@ -8,6 +8,7 @@ import org.pdi.core.image.Histogram
 import org.pdi.core.image.Image
 import org.pdi.core.image.ZoomAlgorithm
 import org.pdi.core.kernels.Kernel
+import org.pdi.core.quantization.Quantizer
 import org.pdi.core.transforms.FrequencyFilter
 import org.pdi.core.transforms.Transform
 
@@ -57,7 +58,7 @@ class AppState {
         stack.redo()?.let { notifyListeners(it) }
     }
 
-    // Facade functions
+    // utilities to make easy for client to use this class
     fun applyConvolution(kernel: Kernel) = update(UpdateType.ConvolutionUpdate(kernel))
     fun applyBorderOperator(kernelX: Kernel, kernelY: Kernel) = update(UpdateType.BorderOperation(kernelX, kernelY))
     fun clear() = update(UpdateType.Clear)
@@ -80,9 +81,7 @@ class AppState {
     fun adjustU(newFactor: Float) = update(UpdateType.UAdjustment(newFactor))
     fun adjustV(newFactor: Float) = update(UpdateType.VAdjustment(newFactor))
     fun applyFrequencyFilter(space: Transform, filter: FrequencyFilter) = update(UpdateType.FrequencyFilter(space, filter))
-    fun applyKMeansQuantization(k: Int) = update(UpdateType.KMeansQuantization(k))
-    fun applyUniformQuantization(bits: Int) = update(UpdateType.UniformQuantization(bits))
-    fun applyMedianCutQuantization(k: Int) = update(UpdateType.MedianCutQuantization(k))
+    fun applyQuantization(algo: Quantizer) = update(UpdateType.ApplyQuantization(algo))
 
     private fun isContextDefault(ctx: StateContext): Boolean {
         val default = StateContext()
@@ -102,6 +101,7 @@ class AppState {
                 ctx.vFactor == default.vFactor
     }
 
+    // updates that allow the user see changes on the tonal curve
     private fun updateContextChanges(ctx: StateContext): Image? {
         val base = _currentProcessedBaseImage ?: return null
         var current = base
@@ -132,31 +132,29 @@ class AppState {
                 _currentProcessedBaseImage = _originalLoadedImage
                 stack.updateCurrent { StateContext(currentImage = _originalLoadedImage) }
             }
-            // Context-only updates (Deferred image processing)
+            // context-only updates
             is UpdateType.BrightnessUpdate -> stack.updateCurrent { it.copy(brightness = updateType.newFactor) }
-            is UpdateType.ContrastUpdate -> stack.updateCurrent {
-                it.copy(contrast = updateType.newFactor)
-            }
+            is UpdateType.ContrastUpdate -> stack.updateCurrent { it.copy(contrast = updateType.newFactor) }
             is UpdateType.NegativeUpdate -> stack.updateCurrent { it.copy(isNegative = updateType.isNegative) }
             is UpdateType.RotationUpdate -> stack.updateCurrent { it.copy(rotationApplied = updateType.angle) }
-            is UpdateType.ZoomInUpdate -> stack.updateCurrent {
-                if (it.currentZoomLevelIndex < zoomLevels.size - 1) it.copy(currentZoomLevelIndex = it.currentZoomLevelIndex + 1) else it
-            }
-            is UpdateType.ZoomOutUpdate -> stack.updateCurrent {
-                if (it.currentZoomLevelIndex > 0) it.copy(currentZoomLevelIndex = it.currentZoomLevelIndex - 1) else it
-            }
             is UpdateType.PanningModeUpdate -> stack.updateCurrent { it.copy(isPanningMode = updateType.isPanning) }
-            is UpdateType.TranslationUpdate -> stack.updateCurrent {
-                it.copy(translationX = it.translationX + updateType.dx, translationY = it.translationY + updateType.dy)
-            }
             is UpdateType.HueAdjustment -> stack.updateCurrent { it.copy(hueFactor = updateType.deltaHue) }
             is UpdateType.SaturationAdjustment -> stack.updateCurrent { it.copy(saturationFactor = updateType.deltaSaturation) }
             is UpdateType.LightnessAdjustment -> stack.updateCurrent { it.copy(lightnessFactor = updateType.deltaLightness) }
             is UpdateType.YAdjustment -> stack.updateCurrent { it.copy(yFactor = updateType.newFactor) }
             is UpdateType.UAdjustment -> stack.updateCurrent { it.copy(uFactor = updateType.newFactor) }
             is UpdateType.VAdjustment -> stack.updateCurrent { it.copy(vFactor = updateType.newFactor) }
+            is UpdateType.TranslationUpdate -> stack.updateCurrent {
+                it.copy(translationX = it.translationX + updateType.dx, translationY = it.translationY + updateType.dy)
+            }
+            is UpdateType.ZoomInUpdate -> stack.updateCurrent {
+                if (it.currentZoomLevelIndex < zoomLevels.size - 1) it.copy(currentZoomLevelIndex = it.currentZoomLevelIndex + 1) else it
+            }
+            is UpdateType.ZoomOutUpdate -> stack.updateCurrent {
+                if (it.currentZoomLevelIndex > 0) it.copy(currentZoomLevelIndex = it.currentZoomLevelIndex - 1) else it
+            }
 
-            // Base Image updates (Reset context to show correct tonal curve)
+            // base img update. resets tonal curve
             is UpdateType.GrayscaleUpdate -> {
                  _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.toGrayscale(updateType.tint)
                 stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
@@ -189,16 +187,8 @@ class AppState {
                 _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.frequencyFilter(updateType.space, updateType.filter)
                 stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
             }
-            is UpdateType.KMeansQuantization -> {
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.kMeansQuantization(updateType.k)
-                stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
-            }
-            is UpdateType.UniformQuantization -> {
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.uniformQuantization(updateType.bits)
-                stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
-            }
-            is UpdateType.MedianCutQuantization -> {
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.medianCutQuantization(updateType.k)
+            is UpdateType.ApplyQuantization -> {
+                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.applyQuantization(updateType.algo)
                 stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
             }
         }
