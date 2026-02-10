@@ -28,6 +28,10 @@
 
             <Label fx:id="contrastValueLabel" text="Contrast: 0.00"/>
             <Slider fx:id="contrastSlider" min="0" max="100" value="0"/>
+
+            <Label fx:id="tempValueLabel" text="Temp: 0"/>
+            <Slider fx:id="tempSlider" min="-100" max="100" value="0"/>
+            <Label text="(0 para Balance Automático)" style="-fx-font-size: 10px; -fx-text-fill: #666666;"/>
         </VBox>
 
         <TitledPane text="HLS Adjustments" expanded="false">
@@ -40,15 +44,6 @@
 
                 <Label fx:id="lightnessValueLabel" text="Luminosidad: 0"/>
                 <Slider fx:id="lightnessSlider" min="-100" max="100" value="0"/>
-            </VBox>
-        </TitledPane>
-
-        <TitledPane text="White Balance &amp; Temp" expanded="true">
-            <VBox spacing="10">
-                <Label text="Ajuste de Temperatura" style="-fx-font-weight: bold;"/>
-                <Label fx:id="tempValueLabel" text="Temp: 0"/>
-                <Slider fx:id="tempSlider" min="-100" max="100" value="0"/>
-                <Label text="(0 hace Balance Automático)" style="-fx-font-size: 10px; -fx-text-fill: #666666;"/>
             </VBox>
         </TitledPane>
     </VBox>

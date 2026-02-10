@@ -31,7 +31,6 @@ class LeftPanelController {
     @FXML private lateinit var lightnessValueLabel: Label
     @FXML private lateinit var lightnessSlider: Slider
 
-    // Nuevo Slider de Temperatura (Sustituye a Y, U, V)
     @FXML private lateinit var tempValueLabel: Label
     @FXML private lateinit var tempSlider: Slider
 
@@ -48,70 +47,91 @@ class LeftPanelController {
         this.appState = appState
         infoPanelController.setAppState(appState)
 
-        // --- Brillo y Contraste ---
         brightnessSlider.valueProperty().addListener { _, _, newValue ->
             val brightness = newValue.toFloat() / 100.0f
             brightnessValueLabel.text = "Brightness: %.2f".format(brightness)
-            debounce(brightnessTimeline, { appState.setBrightness(brightness) }) { brightnessTimeline = it }
+
+            if (brightnessSlider.isValueChanging || brightnessSlider.isPressed) {
+                debounce(brightnessTimeline, { appState.setBrightness(brightness) }) { brightnessTimeline = it }
+            }
         }
 
         contrastSlider.valueProperty().addListener { _, _, newValue ->
             val contrast = newValue.toFloat() / 100.0f
             contrastValueLabel.text = "Contrast: %.2f".format(contrast)
-            debounce(contrastTimeline, { appState.setContrast(contrast) }) { contrastTimeline = it }
+
+            if (contrastSlider.isValueChanging || contrastSlider.isPressed) {
+                debounce(contrastTimeline, { appState.setContrast(contrast) }) { contrastTimeline = it }
+            }
         }
 
-        // --- HLS (Matiz, Saturación, Luminosidad) ---
         hueSlider.valueProperty().addListener { _, _, newValue ->
             val hue = newValue.toInt()
             hueValueLabel.text = "Matiz: %d".format(hue)
-            debounce(hueTimeline, { appState.adjustHue(hue) }) { hueTimeline = it }
+
+            if (hueSlider.isValueChanging || hueSlider.isPressed) {
+                debounce(hueTimeline, { appState.adjustHue(hue) }) { hueTimeline = it }
+            }
         }
 
         saturationSlider.valueProperty().addListener { _, _, newValue ->
             val saturation = newValue.toFloat() / 100.0f
             saturationValueLabel.text = "Saturación: %.2f".format(saturation)
-            debounce(saturationTimeline, { appState.adjustSaturation(saturation) }) { saturationTimeline = it }
+
+            if (saturationSlider.isValueChanging || saturationSlider.isPressed) {
+                debounce(saturationTimeline, { appState.adjustSaturation(saturation) }) { saturationTimeline = it }
+            }
         }
 
         lightnessSlider.valueProperty().addListener { _, _, newValue ->
             val lightness = newValue.toFloat() / 100.0f
             lightnessValueLabel.text = "Luminosidad: %.2f".format(lightness)
-            debounce(lightnessTimeline, { appState.adjustLightness(lightness) }) { lightnessTimeline = it }
+
+            if (lightnessSlider.isValueChanging || lightnessSlider.isPressed) {
+                debounce(lightnessTimeline, { appState.adjustLightness(lightness) }) { lightnessTimeline = it }
+            }
         }
 
         tempSlider.valueProperty().addListener { _, _, newValue ->
             val temp = newValue.toFloat()
             tempValueLabel.text = "Temp: %.0f".format(temp)
-            debounce(tempTimeline, { appState.adjustTemperature(temp) }) { tempTimeline = it }
+
+            if (tempSlider.isValueChanging || tempSlider.isPressed) {
+                debounce(tempTimeline, { appState.adjustTemperature(temp) }) { tempTimeline = it }
+            }
         }
 
-        // Listener del Contexto para sincronizar UI con el estado del AppState
         appState.addContextListener { context ->
-            if (!brightnessSlider.isPressed) {
+            if (!brightnessSlider.isPressed && !brightnessSlider.isValueChanging) {
                 brightnessSlider.value = context.brightness * 100.0
                 brightnessValueLabel.text = "Brightness: %.2f".format(context.brightness)
             }
-            if (!contrastSlider.isPressed) {
+            if (!contrastSlider.isPressed && !contrastSlider.isValueChanging) {
                 contrastSlider.value = context.contrast * 100.0
                 contrastValueLabel.text = "Contrast: %.2f".format(context.contrast)
             }
-            if (!hueSlider.isPressed) {
+            if (!hueSlider.isPressed && !hueSlider.isValueChanging) {
                 hueSlider.value = context.hueFactor.toDouble()
                 hueValueLabel.text = "Matiz: %d".format(context.hueFactor)
             }
-            if (!saturationSlider.isPressed) {
+            if (!saturationSlider.isPressed && !saturationSlider.isValueChanging) {
                 saturationSlider.value = context.saturationFactor * 100.0
                 saturationValueLabel.text = "Saturación: %.2f".format(context.saturationFactor)
             }
-            if (!lightnessSlider.isPressed) {
+            if (!lightnessSlider.isPressed && !lightnessSlider.isValueChanging) {
                 lightnessSlider.value = context.lightnessFactor * 100.0
                 lightnessValueLabel.text = "Luminosidad: %.2f".format(context.lightnessFactor)
+            }
+            if (!tempSlider.isPressed && !tempSlider.isValueChanging) {
+                context.currentImage?.let {
+                    val currentTemp = it.getTemperature()
+                    tempSlider.value = currentTemp.toDouble()
+                    tempValueLabel.text = "Temp: %.0f".format(currentTemp)
+                }
             }
         }
     }
 
-    // Función auxiliar para reducir duplicación de código en los Timelines
     private fun debounce(timeline: Timeline?, action: () -> Unit, updateTimeline: (Timeline) -> Unit) {
         timeline?.stop()
         val newTimeline = Timeline(KeyFrame(Duration.millis(200.0), { action() }))

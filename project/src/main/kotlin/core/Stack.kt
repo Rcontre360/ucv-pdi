@@ -19,7 +19,7 @@ data class StateContext(
 // we store the image on each action but have a max history limit to avoid crashing the memory
 class Stack {
     companion object {
-        private const val MAX_HISTORY_SIZE = 10
+        private const val MAX_HISTORY_SIZE = 20
     }
 
     // history and current index used
@@ -44,13 +44,6 @@ class Stack {
             history.removeAt(0)
             currentIndex--
         }
-    }
-
-    // this basically updates the current context given a transformation. cleaner way to add new state
-    fun updateCurrent(transform: (StateContext) -> StateContext) {
-        val current = getCurrent() ?: StateContext()
-        val newContext = transform(current)
-        push(newContext)
     }
 
     fun undo(): StateContext? {

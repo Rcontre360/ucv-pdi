@@ -19,7 +19,6 @@ class AppState {
     private val _contextListeners = mutableListOf<(StateContext) -> Unit>()
 
     private val stack = Stack()
-    // single context exists only on stack. no duplicated data which is important
     val context: StateContext
         get() = stack.getCurrent() ?: StateContext()
 
@@ -31,12 +30,7 @@ class AppState {
 
     fun getImage(): Mat? {
         val ctx = stack.getCurrent() ?: return null
-
-        if (ctx.currentZoomLevelIndex == 9) {
-            return ctx.currentImage?.image
-        }
-        val contextWithoutZoom = ctx.copy(currentZoomLevelIndex = 9)
-        return updateContextChanges(contextWithoutZoom)?.image
+        return ctx.currentImage?.image
     }
 
     fun getTonalCurve(): Map<Char, IntArray>? {
@@ -52,14 +46,15 @@ class AppState {
     }
 
     fun undo() {
+        println("UNDO")
         stack.undo()?.let { notifyListeners(it) }
+        println("UNDO END")
     }
 
     fun redo() {
         stack.redo()?.let { notifyListeners(it) }
     }
 
-    // utilities to make easy for client to use this class
     fun applyConvolution(kernel: Kernel) = update(UpdateType.ConvolutionUpdate(kernel))
     fun applyBorderOperator(kernelX: Kernel, kernelY: Kernel) = update(UpdateType.BorderOperation(kernelX, kernelY))
     fun clear() = update(UpdateType.Clear)
@@ -72,7 +67,7 @@ class AppState {
     fun zoomOut() = update(UpdateType.ZoomOutUpdate)
     fun loadImage(file: File) = update(UpdateType.LoadImageUpdate(file))
     fun applyThresholding(type: Int) = update(UpdateType.ThresholdUpdate(type))
-    fun applyRegionGrowing(algo: RegionGrowing,seeds: List<Point>) = update(UpdateType.RegionGrowingUpdate(algo,seeds))
+    fun applyRegionGrowing(algo: RegionGrowing, seeds: List<Point>) = update(UpdateType.RegionGrowingUpdate(algo, seeds))
     fun setPanningMode(value: Boolean) = update(UpdateType.PanningModeUpdate(value))
     fun applyTranslation(dx: Int, dy: Int) = update(UpdateType.TranslationUpdate(dx, dy))
     fun adjustHue(newFactor: Int) = update(UpdateType.HueAdjustment(newFactor))
@@ -97,17 +92,14 @@ class AppState {
                 ctx.lightnessFactor == default.lightnessFactor
     }
 
-    // updates that allow the user see changes on the tonal curve
-    private fun updateContextChanges(ctx: StateContext): Image? {
+    private fun renderProcessedImage(ctx: StateContext): Image? {
         val base = _currentProcessedBaseImage ?: return null
-        var current = base
+        if (isContextDefault(ctx)) return base
 
-        if (ctx.isNegative)
-            current = current.negative()
-        if (ctx.contrast != 0.0f)
-            current = current.changeContrast(ctx.contrast)
-        if (ctx.brightness != 0.0f)
-            current = current.changeBrightness(ctx.brightness)
+        var current = base
+        if (ctx.isNegative) current = current.negative()
+        if (ctx.contrast != 0.0f) current = current.changeContrast(ctx.contrast)
+        if (ctx.brightness != 0.0f) current = current.changeBrightness(ctx.brightness)
         if (ctx.hueFactor != 0 || ctx.saturationFactor != 0.0f || ctx.lightnessFactor != 0.0f)
             current = current.applyHLSAdjustments(ctx.hueFactor, ctx.saturationFactor, ctx.lightnessFactor)
         if (ctx.currentZoomLevelIndex != 9)
@@ -121,79 +113,81 @@ class AppState {
     }
 
     private fun update(updateType: UpdateType) {
+        println("UPDATE ${updateType}")
+        var nextContext = stack.getCurrent()?.copy() ?: StateContext()
+
         when (updateType) {
             is UpdateType.Clear -> {
                 _currentProcessedBaseImage = _originalLoadedImage
-                stack.updateCurrent { StateContext(currentImage = _originalLoadedImage) }
+                nextContext = StateContext(currentImage = _originalLoadedImage)
             }
-            // context-only updates
-            is UpdateType.BrightnessUpdate -> stack.updateCurrent { it.copy(brightness = updateType.newFactor) }
-            is UpdateType.ContrastUpdate -> stack.updateCurrent { it.copy(contrast = updateType.newFactor) }
-            is UpdateType.NegativeUpdate -> stack.updateCurrent { it.copy(isNegative = updateType.isNegative) }
-            is UpdateType.RotationUpdate -> stack.updateCurrent { it.copy(rotationApplied = updateType.angle) }
-            is UpdateType.PanningModeUpdate -> stack.updateCurrent { it.copy(isPanningMode = updateType.isPanning) }
-            is UpdateType.HueAdjustment -> stack.updateCurrent { it.copy(hueFactor = updateType.deltaHue) }
-            is UpdateType.SaturationAdjustment -> stack.updateCurrent { it.copy(saturationFactor = updateType.deltaSaturation) }
-            is UpdateType.LightnessAdjustment -> stack.updateCurrent { it.copy(lightnessFactor = updateType.deltaLightness) }
-            is UpdateType.TranslationUpdate -> stack.updateCurrent {
-                it.copy(translationX = it.translationX + updateType.dx, translationY = it.translationY + updateType.dy)
+            is UpdateType.BrightnessUpdate -> nextContext = nextContext.copy(brightness = updateType.newFactor)
+            is UpdateType.ContrastUpdate -> nextContext = nextContext.copy(contrast = updateType.newFactor)
+            is UpdateType.NegativeUpdate -> nextContext = nextContext.copy(isNegative = updateType.isNegative)
+            is UpdateType.RotationUpdate -> nextContext = nextContext.copy(rotationApplied = updateType.angle)
+            is UpdateType.PanningModeUpdate -> nextContext = nextContext.copy(isPanningMode = updateType.isPanning)
+            is UpdateType.HueAdjustment -> nextContext = nextContext.copy(hueFactor = updateType.deltaHue)
+            is UpdateType.SaturationAdjustment -> nextContext = nextContext.copy(saturationFactor = updateType.deltaSaturation)
+            is UpdateType.LightnessAdjustment -> nextContext = nextContext.copy(lightnessFactor = updateType.deltaLightness)
+            is UpdateType.TranslationUpdate -> nextContext = nextContext.copy(
+                translationX = nextContext.translationX + updateType.dx,
+                translationY = nextContext.translationY + updateType.dy
+            )
+            is UpdateType.ZoomInUpdate -> {
+                if (nextContext.currentZoomLevelIndex < zoomLevels.size - 1)
+                    nextContext = nextContext.copy(currentZoomLevelIndex = nextContext.currentZoomLevelIndex + 1)
             }
-            is UpdateType.ZoomInUpdate -> stack.updateCurrent {
-                if (it.currentZoomLevelIndex < zoomLevels.size - 1) it.copy(currentZoomLevelIndex = it.currentZoomLevelIndex + 1) else it
+            is UpdateType.ZoomOutUpdate -> {
+                if (nextContext.currentZoomLevelIndex > 0)
+                    nextContext = nextContext.copy(currentZoomLevelIndex = nextContext.currentZoomLevelIndex - 1)
             }
-            is UpdateType.ZoomOutUpdate -> stack.updateCurrent {
-                if (it.currentZoomLevelIndex > 0) it.copy(currentZoomLevelIndex = it.currentZoomLevelIndex - 1) else it
-            }
-
-            // base img update. resets tonal curve
             is UpdateType.GrayscaleUpdate -> {
-                 _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.toGrayscale(updateType.tint)
-                stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
+                _currentProcessedBaseImage = nextContext.currentImage?.toGrayscale(updateType.tint)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.TemperatureAdjustment -> {
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.changeTemperature(updateType.temp)
-                stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
+                _currentProcessedBaseImage = nextContext.currentImage?.changeTemperature(updateType.temp)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.ThresholdUpdate -> {
                 if (!isCurrentImageGrayscale()) return
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.makeThreshold(updateType.type)
-                stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
+                _currentProcessedBaseImage = nextContext.currentImage?.makeThreshold(updateType.type)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.LoadImageUpdate -> {
                 val loadedImage = org.pdi.io.loadImage(updateType.file)
                 _originalLoadedImage = loadedImage
                 _currentProcessedBaseImage = loadedImage
                 stack.clear()
-                stack.updateCurrent { StateContext(currentImage = loadedImage) }
+                nextContext = StateContext(currentImage = loadedImage)
             }
             is UpdateType.ConvolutionUpdate -> {
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.applyKernel(updateType.kernel)
-                stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
+                _currentProcessedBaseImage = nextContext.currentImage?.applyKernel(updateType.kernel)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.BorderOperation -> {
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.applyBorderOperator(updateType.kernelX, updateType.kernelY)
-                stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
+                _currentProcessedBaseImage = nextContext.currentImage?.applyBorderOperator(updateType.kernelX, updateType.kernelY)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.RegionGrowingUpdate -> {
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.regionGrowing(updateType.algo,updateType.seeds)
-                stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
+                _currentProcessedBaseImage = nextContext.currentImage?.regionGrowing(updateType.algo, updateType.seeds)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.FrequencyFilter -> {
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.frequencyFilter(updateType.space, updateType.filter)
-                stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
+                _currentProcessedBaseImage = nextContext.currentImage?.frequencyFilter(updateType.space, updateType.filter)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.ApplyQuantization -> {
-                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.applyQuantization(updateType.algo)
-                stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
+                _currentProcessedBaseImage = nextContext.currentImage?.applyQuantization(updateType.algo)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
         }
 
-        // Final image rendering based on updated context
-        stack.getCurrent()?.let { currentCtx ->
-            val renderedImage = if (isContextDefault(currentCtx)) _currentProcessedBaseImage else updateContextChanges(currentCtx)
-            stack.updateCurrent { it.copy(currentImage = renderedImage) }
-            notifyListeners(stack.getCurrent()!!)
-        }
+        val rendered = renderProcessedImage(nextContext)
+        val finalContext = nextContext.copy(currentImage = rendered)
+
+        stack.push(finalContext)
+        notifyListeners(finalContext)
     }
 
     private fun notifyListeners(ctx: StateContext) {
