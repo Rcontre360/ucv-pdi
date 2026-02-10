@@ -12,36 +12,43 @@
     <padding>
         <Insets top="10" right="10" bottom="10" left="10"/>
     </padding>
+
     <fx:include fx:id="infoPanel" source="panels/InfoPanel.fxml"/>
-    <Button text="Grayscale/Coloring" onAction="#applyGrayscale"/>
-    <Button text="Negative" onAction="#applyNegative"/>
-    <ColorPicker fx:id="colorPicker" />
+
+    <VBox spacing="5">
+        <Button text="Grayscale/Coloring" onAction="#applyGrayscale" maxWidth="Infinity"/>
+        <Button text="Negative" onAction="#applyNegative" maxWidth="Infinity"/>
+        <ColorPicker fx:id="colorPicker" maxWidth="Infinity"/>
+    </VBox>
 
     <VBox spacing="10">
-        <Label fx:id="brightnessValueLabel" text="Brightness: 0.00"/>
-        <Slider fx:id="brightnessSlider" min="-100" max="100" value="0"/>
-        <Label fx:id="contrastValueLabel" text="Contrast: 0.00"/>
-        <Slider fx:id="contrastSlider" min="0" max="100" value="0"/>
+        <VBox spacing="5">
+            <Label fx:id="brightnessValueLabel" text="Brightness: 0.00"/>
+            <Slider fx:id="brightnessSlider" min="-100" max="100" value="0"/>
+
+            <Label fx:id="contrastValueLabel" text="Contrast: 0.00"/>
+            <Slider fx:id="contrastSlider" min="0" max="100" value="0"/>
+        </VBox>
 
         <TitledPane text="HLS Adjustments" expanded="false">
             <VBox spacing="10">
                 <Label fx:id="hueValueLabel" text="Matiz: 0"/>
                 <Slider fx:id="hueSlider" min="-180" max="180" value="0"/>
+
                 <Label fx:id="saturationValueLabel" text="Saturación: 0"/>
                 <Slider fx:id="saturationSlider" min="-100" max="100" value="0"/>
+
                 <Label fx:id="lightnessValueLabel" text="Luminosidad: 0"/>
                 <Slider fx:id="lightnessSlider" min="-100" max="100" value="0"/>
             </VBox>
         </TitledPane>
 
-        <TitledPane text="YUV Adjustments" expanded="false">
+        <TitledPane text="White Balance &amp; Temp" expanded="true">
             <VBox spacing="10">
-                <Label fx:id="yValueLabel" text="Luma (Y): 0"/>
-                <Slider fx:id="ySlider" min="-100" max="100" value="0"/>
-                <Label fx:id="uValueLabel" text="Croma (U): 0"/>
-                <Slider fx:id="uSlider" min="-100" max="100" value="0"/>
-                <Label fx:id="vValueLabel" text="Croma (V): 0"/>
-                <Slider fx:id="vSlider" min="-100" max="100" value="0"/>
+                <Label text="Ajuste de Temperatura" style="-fx-font-weight: bold;"/>
+                <Label fx:id="tempValueLabel" text="Temp: 0"/>
+                <Slider fx:id="tempSlider" min="-100" max="100" value="0"/>
+                <Label text="(0 hace Balance Automático)" style="-fx-font-size: 10px; -fx-text-fill: #666666;"/>
             </VBox>
         </TitledPane>
     </VBox>

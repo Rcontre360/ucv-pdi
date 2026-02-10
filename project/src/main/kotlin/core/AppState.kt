@@ -78,9 +78,7 @@ class AppState {
     fun adjustHue(newFactor: Int) = update(UpdateType.HueAdjustment(newFactor))
     fun adjustSaturation(newFactor: Float) = update(UpdateType.SaturationAdjustment(newFactor))
     fun adjustLightness(newFactor: Float) = update(UpdateType.LightnessAdjustment(newFactor))
-    fun adjustY(newFactor: Float) = update(UpdateType.YAdjustment(newFactor))
-    fun adjustU(newFactor: Float) = update(UpdateType.UAdjustment(newFactor))
-    fun adjustV(newFactor: Float) = update(UpdateType.VAdjustment(newFactor))
+    fun adjustTemperature(temp: Float) = update(UpdateType.TemperatureAdjustment(temp))
     fun applyFrequencyFilter(space: Transform, filter: FrequencyFilter) = update(UpdateType.FrequencyFilter(space, filter))
     fun applyQuantization(algo: Quantizer) = update(UpdateType.ApplyQuantization(algo))
 
@@ -96,10 +94,7 @@ class AppState {
                 ctx.translationY == default.translationY &&
                 ctx.hueFactor == default.hueFactor &&
                 ctx.saturationFactor == default.saturationFactor &&
-                ctx.lightnessFactor == default.lightnessFactor &&
-                ctx.yFactor == default.yFactor &&
-                ctx.uFactor == default.uFactor &&
-                ctx.vFactor == default.vFactor
+                ctx.lightnessFactor == default.lightnessFactor
     }
 
     // updates that allow the user see changes on the tonal curve
@@ -115,8 +110,6 @@ class AppState {
             current = current.changeBrightness(ctx.brightness)
         if (ctx.hueFactor != 0 || ctx.saturationFactor != 0.0f || ctx.lightnessFactor != 0.0f)
             current = current.applyHLSAdjustments(ctx.hueFactor, ctx.saturationFactor, ctx.lightnessFactor)
-        if (ctx.yFactor != 0.0f || ctx.uFactor != 0.0f || ctx.vFactor != 0.0f)
-            current = current.applyYUVAdjustments(ctx.yFactor, ctx.uFactor, ctx.vFactor)
         if (ctx.currentZoomLevelIndex != 9)
             current = current.zoom(zoomLevels[ctx.currentZoomLevelIndex], zoomAlgorithm)
         if (ctx.rotationApplied != 0)
@@ -142,9 +135,6 @@ class AppState {
             is UpdateType.HueAdjustment -> stack.updateCurrent { it.copy(hueFactor = updateType.deltaHue) }
             is UpdateType.SaturationAdjustment -> stack.updateCurrent { it.copy(saturationFactor = updateType.deltaSaturation) }
             is UpdateType.LightnessAdjustment -> stack.updateCurrent { it.copy(lightnessFactor = updateType.deltaLightness) }
-            is UpdateType.YAdjustment -> stack.updateCurrent { it.copy(yFactor = updateType.newFactor) }
-            is UpdateType.UAdjustment -> stack.updateCurrent { it.copy(uFactor = updateType.newFactor) }
-            is UpdateType.VAdjustment -> stack.updateCurrent { it.copy(vFactor = updateType.newFactor) }
             is UpdateType.TranslationUpdate -> stack.updateCurrent {
                 it.copy(translationX = it.translationX + updateType.dx, translationY = it.translationY + updateType.dy)
             }
@@ -158,6 +148,10 @@ class AppState {
             // base img update. resets tonal curve
             is UpdateType.GrayscaleUpdate -> {
                  _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.toGrayscale(updateType.tint)
+                stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
+            }
+            is UpdateType.TemperatureAdjustment -> {
+                _currentProcessedBaseImage = stack.getCurrent()?.currentImage?.changeTemperature(updateType.temp)
                 stack.updateCurrent { StateContext(currentImage = _currentProcessedBaseImage) }
             }
             is UpdateType.ThresholdUpdate -> {

@@ -4,12 +4,10 @@ import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.Point
 import org.opencv.core.Rect
-import org.opencv.core.Scalar
 import org.opencv.imgproc.Imgproc
 import java.awt.Color
 import kotlin.Int
 import kotlin.math.roundToInt
-import kotlin.random.Random
 import org.opencv.core.Core
 import org.pdi.core.kernels.Kernel
 import org.pdi.core.quantization.Quantizer
@@ -385,24 +383,60 @@ class Image(val image: Mat):AutoCloseable {
         return Image(rgb)
     }
 
-    fun applyYUVAdjustments(yFactor: Float, uFactor: Float, vFactor: Float): Image {
+    fun getTemperature(): Float {
         val yuvMat = Mat()
         Imgproc.cvtColor(image, yuvMat, Imgproc.COLOR_BGR2YUV)
 
-        val channels = arrayListOf<Mat>()
+        val channels = mutableListOf<Mat>()
         Core.split(yuvMat, channels)
 
-        val adjustedY = applyChannelFactor(channels[0], yFactor)
-        val adjustedU = applyChannelFactor(channels[1], uFactor)
-        val adjustedV = applyChannelFactor(channels[2], vFactor)
+        // Obtenemos el promedio de los canales de color
+        val avgU = Core.mean(channels[1]).`val`[0]
+        val avgV = Core.mean(channels[2]).`val`[0]
 
-        Core.merge( listOf(adjustedY, adjustedU, adjustedV), yuvMat)
-        Imgproc.cvtColor(yuvMat, yuvMat, Imgproc.COLOR_YUV2BGR)
+        // El desplazamiento (shift) es la distancia al gris neutro (128)
+        // Usamos la lógica inversa a la aplicada en changeTemperature:
+        // Si la imagen es cálida, U será bajo (<128) y V será alto (>128)
+        val diffU = 128.0 - avgU
+        val diffV = avgV - 128.0
 
-        listOf(adjustedY,adjustedU,adjustedV).release()
-        channels.release()
+        // Promediamos ambas diferencias para obtener un único factor de "temperatura"
+        val temperature = ((diffU + diffV) / 2.0).toFloat()
 
-        return Image(yuvMat)
+        // Limpieza
+        yuvMat.release()
+        channels.forEach { it.release() }
+
+        return temperature
+    }
+
+    fun changeTemperature(tempFactor: Float): Image {
+        val yuvMat = Mat()
+        Imgproc.cvtColor(image, yuvMat, Imgproc.COLOR_BGR2YUV)
+
+        val channels = mutableListOf<Mat>()
+        Core.split(yuvMat, channels)
+
+        val avgU = Core.mean(channels[1]).`val`[0]
+        val avgV = Core.mean(channels[2]).`val`[0]
+
+        val whiteBalanceU = 128.0 - avgU
+        val whiteBalanceV = 128.0 - avgV
+
+        val finalShiftU = whiteBalanceU - tempFactor
+        val finalShiftV = whiteBalanceV + tempFactor
+
+        channels[1].convertTo(channels[1], -1, 1.0, finalShiftU)
+        channels[2].convertTo(channels[2], -1, 1.0, finalShiftV)
+
+        val resultMat = Mat()
+        Core.merge(channels, resultMat)
+        Imgproc.cvtColor(resultMat, resultMat, Imgproc.COLOR_YUV2BGR)
+
+        yuvMat.release()
+        channels.forEach { it.release() }
+
+        return Image(resultMat)
     }
 
     fun frequencyImage(space: Transform): Image {

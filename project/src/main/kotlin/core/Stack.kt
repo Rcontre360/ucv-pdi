@@ -12,10 +12,7 @@ data class StateContext(
     val translationY: Int = 0,
     val hueFactor: Int = 0,
     val saturationFactor: Float = 0.0f,
-    val lightnessFactor: Float = 0.0f,
-    val yFactor: Float = 0.0f,
-    val uFactor: Float = 0.0f,
-    val vFactor: Float = 0.0f
+    val lightnessFactor: Float = 0.0f
 )
 
 // stack allows the user to stack actions.
