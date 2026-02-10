@@ -5,7 +5,7 @@ import org.opencv.core.Mat
 import org.opencv.core.Scalar
 import org.opencv.imgproc.Imgproc
 
-fun bgrToYuvChannels(image: Mat): List<Mat> {
+fun rgbToYuv(image: Mat): List<Mat> {
     val yuvMat = Mat()
     Imgproc.cvtColor(image, yuvMat, Imgproc.COLOR_BGR2YUV)
     val channels = arrayListOf<Mat>()
@@ -14,7 +14,7 @@ fun bgrToYuvChannels(image: Mat): List<Mat> {
     return channels
 }
 
-fun yuvChannelsToBgr(channels: List<Mat>): Mat {
+fun yuvToRGB(channels: List<Mat>): Mat {
     val yuvMat = Mat()
     Core.merge(channels, yuvMat)
     val bgrMat = Mat()

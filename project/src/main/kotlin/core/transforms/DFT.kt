@@ -79,7 +79,7 @@ class DFT : Transform() {
         return res
     }
 
-    private fun shiftQuadrants(mat: Mat) {
+    fun shiftQuadrants(mat: Mat) {
         val rows = mat.rows()
         val cols = mat.cols()
         val channels = mat.channels()

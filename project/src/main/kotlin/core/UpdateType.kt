@@ -3,6 +3,7 @@ package org.pdi.core
 import java.awt.Color
 import java.io.File
 import org.opencv.core.Point
+import org.pdi.core.kernels.GaussianKernel
 import org.pdi.core.kernels.Kernel
 import org.pdi.core.quantization.Quantizer
 import org.pdi.core.rg.RegionGrowing
@@ -27,6 +28,8 @@ sealed class UpdateType {
     object ZoomOutUpdate : UpdateType()
     data class LoadImageUpdate(val file: File) : UpdateType()
     data class ConvolutionUpdate(val kernel: Kernel) : UpdateType()
+    data class RemoveBlurUpdate(val kernel: GaussianKernel) : UpdateType()
+
     // border operations are different from convolution because we calculate the gradient
     data class BorderOperation(val kernelX: Kernel, val kernelY: Kernel) : UpdateType()
     data class RegionGrowingUpdate(val algo: List<RegionGrowing>) : UpdateType()

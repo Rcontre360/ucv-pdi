@@ -9,6 +9,7 @@ import java.awt.Color
 import kotlin.Int
 import kotlin.math.roundToInt
 import org.opencv.core.Core
+import org.pdi.core.kernels.GaussianKernel
 import org.pdi.core.kernels.Kernel
 import org.pdi.core.quantization.Quantizer
 import org.pdi.core.rg.RegionGrowing
@@ -130,6 +131,10 @@ class Image(val image: Mat):AutoCloseable {
                 kernel.convolute(imgB).roundToInt().coerceIn(0, 255)
             )
         }
+    }
+
+    fun removeBlur(kernel: GaussianKernel):Image{
+        return Image(kernel.revert(this.image, 0.1f))
     }
 
     // this applies a given border operator (we can even mix them since this receives 2 kernels)
@@ -399,22 +404,15 @@ class Image(val image: Mat):AutoCloseable {
         val channels = mutableListOf<Mat>()
         Core.split(yuvMat, channels)
 
-        // Obtenemos el promedio de los canales de color
         val avgU = Core.mean(channels[1]).`val`[0]
         val avgV = Core.mean(channels[2]).`val`[0]
-
-        // El desplazamiento (shift) es la distancia al gris neutro (128)
-        // Usamos la lógica inversa a la aplicada en changeTemperature:
-        // Si la imagen es cálida, U será bajo (<128) y V será alto (>128)
         val diffU = 128.0 - avgU
         val diffV = avgV - 128.0
 
-        // Promediamos ambas diferencias para obtener un único factor de "temperatura"
         val temperature = ((diffU + diffV) / 2.0).toFloat()
 
-        // Limpieza
         yuvMat.release()
-        channels.forEach { it.release() }
+        channels.release()
 
         return temperature
     }
@@ -453,11 +451,11 @@ class Image(val image: Mat):AutoCloseable {
     }
 
     fun frequencyFilter(space: Transform, filter: FrequencyFilter): Image {
-        val yuvChannels = bgrToYuvChannels(image)
+        val yuvChannels = rgbToYuv(image)
         val filteredPaddedY = space.applyFilter(yuvChannels[0], filter)
 
         val filteredY = Mat(filteredPaddedY, Rect(0, 0, yuvChannels[0].cols(), yuvChannels[0].rows()))
-        val resultMat = yuvChannelsToBgr(listOf(filteredY, yuvChannels[1], yuvChannels[2]))
+        val resultMat = yuvToRGB(listOf(filteredY, yuvChannels[1], yuvChannels[2]))
 
         yuvChannels.release()
         filteredPaddedY.release()

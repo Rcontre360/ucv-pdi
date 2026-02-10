@@ -30,7 +30,7 @@ class Histogram(private val image: Mat) {
     }
 
     fun equalize(threshold: Float = 0.0f): Mat {
-        val yuv = bgrToYuvChannels(image)
+        val yuv = rgbToYuv(image)
         val yChannel = yuv[0]
 
         val equalized = Imgproc.createCLAHE(threshold.toDouble(), Size(8.0, 8.0))

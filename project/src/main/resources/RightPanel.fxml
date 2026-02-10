@@ -32,6 +32,7 @@
 
         <Button text="Edit Kernel Matrix" onAction="#showKernel" maxWidth="150"/>
         <Button text="Apply Filter" onAction="#applyFilter" maxWidth="150"/>
+        <Button fx:id="removeBlurButton" text="Remove Blur (Wiener)" onAction="#applyRemoveBlur" maxWidth="150" disable="true"/>
     </VBox>
 
     <VBox spacing="8" alignment="TOP_RIGHT" style="-fx-border-color: #AAAAAA; -fx-border-width: 0 0 1 0; -fx-padding: 0 0 10 0;">

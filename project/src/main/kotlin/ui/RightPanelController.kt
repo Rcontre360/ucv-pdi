@@ -4,6 +4,7 @@ import javafx.fxml.FXML
 import javafx.fxml.FXMLLoader
 import javafx.scene.Parent
 import javafx.scene.Scene
+import javafx.scene.control.Button
 import javafx.scene.control.ComboBox
 import javafx.scene.control.TextField
 import javafx.stage.Modality
@@ -32,6 +33,9 @@ class RightPanelController {
     @FXML private lateinit var morphComboBox: ComboBox<MorphOp>
     @FXML private lateinit var morphRowsField: TextField
     @FXML private lateinit var morphColsField: TextField
+
+    // Nuevo botón para el Filtro de Wiener
+    @FXML private lateinit var removeBlurButton: Button
 
     private lateinit var appState: AppState
     private lateinit var primaryStage: Stage
@@ -94,6 +98,9 @@ class RightPanelController {
         val (customR, customC) = currentKernel.isCustomizable()
         rowsField.isEditable = customR
         colsField.isEditable = customC
+
+        // El botón de restauración solo se activa si el kernel es Gaussiano
+        removeBlurButton.isDisable = currentKernel !is GaussianKernel
     }
 
     private fun updateCurrentMorphKernel() {
@@ -107,6 +114,15 @@ class RightPanelController {
 
     @FXML fun showKernel() = openKernelMatrixWindow(currentKernel, false)
     @FXML fun applyFilter() = appState.applyConvolution(currentKernel)
+
+    // Nueva acción para restaurar la imagen (Wiener)
+    @FXML
+    fun applyRemoveBlur() {
+        val kernel = currentKernel
+        if (kernel is GaussianKernel) {
+            appState.removeBlur(kernel)
+        }
+    }
 
     @FXML
     fun applyBorders() {

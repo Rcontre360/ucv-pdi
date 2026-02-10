@@ -1,5 +1,12 @@
 package org.pdi.core.kernels
 
+import org.opencv.core.Core
+import org.opencv.core.CvType
+import org.opencv.core.Mat
+import org.opencv.core.Scalar
+import org.opencv.imgproc.Imgproc
+import org.pdi.core.transforms.DFT
+
 /// all available kernel types
 enum class KernelType {
     AVERAGE,
@@ -57,6 +64,29 @@ abstract class Kernel(var rows: Int, var cols: Int) {
 
     init {
         generateKernel()
+    }
+
+    fun sum(): Float{
+        var kernelSum = 0.0f
+        for (i in 0 until rows) {
+            for (j in 0 until cols) kernelSum += kernel[i][j]
+        }
+        return kernelSum
+    }
+
+    fun normalize(): Array<FloatArray> {
+        val normalizedMatrix = Array(rows) { i -> kernel[i].copyOf() }
+        val kernelSum = this.sum()
+
+        if (kernelSum == 0.0f) return normalizedMatrix
+
+        for (i in 0 until rows) {
+            for (j in 0 until cols) {
+                normalizedMatrix[i][j] = kernel[i][j] / kernelSum
+            }
+        }
+
+        return normalizedMatrix
     }
 
     // used for the panel to edit kernels

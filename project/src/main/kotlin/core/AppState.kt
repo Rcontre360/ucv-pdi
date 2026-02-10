@@ -7,6 +7,7 @@ import org.opencv.core.Point
 import org.pdi.core.image.Histogram
 import org.pdi.core.image.Image
 import org.pdi.core.image.ZoomAlgorithm
+import org.pdi.core.kernels.GaussianKernel
 import org.pdi.core.kernels.Kernel
 import org.pdi.core.quantization.Quantizer
 import org.pdi.core.rg.RegionGrowing
@@ -56,6 +57,7 @@ class AppState {
     }
 
     fun applyConvolution(kernel: Kernel) = update(UpdateType.ConvolutionUpdate(kernel))
+    fun removeBlur(kernel: GaussianKernel) = update(UpdateType.RemoveBlurUpdate(kernel))
     fun applyBorderOperator(kernelX: Kernel, kernelY: Kernel) = update(UpdateType.BorderOperation(kernelX, kernelY))
     fun clear() = update(UpdateType.Clear)
     fun applyGrayscale(tint: Color) = update(UpdateType.GrayscaleUpdate(tint))
@@ -163,6 +165,10 @@ class AppState {
             }
             is UpdateType.ConvolutionUpdate -> {
                 _currentProcessedBaseImage = nextContext.currentImage?.applyKernel(updateType.kernel)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.RemoveBlurUpdate -> {
+                _currentProcessedBaseImage = nextContext.currentImage?.removeBlur(updateType.kernel)
                 nextContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.BorderOperation -> {
