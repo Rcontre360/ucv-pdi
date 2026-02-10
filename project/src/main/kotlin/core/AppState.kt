@@ -1,0 +1,202 @@
+package org.pdi.core
+
+import org.opencv.core.Mat
+import java.awt.Color
+import java.io.File
+import org.opencv.core.Point
+import org.pdi.core.image.Histogram
+import org.pdi.core.image.Image
+import org.pdi.core.image.ZoomAlgorithm
+import org.pdi.core.kernels.GaussianKernel
+import org.pdi.core.kernels.Kernel
+import org.pdi.core.quantization.Quantizer
+import org.pdi.core.rg.RegionGrowing
+import org.pdi.core.transforms.FrequencyFilter
+import org.pdi.core.transforms.Transform
+
+class AppState {
+    private var _originalLoadedImage: Image? = null
+    private var _currentProcessedBaseImage: Image? = null
+    private val _contextListeners = mutableListOf<(StateContext) -> Unit>()
+
+    private val stack = Stack()
+    val context: StateContext
+        get() = stack.getCurrent() ?: StateContext()
+
+    var zoomAlgorithm: ZoomAlgorithm = ZoomAlgorithm.LINEAR_INTERPOLATION
+    val zoomLevels = listOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f)
+
+    fun isCurrentImageGrayscale(): Boolean = stack.getCurrent()?.currentImage?.isGrayscale ?: false
+    fun getHistogram(): Histogram? = stack.getCurrent()?.currentImage?.histogram
+
+    fun getImage(): Mat? {
+        val ctx = stack.getCurrent() ?: return null
+        return ctx.currentImage?.image
+    }
+
+    fun getTonalCurve(): Map<Char, IntArray>? {
+        return _currentProcessedBaseImage?.let { initial ->
+            stack.getCurrent()?.currentImage?.let { current ->
+                initial.getTonalCurve(current)
+            }
+        }
+    }
+
+    fun addContextListener(listener: (StateContext) -> Unit) {
+        _contextListeners.add(listener)
+    }
+
+    fun undo() {
+        println("UNDO")
+        stack.undo()?.let { notifyListeners(it) }
+        println("UNDO END")
+    }
+
+    fun redo() {
+        stack.redo()?.let { notifyListeners(it) }
+    }
+
+    fun applyConvolution(kernel: Kernel) = update(UpdateType.ConvolutionUpdate(kernel))
+    fun removeBlur(kernel: GaussianKernel) = update(UpdateType.RemoveBlurUpdate(kernel))
+    fun applyBorderOperator(kernelX: Kernel, kernelY: Kernel) = update(UpdateType.BorderOperation(kernelX, kernelY))
+    fun clear() = update(UpdateType.Clear)
+    fun applyGrayscale(tint: Color) = update(UpdateType.GrayscaleUpdate(tint))
+    fun applyNegative() = update(UpdateType.NegativeUpdate(!(stack.getCurrent()?.isNegative ?: false)))
+    fun setBrightness(newFactor: Float) = update(UpdateType.BrightnessUpdate(newFactor))
+    fun setContrast(newFactor: Float) = update(UpdateType.ContrastUpdate(newFactor))
+    fun rotate(angle: Int) = update(UpdateType.RotationUpdate(angle))
+    fun zoomIn() = update(UpdateType.ZoomInUpdate)
+    fun zoomOut() = update(UpdateType.ZoomOutUpdate)
+    fun loadImage(file: File) = update(UpdateType.LoadImageUpdate(file))
+    fun applyThresholding(type: Int) = update(UpdateType.ThresholdUpdate(type))
+    fun applyRegionGrowing(algo: List<RegionGrowing>) = update(UpdateType.RegionGrowingUpdate(algo))
+    fun setPanningMode(value: Boolean) = update(UpdateType.PanningModeUpdate(value))
+    fun applyTranslation(dx: Int, dy: Int) = update(UpdateType.TranslationUpdate(dx, dy))
+    fun adjustHue(newFactor: Int) = update(UpdateType.HueAdjustment(newFactor))
+    fun adjustSaturation(newFactor: Float) = update(UpdateType.SaturationAdjustment(newFactor))
+    fun adjustLightness(newFactor: Float) = update(UpdateType.LightnessAdjustment(newFactor))
+    fun adjustTemperature(temp: Float) = update(UpdateType.TemperatureAdjustment(temp))
+    fun applyFrequencyFilter(space: Transform, filter: FrequencyFilter) = update(UpdateType.FrequencyFilter(space, filter))
+    fun applyQuantization(algo: Quantizer) = update(UpdateType.ApplyQuantization(algo))
+
+    private fun isContextDefault(ctx: StateContext): Boolean {
+        val default = StateContext()
+        return ctx.brightness == default.brightness &&
+                ctx.contrast == default.contrast &&
+                ctx.rotationApplied == default.rotationApplied &&
+                ctx.currentZoomLevelIndex == default.currentZoomLevelIndex &&
+                ctx.isNegative == default.isNegative &&
+                ctx.isPanningMode == default.isPanningMode &&
+                ctx.translationX == default.translationX &&
+                ctx.translationY == default.translationY &&
+                ctx.hueFactor == default.hueFactor &&
+                ctx.saturationFactor == default.saturationFactor &&
+                ctx.lightnessFactor == default.lightnessFactor
+    }
+
+    private fun renderProcessedImage(ctx: StateContext): Image? {
+        val base = _currentProcessedBaseImage ?: return null
+        if (isContextDefault(ctx)) return base
+
+        var current = base
+        if (ctx.isNegative) current = current.negative()
+        if (ctx.contrast != 0.0f) current = current.changeContrast(ctx.contrast)
+        if (ctx.brightness != 0.0f) current = current.changeBrightness(ctx.brightness)
+        if (ctx.hueFactor != 0 || ctx.saturationFactor != 0.0f || ctx.lightnessFactor != 0.0f)
+            current = current.applyHLSAdjustments(ctx.hueFactor, ctx.saturationFactor, ctx.lightnessFactor)
+        if (ctx.currentZoomLevelIndex != 9)
+            current = current.zoom(zoomLevels[ctx.currentZoomLevelIndex], zoomAlgorithm)
+        if (ctx.rotationApplied != 0)
+            current = current.rotate(ctx.rotationApplied)
+        if (ctx.translationX != 0 || ctx.translationY != 0)
+            current = current.translate(ctx.translationX, ctx.translationY)
+
+        return current
+    }
+
+    private fun update(updateType: UpdateType) {
+        println("UPDATE ${updateType}")
+        var nextContext = stack.getCurrent()?.copy() ?: StateContext()
+
+        when (updateType) {
+            is UpdateType.Clear -> {
+                _currentProcessedBaseImage = _originalLoadedImage
+                nextContext = StateContext(currentImage = _originalLoadedImage)
+            }
+            is UpdateType.BrightnessUpdate -> nextContext = nextContext.copy(brightness = updateType.newFactor)
+            is UpdateType.ContrastUpdate -> nextContext = nextContext.copy(contrast = updateType.newFactor)
+            is UpdateType.NegativeUpdate -> nextContext = nextContext.copy(isNegative = updateType.isNegative)
+            is UpdateType.RotationUpdate -> nextContext = nextContext.copy(rotationApplied = updateType.angle)
+            is UpdateType.PanningModeUpdate -> nextContext = nextContext.copy(isPanningMode = updateType.isPanning)
+            is UpdateType.HueAdjustment -> nextContext = nextContext.copy(hueFactor = updateType.deltaHue)
+            is UpdateType.SaturationAdjustment -> nextContext = nextContext.copy(saturationFactor = updateType.deltaSaturation)
+            is UpdateType.LightnessAdjustment -> nextContext = nextContext.copy(lightnessFactor = updateType.deltaLightness)
+            is UpdateType.TranslationUpdate -> nextContext = nextContext.copy(
+                translationX = nextContext.translationX + updateType.dx,
+                translationY = nextContext.translationY + updateType.dy
+            )
+            is UpdateType.ZoomInUpdate -> {
+                if (nextContext.currentZoomLevelIndex < zoomLevels.size - 1)
+                    nextContext = nextContext.copy(currentZoomLevelIndex = nextContext.currentZoomLevelIndex + 1)
+            }
+            is UpdateType.ZoomOutUpdate -> {
+                if (nextContext.currentZoomLevelIndex > 0)
+                    nextContext = nextContext.copy(currentZoomLevelIndex = nextContext.currentZoomLevelIndex - 1)
+            }
+            is UpdateType.GrayscaleUpdate -> {
+                _currentProcessedBaseImage = nextContext.currentImage?.toGrayscale(updateType.tint)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.TemperatureAdjustment -> {
+                _currentProcessedBaseImage = nextContext.currentImage?.changeTemperature(updateType.temp)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.ThresholdUpdate -> {
+                if (!isCurrentImageGrayscale()) return
+                _currentProcessedBaseImage = nextContext.currentImage?.makeThreshold(updateType.type)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.LoadImageUpdate -> {
+                val loadedImage = org.pdi.io.loadImage(updateType.file)
+                _originalLoadedImage = loadedImage
+                _currentProcessedBaseImage = loadedImage
+                stack.clear()
+                nextContext = StateContext(currentImage = loadedImage)
+            }
+            is UpdateType.ConvolutionUpdate -> {
+                _currentProcessedBaseImage = nextContext.currentImage?.applyKernel(updateType.kernel)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.RemoveBlurUpdate -> {
+                _currentProcessedBaseImage = nextContext.currentImage?.removeBlur(updateType.kernel)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.BorderOperation -> {
+                _currentProcessedBaseImage = nextContext.currentImage?.applyBorderOperator(updateType.kernelX, updateType.kernelY)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.RegionGrowingUpdate -> {
+                _currentProcessedBaseImage = nextContext.currentImage?.regionGrowing(updateType.algo)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.FrequencyFilter -> {
+                _currentProcessedBaseImage = nextContext.currentImage?.frequencyFilter(updateType.space, updateType.filter)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.ApplyQuantization -> {
+                _currentProcessedBaseImage = nextContext.currentImage?.applyQuantization(updateType.algo)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+        }
+
+        val rendered = renderProcessedImage(nextContext)
+        val finalContext = nextContext.copy(currentImage = rendered)
+
+        stack.push(finalContext)
+        notifyListeners(finalContext)
+    }
+
+    private fun notifyListeners(ctx: StateContext) {
+        _contextListeners.forEach { it.invoke(ctx) }
+    }
+}

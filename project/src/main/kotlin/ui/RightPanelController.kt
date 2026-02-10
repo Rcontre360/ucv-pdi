@@ -1,0 +1,177 @@
+package org.pdi.ui
+
+import javafx.fxml.FXML
+import javafx.fxml.FXMLLoader
+import javafx.scene.Parent
+import javafx.scene.Scene
+import javafx.scene.control.Button
+import javafx.scene.control.ComboBox
+import javafx.scene.control.TextField
+import javafx.stage.Modality
+import javafx.stage.Stage
+import org.pdi.core.AppState
+import org.pdi.core.kernels.*
+import org.pdi.ui.panels.KernelMatrixPanelController
+
+enum class BorderDetectionType {
+    SOBEL, ROBERTS, PREWITT
+}
+
+enum class MorphOp {
+    ERODE, DILATE, OPEN, CLOSE
+}
+
+class RightPanelController {
+
+    @FXML private lateinit var typeComboBox: ComboBox<KernelType>
+    @FXML private lateinit var rowsField: TextField
+    @FXML private lateinit var colsField: TextField
+    @FXML private lateinit var profilingFactorAdjusterController: ValueAdjusterController
+
+    @FXML private lateinit var bordersComboBox: ComboBox<BorderDetectionType>
+
+    @FXML private lateinit var morphComboBox: ComboBox<MorphOp>
+    @FXML private lateinit var morphRowsField: TextField
+    @FXML private lateinit var morphColsField: TextField
+
+    // Nuevo botón para el Filtro de Wiener
+    @FXML private lateinit var removeBlurButton: Button
+
+    private lateinit var appState: AppState
+    private lateinit var primaryStage: Stage
+    private val laplacianProfiling = LaplacianKernelProfiling()
+    private val kernelManager = KernelConfigManager(laplacianProfiling)
+
+    private var currentKernel: Kernel = CustomKernel(3, 3)
+    private var currentMorphKernel: Kernel = ErodeKernel(3, 3)
+
+    fun setAppState(appState: AppState, primaryStage: Stage) {
+        this.appState = appState
+        this.primaryStage = primaryStage
+
+        setupKernelSection()
+        setupBordersSection()
+        setupMorphologySection()
+
+        updateCurrentKernel()
+        updateCurrentMorphKernel()
+    }
+
+    private fun setupKernelSection() {
+        typeComboBox.items.addAll(KernelType.entries.filter {
+            it != KernelType.ERODE && it != KernelType.DILATE
+        })
+        typeComboBox.selectionModel.select(KernelType.CUSTOM)
+
+        val updateListener = { _: Any?, _: Any?, _: Any? -> updateCurrentKernel() }
+        rowsField.textProperty().addListener(updateListener)
+        colsField.textProperty().addListener(updateListener)
+        typeComboBox.valueProperty().addListener(updateListener)
+
+        profilingFactorAdjusterController.setup(1f, 1f, 10f, 1f) { newValue ->
+            laplacianProfiling.updateFactor(newValue.toInt())
+            updateCurrentKernel()
+        }
+    }
+
+    private fun setupBordersSection() {
+        bordersComboBox.items.addAll(BorderDetectionType.entries.toList())
+        bordersComboBox.selectionModel.selectFirst()
+    }
+
+    private fun setupMorphologySection() {
+        morphComboBox.items.addAll(MorphOp.entries.toList())
+        morphComboBox.selectionModel.selectFirst()
+
+        val updateListener = { _: Any?, _: Any?, _: Any? -> updateCurrentMorphKernel() }
+        morphRowsField.textProperty().addListener(updateListener)
+        morphColsField.textProperty().addListener(updateListener)
+        morphComboBox.valueProperty().addListener(updateListener)
+    }
+
+    private fun updateCurrentKernel() {
+        val r = rowsField.text.toIntOrNull() ?: 3
+        val c = colsField.text.toIntOrNull() ?: 3
+        val selected = typeComboBox.value ?: KernelType.CUSTOM
+        currentKernel = kernelManager.createInstance(r, c, selected)
+
+        val (customR, customC) = currentKernel.isCustomizable()
+        rowsField.isEditable = customR
+        colsField.isEditable = customC
+
+        // El botón de restauración solo se activa si el kernel es Gaussiano
+        removeBlurButton.isDisable = currentKernel !is GaussianKernel
+    }
+
+    private fun updateCurrentMorphKernel() {
+        val r = morphRowsField.text.toIntOrNull() ?: 3
+        val c = morphColsField.text.toIntOrNull() ?: 3
+        val op = morphComboBox.value ?: MorphOp.ERODE
+
+        val baseType = if (op == MorphOp.DILATE || op == MorphOp.CLOSE) KernelType.DILATE else KernelType.ERODE
+        currentMorphKernel = kernelManager.createInstance(r, c, baseType)
+    }
+
+    @FXML fun showKernel() = openKernelMatrixWindow(currentKernel, false)
+    @FXML fun applyFilter() = appState.applyConvolution(currentKernel)
+
+    @FXML
+    fun applyRemoveBlur() {
+        val kernel = currentKernel
+        if (kernel is GaussianKernel) {
+            appState.removeBlur(kernel)
+        }
+    }
+
+    @FXML
+    fun applyBorders() {
+        val selected = bordersComboBox.value ?: BorderDetectionType.SOBEL
+        val (kX, kY) = when (selected) {
+            BorderDetectionType.SOBEL -> SobelXKernel(3) to SobelYKernel(3)
+            BorderDetectionType.ROBERTS -> RobertsXKernel() to RobertsYKernel()
+            else -> PrewittXKernel() to PrewittYKernel()
+        }
+        appState.applyBorderOperator(kX, kY)
+    }
+
+    @FXML fun showMorphologyEditor() = openKernelMatrixWindow(currentMorphKernel, true)
+
+    @FXML
+    fun applyMorphology() {
+        val op = morphComboBox.value ?: MorphOp.ERODE
+
+        val r = morphRowsField.text.toIntOrNull() ?: 3
+        val c = morphColsField.text.toIntOrNull() ?: 3
+        val erode = kernelManager.createInstance(r, c, KernelType.ERODE)
+        val dilate = kernelManager.createInstance(r, c, KernelType.DILATE)
+
+        when (op) {
+            MorphOp.ERODE, MorphOp.DILATE -> {
+                appState.applyConvolution(currentMorphKernel)
+            }
+            MorphOp.OPEN -> {
+                appState.applyConvolution(erode)
+                appState.applyConvolution(dilate)
+            }
+            MorphOp.CLOSE -> {
+                appState.applyConvolution(dilate)
+                appState.applyConvolution(erode)
+            }
+        }
+    }
+
+    private fun openKernelMatrixWindow(kernel: Kernel, binaryOnly: Boolean) {
+        val loader = FXMLLoader(javaClass.getResource("/panels/KernelMatrixPanel.fxml"))
+        val root = loader.load<Parent>()
+        val controller: KernelMatrixPanelController = loader.getController()
+        controller.setKernel(kernel)
+
+        Stage().apply {
+            initModality(Modality.APPLICATION_MODAL)
+            initOwner(primaryStage)
+            title = if (binaryOnly) "Structuring Element (Binary)" else "Kernel Matrix"
+            scene = Scene(root)
+            show()
+        }
+    }
+}
