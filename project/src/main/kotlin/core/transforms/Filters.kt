@@ -41,11 +41,17 @@ abstract class DFTFrequencyFilter(r: Int, c: Int, t: Double) : FrequencyFilter(r
         return result
     }
 
-    protected fun createCircleBase(): Mat {
+    protected fun createFilter(): Mat {
         val mask = Mat.zeros(Size(cols.toDouble(), rows.toDouble()), CvType.CV_32F)
-        val center = Point(cols / 2.0, rows / 2.0)
-        val radius = (Math.min(cols, rows) / 2.0) * threshold
-        Imgproc.circle(mask, center, radius.toInt(), Scalar(1.0), -1)
+        val halfW = (cols / 2.0) * threshold
+        val halfH = (rows / 2.0) * threshold
+
+        val centerX = cols / 2.0
+        val centerY = rows / 2.0
+        val p1 = Point(centerX - halfW, centerY - halfH)
+        val p2 = Point(centerX + halfW, centerY + halfH)
+
+        Imgproc.rectangle(mask, p1, p2, Scalar(1.0), -1)
         return mask
     }
 }
@@ -60,7 +66,7 @@ abstract class DCTFrequencyFilter(r: Int, c: Int, t: Double) : FrequencyFilter(r
         return result
     }
 
-    protected fun createRectBase(): Mat {
+    protected fun createFilter(): Mat {
         val mask = Mat.zeros(Size(cols.toDouble(), rows.toDouble()), CvType.CV_32F)
         val limitX = (cols * threshold).toInt()
         val limitY = (rows * threshold).toInt()
@@ -72,17 +78,17 @@ abstract class DCTFrequencyFilter(r: Int, c: Int, t: Double) : FrequencyFilter(r
 }
 
 class LowPassDFT(r: Int, c: Int, t: Double) : DFTFrequencyFilter(r, c, t) {
-    override fun generateMask() = createCircleBase()
+    override fun generateMask() = createFilter()
 }
 
 class HighPassDFT(r: Int, c: Int, t: Double) : DFTFrequencyFilter(r, c, t) {
-    override fun generateMask() = createCircleBase().also { invertMask(it) }
+    override fun generateMask() = createFilter().also { invertMask(it) }
 }
 
 class LowPassDCT(r: Int, c: Int, t: Double) : DCTFrequencyFilter(r, c, t) {
-    override fun generateMask() = createRectBase()
+    override fun generateMask() = createFilter()
 }
 
 class HighPassDCT(r: Int, c: Int, t: Double) : DCTFrequencyFilter(r, c, t) {
-    override fun generateMask() = createRectBase().also { invertMask(it) }
+    override fun generateMask() = createFilter().also { invertMask(it) }
 }

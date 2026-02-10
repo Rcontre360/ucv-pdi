@@ -1,34 +1,37 @@
 package org.pdi.core.quantization
 
-import org.opencv.core.*
-import org.pdi.core.image.*
+import org.opencv.core.CvType
+import org.opencv.core.Mat
+import org.pdi.core.image.Image
 import java.awt.Color
 
-private class Node(val level: Int) {
-    var rSum = 0L
-    var gSum = 0L
-    var bSum = 0L
-    var pixelCount = 0
-    val children = arrayOfNulls<Node>(8)
+class OctreeQuantizer(private val k: Int) : Quantizer(k) {
 
-    val isLeaf: Boolean get() = children.all { it == null }
+    private class Node(val level: Int) {
+        var rSum = 0L
+        var gSum = 0L
+        var bSum = 0L
+        var pixelCount = 0
+        val children = arrayOfNulls<Node>(8)
 
-    fun getIndex(r: Int, g: Int, b: Int): Int {
-        val bit = 7 - level
-        val rBit = (r shr bit) and 1
-        val gBit = (g shr bit) and 1
-        val bBit = (b shr bit) and 1
-        return (rBit shl 2) or (gBit shl 1) or bBit
+        val isLeaf: Boolean
+            get() = pixelCount > 0 && children.all { it == null }
+
+        fun getIndex(r: Int, g: Int, b: Int): Int {
+            var index = 0
+            val mask = 0x80 shr level
+            if (r and mask != 0) index = index or 4
+            if (g and mask != 0) index = index or 2
+            if (b and mask != 0) index = index or 1
+            return index
+        }
+
+        fun getAverageColor(): Color {
+            return if (pixelCount == 0) Color(0, 0, 0)
+            else Color((rSum / pixelCount).toInt(), (gSum / pixelCount).toInt(), (bSum / pixelCount).toInt())
+        }
     }
 
-    fun getAverageColor() = if (pixelCount == 0) Color.BLACK else Color(
-        (rSum / pixelCount).toInt().coerceIn(0, 255),
-        (gSum / pixelCount).toInt().coerceIn(0, 255),
-        (bSum / pixelCount).toInt().coerceIn(0, 255)
-    )
-}
-
-class OctreeQuantizer(k: Int) : Quantizer(k) {
     override fun apply(image: Image): Mat {
         val root = Node(0)
         val levels = Array(8) { mutableListOf<Node>() }
@@ -55,12 +58,12 @@ class OctreeQuantizer(k: Int) : Quantizer(k) {
                 if (curr.isLeaf) break
             }
 
-            curr.rSum += c.red;
-            curr.gSum += c.green;
-            curr.bSum += c.blue
+            curr.rSum += c.red.toLong()
+            curr.gSum += c.green.toLong()
+            curr.bSum += c.blue.toLong()
             curr.pixelCount++
 
-            while (leafCount > value) {
+            while (leafCount > k) {
                 val depth = levels.indices.lastOrNull { levels[it].isNotEmpty() } ?: break
                 val parent = levels[depth].removeAt(0)
 
@@ -81,7 +84,8 @@ class OctreeQuantizer(k: Int) : Quantizer(k) {
         image.readAllPixels { x, y, c ->
             var node = root
             while (!node.isLeaf) {
-                node = node.children[node.getIndex(c.red, c.green, c.blue)] ?: break
+                val idx = node.getIndex(c.red, c.green, c.blue)
+                node = node.children[idx] ?: break
             }
             val avg = node.getAverageColor()
             res.put(y, x, avg.blue.toDouble(), avg.green.toDouble(), avg.red.toDouble())
