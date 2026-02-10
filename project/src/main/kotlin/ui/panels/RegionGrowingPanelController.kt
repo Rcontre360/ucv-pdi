@@ -10,13 +10,11 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Circle
 import javafx.stage.Stage
 import org.pdi.core.AppState
-import org.pdi.core.image.Image
 import org.opencv.core.Point
 import org.pdi.core.image.toBufferedImage
 import javafx.embed.swing.SwingFXUtils
 import org.opencv.core.Mat
 import org.pdi.core.rg.*
-import org.pdi.core.rg.FixedRegionGrowing
 
 class RegionGrowingPanelController {
 
@@ -25,7 +23,6 @@ class RegionGrowingPanelController {
     @FXML private lateinit var modeComboBox: ComboBox<String>
     @FXML private lateinit var connectivityComboBox: ComboBox<String>
     @FXML private lateinit var maxAbsDiffTextField: TextField
-    @FXML private lateinit var cancelButton: Button
     @FXML private lateinit var applyButton: Button
 
     private lateinit var appState: AppState
@@ -34,7 +31,13 @@ class RegionGrowingPanelController {
 
     fun initialize(appState: AppState) {
         this.appState = appState
-        this.image = appState.getImage()!!
+        // Obtenemos la matriz actual del estado de la aplicación
+        val currentMat = appState.getImage()
+        if (currentMat == null) {
+            close()
+            return
+        }
+        this.image = currentMat
         regionGrowingImageView.image = SwingFXUtils.toFXImage(this.image.toBufferedImage(), null)
 
         setupComboBoxes()
@@ -62,6 +65,7 @@ class RegionGrowingPanelController {
 
         if (imageX in 0 until image.width() && imageY in 0 until image.height()) {
             seedPoints.add(Point(imageX.toDouble(), imageY.toDouble()))
+            // Visualización de la semilla en el panel
             val circle = Circle((imageX * scale) + offsetX, (imageY * scale) + offsetY, 3.0, Color.RED)
             imagePane.children.add(circle)
         }
@@ -72,15 +76,20 @@ class RegionGrowingPanelController {
     @FXML fun apply() {
         val threshold = maxAbsDiffTextField.text.toDoubleOrNull() ?: 20.0
         val conn = if (connectivityComboBox.value == "4-connectivity") 4 else 8
-
-        val algorithm = if (modeComboBox.value == "Fixed Range") {
-            FixedRegionGrowing(threshold, conn)
-        } else {
-            FloatingRegionGrowing(threshold, conn)
-        }
+        val isFixed = modeComboBox.value == "Fixed Range"
 
         if (seedPoints.isNotEmpty()) {
-            appState.applyRegionGrowing(algorithm,seedPoints)
+            // Creamos una instancia del algoritmo por cada semilla recolectada
+            val algorithms: List<RegionGrowing> = seedPoints.map { point ->
+                if (isFixed) {
+                    FixedRegionGrowing(point, threshold, conn)
+                } else {
+                    FloatingRegionGrowing(point, threshold, conn)
+                }
+            }
+
+            // Enviamos la lista de estrategias al AppState para su ejecución secuencial
+            appState.applyRegionGrowing(algorithms)
             close()
         }
     }

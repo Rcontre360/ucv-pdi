@@ -14,6 +14,7 @@ import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
+import java.util.*
 
 fun Color.euclidean(other: Color): Double {
     val dr = (this.red - other.red).toDouble()
@@ -21,6 +22,11 @@ fun Color.euclidean(other: Color): Double {
     val db = (this.blue - other.blue).toDouble()
 
     return sqrt(dr * dr + dg * dg + db * db)
+}
+
+fun randomColor(): Color{
+    val random = Random()
+    return Color(random.nextInt(256), random.nextInt(256), random.nextInt(256))
 }
 
 fun Mat.getRGB(x:Int,y:Int): Color {

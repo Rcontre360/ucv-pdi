@@ -29,7 +29,7 @@ sealed class UpdateType {
     data class ConvolutionUpdate(val kernel: Kernel) : UpdateType()
     // border operations are different from convolution because we calculate the gradient
     data class BorderOperation(val kernelX: Kernel, val kernelY: Kernel) : UpdateType()
-    data class RegionGrowingUpdate(val algo: RegionGrowing, val seeds: List<Point>) : UpdateType()
+    data class RegionGrowingUpdate(val algo: List<RegionGrowing>) : UpdateType()
     data class PanningModeUpdate(val isPanning: Boolean) : UpdateType()
     data class TranslationUpdate(val dx: Int, val dy: Int) : UpdateType()
 

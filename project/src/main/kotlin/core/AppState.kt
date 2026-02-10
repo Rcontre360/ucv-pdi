@@ -67,7 +67,7 @@ class AppState {
     fun zoomOut() = update(UpdateType.ZoomOutUpdate)
     fun loadImage(file: File) = update(UpdateType.LoadImageUpdate(file))
     fun applyThresholding(type: Int) = update(UpdateType.ThresholdUpdate(type))
-    fun applyRegionGrowing(algo: RegionGrowing, seeds: List<Point>) = update(UpdateType.RegionGrowingUpdate(algo, seeds))
+    fun applyRegionGrowing(algo: List<RegionGrowing>) = update(UpdateType.RegionGrowingUpdate(algo))
     fun setPanningMode(value: Boolean) = update(UpdateType.PanningModeUpdate(value))
     fun applyTranslation(dx: Int, dy: Int) = update(UpdateType.TranslationUpdate(dx, dy))
     fun adjustHue(newFactor: Int) = update(UpdateType.HueAdjustment(newFactor))
@@ -170,7 +170,7 @@ class AppState {
                 nextContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.RegionGrowingUpdate -> {
-                _currentProcessedBaseImage = nextContext.currentImage?.regionGrowing(updateType.algo, updateType.seeds)
+                _currentProcessedBaseImage = nextContext.currentImage?.regionGrowing(updateType.algo)
                 nextContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.FrequencyFilter -> {

@@ -328,9 +328,18 @@ class Image(val image: Mat):AutoCloseable {
         return Image(newImg)
     }
 
-    fun regionGrowing(algorithm: RegionGrowing,seeds: List<Point>): Image {
-        val processedMat = algorithm.execute(this.image, seeds)
-        return Image(processedMat)
+    fun regionGrowing(algorithms: List<RegionGrowing>): Image {
+        var resultMat = this.image.clone()
+
+        for (algo in algorithms) {
+            val nextMat = algo.execute(resultMat)
+            if (resultMat !== this.image) {
+                resultMat.release()
+            }
+            resultMat = nextMat
+        }
+
+        return Image(resultMat)
     }
 
     // given an axis, line and channel. We get the profile of the linne which is just a list of pairs (x,f(x))
