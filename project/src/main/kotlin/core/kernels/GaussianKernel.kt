@@ -30,7 +30,6 @@ class GaussianKernel(rows: Int, cols: Int) : LinearKernel(rows, cols) {
         }
     }
 
-    // for gaussian we
     override fun generateKernel() {
         // to generate it we create the outer product of the two pascal vectors
         val pascal1DRows = pascalRow(rows)

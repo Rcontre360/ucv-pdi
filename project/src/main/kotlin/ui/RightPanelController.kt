@@ -115,7 +115,6 @@ class RightPanelController {
     @FXML fun showKernel() = openKernelMatrixWindow(currentKernel, false)
     @FXML fun applyFilter() = appState.applyConvolution(currentKernel)
 
-    // Nueva acción para restaurar la imagen (Wiener)
     @FXML
     fun applyRemoveBlur() {
         val kernel = currentKernel

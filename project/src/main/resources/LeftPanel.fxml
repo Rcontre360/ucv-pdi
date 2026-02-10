@@ -32,6 +32,7 @@
             <Label fx:id="tempValueLabel" text="Temp: 0"/>
             <Slider fx:id="tempSlider" min="-100" max="100" value="0"/>
             <Label text="(0 para Balance Automático)" style="-fx-font-size: 10px; -fx-text-fill: #666666;"/>
+            <Button text="Reset Temperature" onAction="#resetTemperature" maxWidth="Infinity"/>
         </VBox>
 
         <TitledPane text="HLS Adjustments" expanded="false">

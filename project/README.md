@@ -122,8 +122,53 @@ A continuación, se detalla la ubicación de cada funcionalidad implementada en 
     *   **Ubicación**: Panel Superior -> "Guardar Imagen"
 17. **Compresión con RLE de las imágenes en formato Netpbm. El archivo resultante debe tener extensión .rle y debe poder ser cargado de vuelta por su propia aplicación.**
     *   **Ubicación**: Panel Superior -> "Guardar Imagen" (Formato: `PDI`). 
-18. **Aplicar un kernel de tamaño y valores arbitrarios a la imagen (considerando que el objetivo sea suavizado, perfilado o detección de bordes). Debe proveer una forma simple y práctica de asignar los valores a cada posición del kernel.**
-    *   **Ubicación**: Panel Derecho -> "Filtros (Convolución)" -> "Selección de Tipo de Kernel" (Opción: `Custom`), y "Mostrar Kernel" (para editar los valores de la matriz).
+## Fase 2: Funcionalidades Implementadas y su Ubicación
+
+A continuación, se detalla la ubicación de cada funcionalidad implementada en la aplicación:
+
+1.  **Cuantización/Reducción de colores**:
+    *   **Ubicación**: Panel Superior -> "Quantization"
+    *   **Archivos**: `core/quantization/*`, `ui/panels/QuantizationPanelController.kt`
+    *   **Métodos**: K-Means, Median Cut, Octree
+2.  **Umbralización automática**:
+    *   **Ubicación**: Panel Superior -> "Mostrar Umbralización"
+    *   **Archivos**: `core/image/Image.kt` (función `makeThreshold`), `ui/panels/UmbralizationPanelController.kt`
+    *   **Métodos**: OTSU, Triángulo
+3.  **Ecualización del Histograma**:
+    *   **Ubicación**: Panel Izquierdo -> "Contraste" (La ecualización se usa para ajustar el contraste)
+    *   **Archivos**: `core/image/Histogram.kt` (función `equalize`), `core/image/Image.kt` (función `changeContrast`)
+4.  **Morfología (Erosión, dilatación, apertura y cierre)**:
+    *   **Ubicación**: Panel Derecho -> "Morphology"
+    *   **Archivos**: `core/kernels/ErodeKernel.kt`, `core/kernels/DilateKernel.kt`, `ui/RightPanelController.kt`
+5.  **Crecimiento de regiones**:
+    *   **Ubicación**: Panel Superior -> "Region Growing"
+    *   **Archivos**: `core/rg/RegionGrowing.kt`, `ui/panels/RegionGrowingPanelController.kt`
+6.  **Ajuste de matiz, saturación y luminosidad con HLS**:
+    *   **Ubicación**: Panel Izquierdo
+    *   **Archivos**: `core/image/Image.kt` (función `applyHLSAdjustments`), `ui/LeftPanelController.kt`
+7.  **Balance de blancos con YUV**:
+    *   **Ubicación**: Panel Izquierdo -> "Temp"
+    *   **Archivos**: `core/image/Image.kt` (función `changeTemperature`), `ui/LeftPanelController.kt`
+8.  **Aplicación de la Transformada Discreta de Fourier (DFT)**:
+    *   **Ubicación**: Panel Superior -> "DFT"
+    *   **Archivos**: `core/transforms/DFT.kt`, `ui/panels/DFTPreviewPanelController.kt`
+9.  **Aplicación de filtros en el dominio de la frecuencia**:
+    *   **Ubicación**: Panel Superior -> "DFT"
+    *   **Archivos**: `core/transforms/Filters.kt`, `ui/panels/DFTPreviewPanelController.kt`
+10. **Deshacer y rehacer**:
+    *   **Ubicación**: Panel Superior -> Botones de Undo/Redo
+    *   **Archivos**: `core/Stack.kt`, `core/AppState.kt`
+11. **Traslado (Panning) de la imagen**:
+    *   **Ubicación**: Panel Inferior -> Checkbox "Panning"
+    *   **Archivos**: `core/image/Image.kt` (función `translate`), `ui/BottomPanelController.kt`, `MainController.kt`
+12. **Rotación en ángulo arbitrario**:
+    *   **Ubicación**: Panel Inferior -> Slider de Rotación
+    *   **Archivos**: `core/image/Image.kt` (función `rotate`), `ui/BottomPanelController.kt`
+13. **Aplicación de la Transformada Discreta del Coseno (DCT)**:
+    *   **Ubicación**: Panel Superior -> "DFT"
+    *   **Archivos**: `core/transforms/DCT.kt`, `ui/panels/DFTPreviewPanelController.kt`
+14. **Filtro de Wiener**:
+    *   **Estado**: No implementado.
 
 
 

@@ -148,4 +148,10 @@ class LeftPanelController {
 
     @FXML
     fun applyNegative() = appState.applyNegative()
+
+    @FXML
+    fun resetTemperature() {
+        tempSlider.value = 0.0
+        appState.adjustTemperature(0.0f)
+    }
 }

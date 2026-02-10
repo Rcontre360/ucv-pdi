@@ -10,12 +10,8 @@ class DFT : Transform() {
     override fun applyFilter(mat: Mat, filter: FrequencyFilter): Mat {
         val dft = toFrequency(mat)
 
-        // El espectro se centra antes de aplicar la máscara circular
         shiftQuadrants(dft)
-
         val filteredDft = filter.apply(dft)
-
-        // Deshacer el shift para volver al formato nativo de OpenCV antes de la IDFT
         shiftQuadrants(filteredDft)
 
         val inverseDft = Mat()
