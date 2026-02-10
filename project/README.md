@@ -128,10 +128,3 @@ A continuación, se detalla la ubicación de cada funcionalidad implementada en 
 
 
 
-## CORRECTIONS
-
-- new windows must allow further edit on background (histogram example)
-- remember dir too when saving
-- undo/redo with 4 operations. Must be with old operations as well?
-- how should be the filter ui on the DFT
-- should we be able to store the DFT?

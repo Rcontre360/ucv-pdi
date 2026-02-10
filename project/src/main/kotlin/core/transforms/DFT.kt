@@ -60,55 +60,55 @@ class DFT : Transform() {
         return complexImage
     }
 
-    override fun logMagnitude(complexImage: Mat): Mat {
+    override fun logMagnitude(cImage: Mat): Mat {
         val planes = mutableListOf<Mat>()
-        Core.split(complexImage, planes)
+        Core.split(cImage, planes)
 
-        val magnitude = Mat()
-        Core.magnitude(planes[0], planes[1], magnitude)
+        val mag = Mat()
+        Core.magnitude(planes[0], planes[1], mag)
+        Core.add(mag, Scalar(1.0), mag)
+        Core.log(mag, mag)
+        shiftQuadrants(mag)
 
-        Core.add(magnitude, Scalar.all(1.0), magnitude)
-        Core.log(magnitude, magnitude)
+        val res = Mat()
+        Core.normalize(mag, res, 0.0, 255.0, Core.NORM_MINMAX, CvType.CV_8U)
+        Core.bitwise_not(res, res)
 
-        // Shift para centrar el componente DC en la visualización
-        shiftQuadrants(magnitude)
-
-        val result = Mat()
-        Core.normalize(magnitude, result, 0.0, 255.0, Core.NORM_MINMAX, CvType.CV_8U)
-
-        magnitude.release()
+        mag.release()
         planes.forEach { it.release() }
-
-        return result
+        return res
     }
 
-    private fun shiftQuadrants(mat: Mat): Mat {
-        val (rows, cols) = mat.rows() to mat.cols()
-        val data = FloatArray(rows * cols)
+    private fun shiftQuadrants(mat: Mat) {
+        val rows = mat.rows()
+        val cols = mat.cols()
+        val channels = mat.channels()
+        val data = FloatArray(rows * cols * channels)
         mat.get(0, 0, data)
 
         val cx = cols / 2
         val cy = rows / 2
 
-        fun idx(x: Int, y: Int) = y * cols + x
+        fun getIdx(x: Int, y: Int): Int = (y * cols + x) * channels
 
         for (y in 0 until cy) {
             for (x in 0 until cx) {
-                val p0 = idx(x, y)
-                val p1 = idx(x + cx, y)
-                val p2 = idx(x, y + cy)
-                val p3 = idx(x + cx, y + cy)
+                val p0 = getIdx(x, y)
+                val p1 = getIdx(x + cx, y)
+                val p2 = getIdx(x, y + cy)
+                val p3 = getIdx(x + cx, y + cy)
 
-                val temp1 = data[p0]
-                data[p0] = data[p3]
-                data[p3] = temp1
-                val temp2 = data[p1]
-                data[p1] = data[p2]
-                data[p2] = temp2
+                for (c in 0 until channels) {
+                    val t1 = data[p0 + c]
+                    data[p0 + c] = data[p3 + c]
+                    data[p3 + c] = t1
+
+                    val t2 = data[p1 + c]
+                    data[p1 + c] = data[p2 + c]
+                    data[p2 + c] = t2
+                }
             }
         }
-
         mat.put(0, 0, data)
-        return mat
     }
 }

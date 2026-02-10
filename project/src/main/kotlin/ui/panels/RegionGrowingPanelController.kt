@@ -31,7 +31,6 @@ class RegionGrowingPanelController {
 
     fun initialize(appState: AppState) {
         this.appState = appState
-        // Obtenemos la matriz actual del estado de la aplicación
         val currentMat = appState.getImage()
         if (currentMat == null) {
             close()
@@ -65,7 +64,6 @@ class RegionGrowingPanelController {
 
         if (imageX in 0 until image.width() && imageY in 0 until image.height()) {
             seedPoints.add(Point(imageX.toDouble(), imageY.toDouble()))
-            // Visualización de la semilla en el panel
             val circle = Circle((imageX * scale) + offsetX, (imageY * scale) + offsetY, 3.0, Color.RED)
             imagePane.children.add(circle)
         }
@@ -79,7 +77,6 @@ class RegionGrowingPanelController {
         val isFixed = modeComboBox.value == "Fixed Range"
 
         if (seedPoints.isNotEmpty()) {
-            // Creamos una instancia del algoritmo por cada semilla recolectada
             val algorithms: List<RegionGrowing> = seedPoints.map { point ->
                 if (isFixed) {
                     FixedRegionGrowing(point, threshold, conn)
@@ -88,7 +85,6 @@ class RegionGrowingPanelController {
                 }
             }
 
-            // Enviamos la lista de estrategias al AppState para su ejecución secuencial
             appState.applyRegionGrowing(algorithms)
             close()
         }

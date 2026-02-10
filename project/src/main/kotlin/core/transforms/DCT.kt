@@ -46,16 +46,17 @@ class DCT : Transform() {
     }
 
     override fun logMagnitude(dctMat: Mat): Mat {
-        val magnitude = Mat()
-        Core.absdiff(dctMat, Scalar.all(0.0), magnitude)
+        val mag = Mat()
+        Core.absdiff(dctMat, Scalar(0.0), mag)
 
-        Core.add(magnitude, Scalar.all(1.0), magnitude)
-        Core.log(magnitude, magnitude)
+        Core.add(mag, Scalar(1.0), mag)
+        Core.log(mag, mag)
 
-        val result = Mat()
-        Core.normalize(magnitude, result, 0.0, 255.0, Core.NORM_MINMAX, CvType.CV_8U)
+        val res = Mat()
+        Core.normalize(mag, res, 0.0, 255.0, Core.NORM_MINMAX, CvType.CV_8U)
+        Core.bitwise_not(res, res)
 
-        magnitude.release()
-        return result
+        mag.release()
+        return res
     }
 }

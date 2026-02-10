@@ -16,8 +16,6 @@ class TopPanelController {
 
     private lateinit var appState: AppState
     private lateinit var primaryStage: Stage
-
-    // Caché para evitar duplicar ventanas abiertas
     private val activePanels = mutableMapOf<String, Stage>()
 
     fun setAppState(appState: AppState, primaryStage: Stage) {

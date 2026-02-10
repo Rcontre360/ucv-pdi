@@ -8,7 +8,6 @@ import javafx.scene.control.ComboBox
 import javafx.scene.paint.Color
 import org.pdi.core.AppState
 
-// histogram panel with selectors for the channels
 class HistogramPanelController {
 
     @FXML
@@ -18,7 +17,7 @@ class HistogramPanelController {
     private lateinit var channelComboBox: ComboBox<String>
 
     private lateinit var appState: AppState
-    private var selectedChannel: String = "Red" // Default selected channel
+    private var selectedChannel: String = "Red"
 
     fun setAppState(appState: AppState) {
         this.appState = appState
@@ -39,7 +38,6 @@ class HistogramPanelController {
 
     private fun drawHistogram() {
         val histogramData = appState.getHistogram()
-        // canvas and graphics 2d content
         val gc: GraphicsContext = histogramCanvas.graphicsContext2D
         gc.clearRect(0.0, 0.0, histogramCanvas.width, histogramCanvas.height)
 

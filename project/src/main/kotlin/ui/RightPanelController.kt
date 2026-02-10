@@ -38,7 +38,6 @@ class RightPanelController {
     private val laplacianProfiling = LaplacianKernelProfiling()
     private val kernelManager = KernelConfigManager(laplacianProfiling)
 
-    // Variables persistentes (Referencia única para el editor y la aplicación)
     private var currentKernel: Kernel = CustomKernel(3, 3)
     private var currentMorphKernel: Kernel = ErodeKernel(3, 3)
 
@@ -102,7 +101,6 @@ class RightPanelController {
         val c = morphColsField.text.toIntOrNull() ?: 3
         val op = morphComboBox.value ?: MorphOp.ERODE
 
-        // Mapeamos a ERODE o DILATE para inicializar el objeto base
         val baseType = if (op == MorphOp.DILATE || op == MorphOp.CLOSE) KernelType.DILATE else KernelType.ERODE
         currentMorphKernel = kernelManager.createInstance(r, c, baseType)
     }
@@ -127,20 +125,22 @@ class RightPanelController {
     fun applyMorphology() {
         val op = morphComboBox.value ?: MorphOp.ERODE
 
+        val r = morphRowsField.text.toIntOrNull() ?: 3
+        val c = morphColsField.text.toIntOrNull() ?: 3
+        val erode = kernelManager.createInstance(r, c, KernelType.ERODE)
+        val dilate = kernelManager.createInstance(r, c, KernelType.DILATE)
+
         when (op) {
             MorphOp.ERODE, MorphOp.DILATE -> {
-                // Usamos la instancia persistente que fue editada
                 appState.applyConvolution(currentMorphKernel)
             }
             MorphOp.OPEN -> {
-                // Para Open/Close, usamos la misma instancia dos veces (Erosión -> Dilatación)
-                appState.applyConvolution(currentMorphKernel)
-                appState.applyConvolution(currentMorphKernel)
+                appState.applyConvolution(erode)
+                appState.applyConvolution(dilate)
             }
             MorphOp.CLOSE -> {
-                // Cierre (Dilatación -> Erosión)
-                appState.applyConvolution(currentMorphKernel)
-                appState.applyConvolution(currentMorphKernel)
+                appState.applyConvolution(dilate)
+                appState.applyConvolution(erode)
             }
         }
     }
