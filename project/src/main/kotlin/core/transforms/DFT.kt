@@ -75,6 +75,24 @@ class DFT : Transform() {
         return res
     }
 
+    fun phase(cImage: Mat): Mat {
+        val planes = mutableListOf<Mat>()
+        Core.split(cImage, planes)
+
+        val phase = Mat()
+        Core.phase(planes[0], planes[1], phase)
+
+        shiftQuadrants(phase)
+
+        val res = Mat()
+        Core.normalize(phase, res, 0.0, 255.0, Core.NORM_MINMAX, CvType.CV_8U)
+
+       phase.release()
+        planes.release()
+
+        return res
+    }
+
     fun shiftQuadrants(mat: Mat) {
         val rows = mat.rows()
         val cols = mat.cols()

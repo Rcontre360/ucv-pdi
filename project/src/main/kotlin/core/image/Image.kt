@@ -13,6 +13,7 @@ import org.pdi.core.kernels.GaussianKernel
 import org.pdi.core.kernels.Kernel
 import org.pdi.core.quantization.Quantizer
 import org.pdi.core.rg.RegionGrowing
+import org.pdi.core.transforms.DFT
 import org.pdi.core.transforms.FrequencyFilter
 import org.pdi.core.transforms.Transform
 import kotlin.math.PI
@@ -496,6 +497,11 @@ class Image(val image: Mat):AutoCloseable {
         channels.forEach { it.release() }
 
         return Image(resultMat)
+    }
+
+    fun phaseImage(space: DFT): Image {
+        val freq = space.toFrequency(this.image)
+        return Image(space.phase(freq))
     }
 
     fun frequencyImage(space: Transform): Image {
