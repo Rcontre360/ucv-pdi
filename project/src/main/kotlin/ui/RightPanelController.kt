@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader
 import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.control.Button
+import javafx.scene.control.CheckBox
 import javafx.scene.control.ComboBox
 import javafx.scene.control.TextField
 import javafx.stage.Modality
@@ -29,12 +30,12 @@ class RightPanelController {
     @FXML private lateinit var profilingFactorAdjusterController: ValueAdjusterController
 
     @FXML private lateinit var bordersComboBox: ComboBox<BorderDetectionType>
+    @FXML private lateinit var gradientAngleTick: CheckBox
 
     @FXML private lateinit var morphComboBox: ComboBox<MorphOp>
     @FXML private lateinit var morphRowsField: TextField
     @FXML private lateinit var morphColsField: TextField
 
-    // Nuevo botón para el Filtro de Wiener
     @FXML private lateinit var removeBlurButton: Button
 
     private lateinit var appState: AppState
@@ -75,6 +76,7 @@ class RightPanelController {
     }
 
     private fun setupBordersSection() {
+        gradientAngleTick.isSelected = false
         bordersComboBox.items.addAll(BorderDetectionType.entries.toList())
         bordersComboBox.selectionModel.selectFirst()
     }
@@ -131,7 +133,12 @@ class RightPanelController {
             BorderDetectionType.ROBERTS -> RobertsXKernel() to RobertsYKernel()
             else -> PrewittXKernel() to PrewittYKernel()
         }
-        appState.applyBorderOperator(kX, kY)
+
+        if (gradientAngleTick.isSelected) {
+            appState.applyGradientAngle(kX, kY)
+        } else {
+            appState.applyBorderOperator(kX, kY)
+        }
     }
 
     @FXML fun showMorphologyEditor() = openKernelMatrixWindow(currentMorphKernel, true)

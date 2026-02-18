@@ -58,6 +58,7 @@ class AppState {
 
     fun applyConvolution(kernel: Kernel) = update(UpdateType.ConvolutionUpdate(kernel))
     fun removeBlur(kernel: GaussianKernel) = update(UpdateType.RemoveBlurUpdate(kernel))
+    fun applyGradientAngle(kernelX: Kernel, kernelY: Kernel) = update(UpdateType.GradientAngle(kernelX, kernelY))
     fun applyBorderOperator(kernelX: Kernel, kernelY: Kernel) = update(UpdateType.BorderOperation(kernelX, kernelY))
     fun clear() = update(UpdateType.Clear)
     fun applyGrayscale(tint: Color) = update(UpdateType.GrayscaleUpdate(tint))
@@ -173,6 +174,10 @@ class AppState {
             }
             is UpdateType.BorderOperation -> {
                 _currentProcessedBaseImage = nextContext.currentImage?.applyBorderOperator(updateType.kernelX, updateType.kernelY)
+                nextContext = StateContext(currentImage = _currentProcessedBaseImage)
+            }
+            is UpdateType.GradientAngle -> {
+                _currentProcessedBaseImage = nextContext.currentImage?.getAngleImage(updateType.kernelX, updateType.kernelY)
                 nextContext = StateContext(currentImage = _currentProcessedBaseImage)
             }
             is UpdateType.RegionGrowingUpdate -> {
