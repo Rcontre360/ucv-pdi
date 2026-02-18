@@ -39,6 +39,7 @@
         <Label text="Apply Borders" style="-fx-font-weight: bold;"/>
         <ComboBox fx:id="bordersComboBox" prefWidth="150"/>
         <Button text="Detect Borders" onAction="#applyBorders" maxWidth="150"/>
+        <CheckBox fx:id="gradientAngleTick" text="Gradient Angle"/>
     </VBox>
 
     <VBox spacing="8" alignment="TOP_RIGHT">

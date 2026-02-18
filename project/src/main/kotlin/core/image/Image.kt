@@ -15,6 +15,8 @@ import org.pdi.core.quantization.Quantizer
 import org.pdi.core.rg.RegionGrowing
 import org.pdi.core.transforms.FrequencyFilter
 import org.pdi.core.transforms.Transform
+import kotlin.math.PI
+import kotlin.math.atan2
 
 // zoom algorithm type
 enum class ZoomAlgorithm {
@@ -97,6 +99,40 @@ class Image(val image: Mat):AutoCloseable {
         }.toMap()
     }
 
+    // Returns the raw convolution results as a 2D FloatArray matrix to preserve negative values
+    fun applyRawConvolution(kernel: Kernel): Array<FloatArray> {
+        val width = image.width()
+        val height = image.height()
+
+        // We return a 2D matrix of Floats (the raw "strength" of the gradient)
+        val rawMatrix = Array(width) { FloatArray(height) }
+
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                val neighborhood = Array(kernel.rows) { FloatArray(kernel.cols) }
+
+                for (i in 0 until kernel.rows) {
+                    for (j in 0 until kernel.cols) {
+                        val ix = x - kernel.cols / 2 + j
+                        val iy = y - kernel.rows / 2 + i
+
+                        val color = if (ix < 0 || ix >= width || iy < 0 || iy >= height) {
+                            Color.BLACK
+                        } else {
+                            image.getRGB(ix, iy)
+                        }
+
+                        // Convert RGB to a single Float using your luminosity function
+                        neighborhood[i][j] = luminosity(color).toFloat()
+                    }
+                }
+                // Store the convolution result (Negative values are preserved!)
+                rawMatrix[x][y] = kernel.convolute(neighborhood)
+            }
+        }
+        return rawMatrix
+    }
+
     // applies a kernel to the current image and returns its result
     // this function calculates the window we must send to the kernel and uses the convolute function to get the value
     fun applyKernel(kernel: Kernel): Image {
@@ -153,6 +189,22 @@ class Image(val image: Mat):AutoCloseable {
                 kotlin.math.hypot(cx.green.toDouble(),cy.green.toDouble()).toInt().coerceIn(0, 255),
                 kotlin.math.hypot(cx.blue.toDouble(),cy.blue.toDouble()).toInt().coerceIn(0, 255)
             )
+        }
+    }
+
+    fun getAngleImage(kernelX: Kernel, kernelY: Kernel): Image {
+        val imageX = applyRawConvolution(kernelX)
+        val imageY = applyRawConvolution(kernelY)
+
+        return applyPerPixel { x, y, _ ->
+            val cx = imageX[x][y].toDouble()
+            val cy = imageY[x][y].toDouble()
+
+            // angle ranges from -pi to pi
+            val angle = atan2(cx,cy)
+            val color = (((angle + PI) / (2 * PI)) * 255).toInt()
+
+            Color(color,color,color)
         }
     }
 
