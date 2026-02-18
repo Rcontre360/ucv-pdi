@@ -1,12 +1,13 @@
 import { Core } from "./src/core/Core";
 import { ReplicateDepthService } from "./src/depthService/ReplicateDepthService";
+import { PointCloudGenerator } from "./src/3dModule/PointCloudGenerator";
 import fs from "fs";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const imagePath = "images/sample.jpg";
-const outputPath = "output/depth_map.png";
+const rgbImagePath = "images/sample.jpg";
+const pointCloudOutputPath = "output/point_cloud.ply";
 
 async function main() {
   const apiKey = process.env.REPLICATE_API_TOKEN;
@@ -18,25 +19,33 @@ async function main() {
     return;
   }
 
-  if (!fs.existsSync(imagePath)) {
-    console.error(`Image not found at: ${imagePath}`);
+  if (!fs.existsSync(rgbImagePath)) {
+    console.error(`RGB Image not found at: ${rgbImagePath}`);
     return;
   }
 
   const depthService = new ReplicateDepthService(apiKey);
   const core = new Core(depthService);
+  const pointCloudGenerator = new PointCloudGenerator();
 
   try {
-    const depthMap = await core.processImage(imagePath);
+    // Generate Depth Map
+    const depthMap = await core.processImage(rgbImagePath);
 
     if (!fs.existsSync("output")) {
       fs.mkdirSync("output");
     }
 
-    fs.writeFileSync(outputPath, depthMap);
-    console.log(`Depth map saved to: ${outputPath}`);
+    // Generate Point Cloud
+    console.log("Generating point cloud...");
+    await pointCloudGenerator.generatePointCloud(
+      rgbImagePath,
+      depthMap,
+      pointCloudOutputPath
+    );
+    console.log(`Point cloud saved to: ${pointCloudOutputPath}`);
   } catch (error) {
-    console.error("Error generating depth map:", error);
+    console.error("Error in main application:", error);
   }
 }
 
