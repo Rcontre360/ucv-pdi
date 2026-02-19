@@ -1,8 +1,8 @@
-import { DepthService, DepthMap } from "src/depthService/DepthService";
+import {DepthService, DepthMap} from "src/core/depth";
 import fs from "fs";
 import Replicate from "replicate";
 
-export class ReplicateDepthService implements DepthService {
+export class DepthAnythingV2 implements DepthService {
   private replicate: Replicate;
 
   constructor(apiToken: string) {
@@ -23,7 +23,7 @@ export class ReplicateDepthService implements DepthService {
           model_size: "Large",
         },
       }
-    )) as { color_depth: { url: () => Promise<string>; bytes: () => Promise<Buffer> } };
+    )) as {color_depth: {url: () => Promise<string>; bytes: () => Promise<Buffer>}};
 
     return await output.color_depth.bytes();
   }

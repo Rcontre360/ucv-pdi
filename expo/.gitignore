@@ -1,5 +1,8 @@
 # dependencies (bun install)
 node_modules
+images
+output
+example
 
 # output
 out

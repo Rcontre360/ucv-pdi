@@ -1,17 +1,20 @@
 {
-  "name": "expo",
-  "module": "index.ts",
-  "type": "module",
+  "name": "pdi-depth-workspace",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+  "workspaces": [
+    "packages/app",
+    "packages/core"
+  ],
+  "scripts": {
+    "dev:app": "bun --filter app dev",
+    "build:app": "bun --filter app build"
   },
   "dependencies": {
-    "dotenv": "^17.3.1",
-    "jimp": "^1.6.0",
-    "replicate": "^1.4.0"
+    "zod": "^3.23.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "eslint": "^9.0.0"
   }
 }
