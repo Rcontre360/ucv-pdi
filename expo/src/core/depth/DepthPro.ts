@@ -2,7 +2,7 @@ import {DepthService, DepthMap} from "src/core/depth";
 import fs from "fs";
 import Replicate from "replicate";
 
-export class ReplicateDepthService implements DepthService {
+export class DepthPro implements DepthService {
   private replicate: Replicate;
 
   constructor(apiToken: string) {
@@ -12,15 +12,14 @@ export class ReplicateDepthService implements DepthService {
   }
 
   async getDepthMap(imagePath: string): Promise<DepthMap> {
-    const image = fs.readFileSync(imagePath, "base64");
+    const image = Bun.file(imagePath);
     const dataUri = `data:image/jpeg;base64,${image}`;
 
     const output = (await this.replicate.run(
-      "chenxwh/depth-anything-v2:b239ea33cff32bb7abb5db39ffe9a09c14cbc2894331d1ef66fe096eed88ebd4",
+      "chenxwh/ml-depth-pro:a6645b33f4e36eda0d8d52ab3da6ef37b82d198e2b70c72e680cc75f0baf1623",
       {
         input: {
-          image: dataUri,
-          model_size: "Large",
+          image_path: dataUri
         },
       }
     )) as {color_depth: {url: () => Promise<string>; bytes: () => Promise<Buffer>}};

@@ -13,10 +13,16 @@ interface Point {
 export class PointCloudGenerator {
   private depthScale: number;
   private depthTrunc: number;
+  private minDepth: number; // New parameter
 
-  constructor(depthScale: number = 1.0, depthTrunc: number = 15.0) {
+  constructor(
+    depthScale: number = 1.0,
+    depthTrunc: number = 15.0,
+    minDepth: number = 0.1 // Default value for minDepth
+  ) {
     this.depthScale = depthScale;
     this.depthTrunc = depthTrunc;
+    this.minDepth = minDepth;
   }
 
   async generatePointCloud(
@@ -62,9 +68,9 @@ export class PointCloudGenerator {
         // Convert depth to meters (or scene units)
         let z = depthValue / this.depthScale;
 
-        // Apply depth truncation
-        if (z > this.depthTrunc || z === 0) {
-          continue; // Skip points that are too far or have no depth information
+        // Apply depth truncation and minDepth filtering
+        if (z > this.depthTrunc || z === 0 || z < this.minDepth) {
+          continue; // Skip points that are too far, too close, or have no depth information
         }
 
         // 3D projection formulas
@@ -87,7 +93,16 @@ export class PointCloudGenerator {
   }
 
   private savePLY(points: Point[], filePath: string): void {
-    let plyContent = `ply\nformat ascii 1.0\nelement vertex ${points.length}\nproperty float x\nproperty float y\nproperty float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\nend_header\n`;
+    let plyContent = `ply
+format ascii 1.0
+element vertex ${points.length}
+property float x
+property float y
+property float z
+property uchar red
+property uchar green
+property uchar blue
+end_header\n`;
 
     points.forEach((p) => {
       plyContent += `${p.x} ${p.y} ${p.z} ${p.r} ${p.g} ${p.b}\n`;
@@ -96,3 +111,4 @@ export class PointCloudGenerator {
     fs.writeFileSync(filePath, plyContent);
   }
 }
+

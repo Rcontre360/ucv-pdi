@@ -1,2 +1,3 @@
 export * from './DepthService'
-export * from './ReplicateDepthService'
+export * from './DepthAnythingV2'
+export * from './DepthPro'
