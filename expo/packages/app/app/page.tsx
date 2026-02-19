@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import { useWebGL } from '../hooks/useWebGL';
 import Loader from '../components/Loader';
 
@@ -22,37 +22,21 @@ const images = {
 
 export default function Home() {
   const [imgIdx, setImgIdx] = useState(0);
-  const [loading, setLoading] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const depthImageRef = useRef<HTMLImageElement>(null);
-  const textureImageRef = useRef<HTMLImageElement>(null);
 
   const {
     lightPos,
     lightIntensity,
     textureLighting,
+    loading,
     setLightPos,
     setLightIntensity,
     setTextureLighting,
-  } = useWebGL(canvasRef, depthImageRef, textureImageRef);
-
-  useEffect(() => {
-    const depthImg = new Image();
-    depthImg.src = images.depthRoot + images.img[imgIdx];
-    depthImg.onload = () => {
-      if (depthImageRef.current) {
-        depthImageRef.current.src = depthImg.src;
-      }
-      const textureImg = new Image();
-      textureImg.src = images.texRoot + images.img[imgIdx];
-      textureImg.onload = () => {
-        if (textureImageRef.current) {
-          textureImageRef.current.src = textureImg.src;
-        }
-        setLoading(false);
-      };
-    };
-  }, [imgIdx]);
+  } = useWebGL(
+    canvasRef,
+    images.depthRoot + images.img[imgIdx],
+    images.texRoot + images.img[imgIdx]
+  );
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -105,7 +89,6 @@ export default function Home() {
                   id="image-select"
                   value={imgIdx}
                   onChange={(e) => {
-                    setLoading(true);
                     setImgIdx(parseInt(e.target.value));
                   }}
                 >
@@ -236,8 +219,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <img ref={depthImageRef} style={{ display: 'none' }} />
-      <img ref={textureImageRef} style={{ display: 'none' }} />
     </div>
   );
 }

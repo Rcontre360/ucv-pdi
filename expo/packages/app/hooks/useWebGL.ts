@@ -8,6 +8,7 @@ interface WebGLHook {
   lightPos: number[];
   lightIntensity: number;
   textureLighting: number;
+  loading: boolean;
   setLightPos: (pos: number[]) => void;
   setLightIntensity: (intensity: number) => void;
   setTextureLighting: (lighting: number) => void;
@@ -15,19 +16,37 @@ interface WebGLHook {
 
 export const useWebGL = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
-  depthImageRef: React.RefObject<HTMLImageElement>,
-  textureImageRef: React.RefObject<HTMLImageElement>
+  depthImageUrl: string,
+  textureImageUrl: string
 ): WebGLHook => {
   const [lightPos, setLightPos] = useState([0, 0, -1]);
   const [lightIntensity, setLightIntensity] = useState(0.4);
   const [textureLighting, setTextureLighting] = useState(3);
+  const [loading, setLoading] = useState(true);
 
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const shaderProgramRef = useRef<WebGLProgram | null>(null);
   const imgBufferRef = useRef<any>({});
+  const depthImageRef = useRef<HTMLImageElement | null>(null);
+  const textureImageRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
-    if (!canvasRef.current || !depthImageRef.current || !textureImageRef.current) {
+    setLoading(true);
+    const depthImg = new Image();
+    depthImg.src = depthImageUrl;
+    depthImg.onload = () => {
+      depthImageRef.current = depthImg;
+      const textureImg = new Image();
+      textureImg.src = textureImageUrl;
+      textureImg.onload = () => {
+        textureImageRef.current = textureImg;
+        setLoading(false);
+      };
+    };
+  }, [depthImageUrl, textureImageUrl]);
+
+  useEffect(() => {
+    if (loading || !canvasRef.current || !depthImageRef.current || !textureImageRef.current) {
       return;
     }
 
@@ -123,11 +142,9 @@ export const useWebGL = (
 
     setupShaderAttributes();
 
-
     const draw = () => {
-        if (!gl) return;
+        if (!gl || !shaderProgramRef.current || !depthImageRef.current || !textureImageRef.current) return;
         const shaderProgram = shaderProgramRef.current;
-        if (!shaderProgram) return;
 
         gl.clearColor(0, 0, 0, 1);
         gl.enable(gl.DEPTH_TEST);
@@ -156,12 +173,13 @@ export const useWebGL = (
 
     draw();
 
-  }, [canvasRef, depthImageRef, textureImageRef, lightPos, lightIntensity, textureLighting]);
+  }, [loading, canvasRef, lightPos, lightIntensity, textureLighting]);
 
   return {
     lightPos,
     lightIntensity,
     textureLighting,
+    loading,
     setLightPos,
     setLightIntensity,
     setTextureLighting,
