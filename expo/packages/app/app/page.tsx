@@ -1,7 +1,8 @@
 'use client';
-import { useRef, useState } from 'react';
-import { useWebGL } from '../hooks/useWebGL';
+import {useRef, useState, useCallback, useEffect} from 'react';
+import {useWebGL} from '../hooks/useWebGL';
 import Loader from '../components/Loader';
+import {Core, DepthAnythingV2} from 'core';
 
 const images = {
   img: [
@@ -22,7 +23,14 @@ const images = {
 
 export default function Home() {
   const [imgIdx, setImgIdx] = useState(0);
+  const [userImage, setUserImage] = useState<string | null>(null);
+  const [userDepthMap, setUserDepthMap] = useState<string | null>(null);
+  const [processingUserImage, setProcessingUserImage] = useState(false);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const currentDepthMapUrl = userDepthMap || (images.depthRoot + images.img[imgIdx]);
+  const currentTextureImageUrl = userImage || (images.texRoot + images.img[imgIdx]);
 
   const {
     lightPos,
@@ -34,41 +42,50 @@ export default function Home() {
     setTextureLighting,
   } = useWebGL(
     canvasRef,
-    images.depthRoot + images.img[imgIdx],
-    images.texRoot + images.img[imgIdx]
+    currentDepthMapUrl,
+    currentTextureImageUrl
   );
 
-  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    const newLightPos = [...lightPos];
-    if (id === 'xlightSlider') {
-      newLightPos[0] = parseFloat(value);
-    } else if (id === 'ylightSlider') {
-      newLightPos[1] = parseFloat(value);
-    } else if (id === 'zlightSlider') {
-      newLightPos[2] = parseFloat(value);
-    }
-    setLightPos(newLightPos);
-  };
+  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const handleIntensityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLightIntensity(parseFloat(e.target.value));
-  };
+    setProcessingUserImage(true);
+    setUserImage(null);
+    setUserDepthMap(null);
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, checked } = e.target;
-    let newTextureLighting = textureLighting;
-    if (id === 'lighting-checkbox') {
-      newTextureLighting = checked ? newTextureLighting + 2 : newTextureLighting - 2;
-    } else if (id === 'texture-checkbox') {
-      newTextureLighting = checked ? newTextureLighting + 1 : newTextureLighting - 1;
-    }
-    setTextureLighting(newTextureLighting);
-  };
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const imageUrl = e.target?.result as string;
+      setUserImage(imageUrl);
+
+      try {
+        // IMPORTANT: The REPLICATE_API_TOKEN should NOT be exposed on the client-side in a production environment.
+        // It should be handled via a secure backend API. For local development/demonstration,
+        // you might temporarily use a token here, but be aware of the security implications.
+        // Replace 'YOUR_REPLICATE_API_TOKEN' with an actual token if testing locally.
+        const REPLICATE_API_TOKEN_PLACEHOLDER = process.env.NEXT_PUBLIC_REPLICATE_API_TOKEN || 'YOUR_REPLICATE_API_TOKEN';
+
+        const depthService = new DepthAnythingV2(REPLICATE_API_TOKEN_PLACEHOLDER);
+        const core = new Core(depthService);
+
+        const depthMap = await core.processImage(imageUrl);
+        setUserDepthMap(depthMap);
+
+      } catch (error) {
+        console.error("Error processing image with SDK:", error);
+        setUserImage(null);
+        setUserDepthMap(null);
+      } finally {
+        setProcessingUserImage(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  }, []);
 
   return (
     <div>
-      {loading && <Loader />}
+      {(loading || processingUserImage) && <Loader />}
       <nav className="navbar navbar-dark bg-dark">
         <a className="navbar-brand disabled text-light">Image Relighting</a>
       </nav>
@@ -89,8 +106,11 @@ export default function Home() {
                   id="image-select"
                   value={imgIdx}
                   onChange={(e) => {
+                    setUserImage(null); // Clear user image when selecting default
+                    setUserDepthMap(null);
                     setImgIdx(parseInt(e.target.value));
                   }}
+                  disabled={processingUserImage}
                 >
                   {images.img.map((img, idx) => (
                     <option key={idx} value={idx}>
@@ -99,6 +119,17 @@ export default function Home() {
                   ))}
                 </select>
               </div>
+            </div>
+            <div className="form-group row">
+              <label htmlFor="imageUpload" className="col-form-label-md">Upload Custom Image:</label>
+              <input
+                type="file"
+                id="imageUpload"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="form-control-file"
+                disabled={processingUserImage}
+              />
             </div>
             <hr />
             <div className="row">
@@ -127,6 +158,7 @@ export default function Home() {
                 step="0.01"
                 value={lightPos[0]}
                 onChange={handleSliderChange}
+                disabled={processingUserImage}
               />
             </div>
             <div className="row">
@@ -142,6 +174,7 @@ export default function Home() {
                 step="0.01"
                 value={lightPos[1]}
                 onChange={handleSliderChange}
+                disabled={processingUserImage}
               />
             </div>
             <div className="row">
@@ -157,6 +190,7 @@ export default function Home() {
                 step="0.01"
                 value={lightPos[2]}
                 onChange={handleSliderChange}
+                disabled={processingUserImage}
               />
             </div>
             <hr />
@@ -179,6 +213,7 @@ export default function Home() {
                 step="0.01"
                 value={lightIntensity}
                 onChange={handleIntensityChange}
+                disabled={processingUserImage}
               />
             </div>
             <hr />
@@ -191,6 +226,7 @@ export default function Home() {
                     id="lighting-checkbox"
                     checked={textureLighting > 1}
                     onChange={handleCheckboxChange}
+                    disabled={processingUserImage}
                   />
                   <label
                     className="form-check-label col-form-label-md"
@@ -206,6 +242,7 @@ export default function Home() {
                     id="texture-checkbox"
                     checked={textureLighting % 2 === 1}
                     onChange={handleCheckboxChange}
+                    disabled={processingUserImage}
                   />
                   <label
                     className="form-check-label col-form-label-md"
