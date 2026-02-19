@@ -3,8 +3,9 @@ import { useMemo, useState, useRef } from 'react';
 import Loader from '../components/Loader';
 import RelightingCanvas from '../components/RelightingCanvas';
 import BokehCanvas from '../components/BokehCanvas';
+import FogCanvas from '../components/FogCanvas';
 
-type Mode = 'relighting' | 'bokeh';
+type Mode = 'relighting' | 'bokeh' | 'fog';
 
 export default function Home() {
   const [userImage, setUserImage] = useState<string | null>(null);
@@ -34,9 +35,16 @@ export default function Home() {
           processing={processingUserImage}
         />
       );
-    } else {
+    } else if (activeMode === 'bokeh') {
       return (
         <BokehCanvas
+          depthMapUrl={userDepthMap}
+          textureImageUrl={userImage}
+        />
+      );
+    } else {
+      return (
+        <FogCanvas
           depthMapUrl={userDepthMap}
           textureImageUrl={userImage}
         />
@@ -147,6 +155,16 @@ export default function Home() {
                 }`}
               >
                 Bokeh Effect
+              </button>
+              <button
+                onClick={() => setActiveMode('fog')}
+                className={`px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
+                  activeMode === 'fog'
+                    ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                Virtual Fog
               </button>
             </div>
           </div>
