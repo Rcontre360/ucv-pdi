@@ -97,7 +97,7 @@ class ImageHelper {
 
         const getZ = (x: number, y: number) => {
           const data = imgContext.getImageData(x, y, 1, 1).data;
-          return (data[0] + data[1] + data[2]) / 3;
+          return data[0];
         };
 
         const v0 = getZ(startX, startY);
@@ -161,7 +161,7 @@ class ImageHelper {
       const nx = Math.max(0, Math.min(width - 1, px));
       const ny = Math.max(0, Math.min(height - 1, py));
       const data = imgContext.getImageData(nx, ny, 1, 1).data;
-      const z = (data[0] + data[1] + data[2]) / 3;
+      const z = data[0];
       return new Vector3(nx, ny, z);
     };
 

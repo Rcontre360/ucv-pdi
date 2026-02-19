@@ -43,10 +43,15 @@ const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImag
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, checked } = e.target;
-    let newTextureLighting = textureLighting;
-    if (id === 'lighting-checkbox') newTextureLighting = checked ? newTextureLighting + 2 : newTextureLighting - 2;
-    else if (id === 'texture-checkbox') newTextureLighting = checked ? newTextureLighting + 1 : newTextureLighting - 1;
-    setTextureLighting(newTextureLighting);
+    // We only control lighting toggle now (Mode 3 vs Mode 1)
+    // Mode 3: Texture + Light (Default)
+    // Mode 1: Texture Only (Unlit)
+    // Mode 2: Light Only (Removed from UI)
+    
+    // If Checked: Enable Lighting (Mode 3)
+    // If Unchecked: Disable Lighting (Mode 1)
+    
+    setTextureLighting(checked ? 3 : 1);
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -166,26 +171,13 @@ const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImag
                 <input
                   type="checkbox"
                   id="lighting-checkbox"
-                  checked={textureLighting > 1}
+                  checked={textureLighting === 3}
                   onChange={handleCheckboxChange}
                   disabled={processing}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="lighting-checkbox" className="ml-2 block text-sm text-gray-700">
                   Enable Lighting
-                </label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="texture-checkbox"
-                  checked={textureLighting % 2 === 1}
-                  onChange={handleCheckboxChange}
-                  disabled={processing}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="texture-checkbox" className="ml-2 block text-sm text-gray-700">
-                  Show Texture
                 </label>
               </div>
             </div>

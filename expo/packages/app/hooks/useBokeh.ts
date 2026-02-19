@@ -23,7 +23,7 @@ const fs_src = `
 
   void main() {
     vec4 depthColor = texture2D(u_depth, texCoords);
-    float depth = depthColor.r; // Assuming grayscale depth map
+    float depth = depthColor.r;
     
     // Calculate blur radius based on distance from focal plane
     float blur = abs(depth - u_focusDepth) * u_aperture * 0.05; // Scaling factor

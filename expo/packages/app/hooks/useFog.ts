@@ -25,7 +25,7 @@ const fs_src = `
   void main() {
     vec4 color = texture2D(u_image, texCoords);
     vec4 depthVal = texture2D(u_depth, texCoords);
-    float depth = depthVal.r; // 0 (Near) to 1 (Far)
+    float depth = depthVal.r;
     
     // Linear Fog
     // Factor = (End - Dist) / (End - Start)
