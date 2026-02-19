@@ -15,10 +15,12 @@ export class Core {
     this.cloudgen = cloudgen;
   }
 
-  async processImage(imagePath: string): Promise<DepthMap> {
-    const depthMap = await this.depthService.getDepthMap(imagePath);
+  async processImage(imageDataUri: string): Promise<DepthMap> {
+    console.log('depth service')
+    const depthMap = await this.depthService.getDepthMap(imageDataUri);
+    console.log('END')
 
-    //await this.cloudgen.generatePointCloud(imagePath, depthMap, plyOutput);
+    //await this.cloudgen.generatePointCloud(imageDataUri, depthMap, plyOutput);
 
     return depthMap;
   }
