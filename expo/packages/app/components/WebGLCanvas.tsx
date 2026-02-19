@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { useWebGL } from '../hooks/useWebGL';
 import Loader from './Loader';
 import Slider from './Slider';
@@ -13,6 +13,7 @@ interface WebGLCanvasProps {
 
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImageUrl, processing }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const {
     lightPos,
     lightIntensity,
@@ -48,15 +49,54 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImageUrl,
     setTextureLighting(newTextureLighting);
   };
 
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (processing || !canvasRef.current) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Normalize coordinates to [-1, 1] range
+    const normalizedX = (x / rect.width) * 2 - 1;
+    const normalizedY = -((y / rect.height) * 2 - 1); // Flip Y for WebGL coords
+    
+    setLightPos((prev) => [normalizedX, normalizedY, prev[2]]);
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (processing) return;
+      e.preventDefault();
+      
+      const zoomSpeed = 0.1;
+      const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
+      
+      setLightPos((prev) => {
+        const newZ = Math.max(-1, Math.min(1, prev[2] + delta));
+        return [prev[0], prev[1], newZ];
+      });
+    };
+
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    
+    return () => {
+      canvas.removeEventListener('wheel', handleWheel);
+    };
+  }, [processing, setLightPos]);
+
   return (
     <>
       {loading && <Loader />}
       <div className="row">
         <div className="col-12 col-lg-8">
-          <div className="canvas-wrapper" style={{ width: '100%', height: 'auto', overflow: 'hidden' }}>
+          <div className="canvas-wrapper" ref={containerRef} style={{ width: '100%', height: 'auto', overflow: 'hidden' }}>
             <canvas 
               ref={canvasRef} 
-              style={{ width: '100%', height: 'auto', display: 'block' }}
+              style={{ width: '100%', height: 'auto', display: 'block', cursor: 'crosshair' }}
+              onClick={handleCanvasClick}
             ></canvas>
           </div>
         </div>
