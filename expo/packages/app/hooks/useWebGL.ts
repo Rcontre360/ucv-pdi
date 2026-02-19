@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { imageHelper, dataUriToImage } from '../utils/images';
-import { vs_src } from '../utils/vs';
-import { fs_src } from '../utils/fs';
+import { relightingVertexShader, relightingFragmentShader } from '../utils/shaders/relighting';
 
 interface WebGLHook {
   lightPos: number[];
   lightIntensity: number;
   textureLighting: number;
   loading: boolean;
-  setLightPos: (pos: number[]) => void;
+  setLightPos: (pos: number[] | ((prev: number[]) => number[])) => void;
   setLightIntensity: (intensity: number) => void;
   setTextureLighting: (lighting: number) => void;
 }
@@ -42,8 +41,8 @@ export const useWebGL = (
   };
 
   const initShaderProgram = (gl: WebGLRenderingContext) => {
-    const vs = createShader(gl, gl.VERTEX_SHADER, vs_src);
-    const fs = createShader(gl, gl.FRAGMENT_SHADER, fs_src);
+    const vs = createShader(gl, gl.VERTEX_SHADER, relightingVertexShader);
+    const fs = createShader(gl, gl.FRAGMENT_SHADER, relightingFragmentShader);
     if (!vs || !fs) return null;
 
     const program = gl.createProgram();
