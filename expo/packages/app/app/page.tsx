@@ -1,65 +1,243 @@
-import Image from "next/image";
+'use client';
+import { useRef, useState, useEffect } from 'react';
+import { useWebGL } from '../hooks/useWebGL';
+import Loader from '../components/Loader';
+
+const images = {
+  img: [
+    'bird.jpg',
+    'coke.jpg',
+    'tunnel.jpg',
+    'room.jpg',
+    'shelf.jpg',
+    'flower.jpg',
+    'misc.jpg',
+    'office.jpg',
+    'kitchen.jpg',
+    'human.jpg',
+  ],
+  texRoot: '/images/texture/',
+  depthRoot: '/images/depth/',
+};
 
 export default function Home() {
+  const [imgIdx, setImgIdx] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const depthImageRef = useRef<HTMLImageElement>(null);
+  const textureImageRef = useRef<HTMLImageElement>(null);
+
+  const {
+    lightPos,
+    lightIntensity,
+    textureLighting,
+    setLightPos,
+    setLightIntensity,
+    setTextureLighting,
+  } = useWebGL(canvasRef, depthImageRef, textureImageRef);
+
+  useEffect(() => {
+    const depthImg = new Image();
+    depthImg.src = images.depthRoot + images.img[imgIdx];
+    depthImg.onload = () => {
+      if (depthImageRef.current) {
+        depthImageRef.current.src = depthImg.src;
+      }
+      const textureImg = new Image();
+      textureImg.src = images.texRoot + images.img[imgIdx];
+      textureImg.onload = () => {
+        if (textureImageRef.current) {
+          textureImageRef.current.src = textureImg.src;
+        }
+        setLoading(false);
+      };
+    };
+  }, [imgIdx]);
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    const newLightPos = [...lightPos];
+    if (id === 'xlightSlider') {
+      newLightPos[0] = parseFloat(value);
+    } else if (id === 'ylightSlider') {
+      newLightPos[1] = parseFloat(value);
+    } else if (id === 'zlightSlider') {
+      newLightPos[2] = parseFloat(value);
+    }
+    setLightPos(newLightPos);
+  };
+
+  const handleIntensityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLightIntensity(parseFloat(e.target.value));
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, checked } = e.target;
+    let newTextureLighting = textureLighting;
+    if (id === 'lighting-checkbox') {
+      newTextureLighting = checked ? newTextureLighting + 2 : newTextureLighting - 2;
+    } else if (id === 'texture-checkbox') {
+      newTextureLighting = checked ? newTextureLighting + 1 : newTextureLighting - 1;
+    }
+    setTextureLighting(newTextureLighting);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div>
+      {loading && <Loader />}
+      <nav className="navbar navbar-dark bg-dark">
+        <a className="navbar-brand disabled text-light">Image Relighting</a>
+      </nav>
+      <div className="container">
+        <br />
+        <div className="row">
+          <div className="col">
+            <canvas ref={canvasRef}></canvas>
+          </div>
+          <div className="col">
+            <div className="form-group row d-flex justify-content-between">
+              <div className="p-0 align-self-center">
+                <span className="image-label"> Image: </span>
+              </div>
+              <div className="p-0 align-self-center">
+                <select
+                  className="col-form-label-md custom-select"
+                  id="image-select"
+                  value={imgIdx}
+                  onChange={(e) => {
+                    setLoading(true);
+                    setImgIdx(parseInt(e.target.value));
+                  }}
+                >
+                  {images.img.map((img, idx) => (
+                    <option key={idx} value={idx}>
+                      {img}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <hr />
+            <div className="row">
+              <h6 className="">
+                <u>Light Controls</u>
+              </h6>
+            </div>
+            <div className="row">
+              <span className="col">Light Position:</span>
+              <span className="col" id="light-pos-span">
+                [{lightPos[0].toFixed(2)}, {lightPos[1].toFixed(2)},{' '}
+                {lightPos[2].toFixed(2)}]
+              </span>
+            </div>
+            <br />
+            <div className="row">
+              <label className="col-form-label-md" htmlFor="xlightSlider">
+                x :
+              </label>
+              <input
+                className="form-control-range"
+                type="range"
+                id="xlightSlider"
+                min="-1"
+                max="1"
+                step="0.01"
+                value={lightPos[0]}
+                onChange={handleSliderChange}
+              />
+            </div>
+            <div className="row">
+              <label className="col-form-label-md" htmlFor="ylightSlider">
+                y :
+              </label>
+              <input
+                className="form-control-range"
+                type="range"
+                id="ylightSlider"
+                min="-1"
+                max="1"
+                step="0.01"
+                value={lightPos[1]}
+                onChange={handleSliderChange}
+              />
+            </div>
+            <div className="row">
+              <label className="col-form-label-md" htmlFor="zlightSlider">
+                z :
+              </label>
+              <input
+                className="form-control-range"
+                type="range"
+                id="zlightSlider"
+                min="-1"
+                max="1"
+                step="0.01"
+                value={lightPos[2]}
+                onChange={handleSliderChange}
+              />
+            </div>
+            <hr />
+            <div className="form-group row">
+              <label
+                className="form-control-md"
+                htmlFor="lightIntensitySlider"
+              >
+                Light Intensity: &nbsp;&nbsp;
+              </label>
+              <span className="form-control-md" id="light-intensity-span">
+                {lightIntensity}
+              </span>
+              <input
+                className="form-control-range"
+                type="range"
+                id="lightIntensitySlider"
+                min="0"
+                max="2"
+                step="0.01"
+                value={lightIntensity}
+                onChange={handleIntensityChange}
+              />
+            </div>
+            <hr />
+            <div className="row">
+              <div className="col">
+                <div className="form-check">
+                  <input
+                    className="form-control-md"
+                    type="checkbox"
+                    id="lighting-checkbox"
+                    checked={textureLighting > 1}
+                    onChange={handleCheckboxChange}
+                  />
+                  <label
+                    className="form-check-label col-form-label-md"
+                    htmlFor="lighting-checkbox"
+                  >
+                    Light
+                  </label>
+                </div>
+                <div className="form-check">
+                  <input
+                    className="form-control-md"
+                    type="checkbox"
+                    id="texture-checkbox"
+                    checked={textureLighting % 2 === 1}
+                    onChange={handleCheckboxChange}
+                  />
+                  <label
+                    className="form-check-label col-form-label-md"
+                    htmlFor="texture-checkbox"
+                  >
+                    Texture
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
+      <img ref={depthImageRef} style={{ display: 'none' }} />
+      <img ref={textureImageRef} style={{ display: 'none' }} />
     </div>
   );
 }
