@@ -1,5 +1,9 @@
-import { Core } from "./src/core/Core";
-import { DepthAnythingV2 } from "./src/core/depth";
+import dotenv from "dotenv";
+import {Core} from "./src/core/Core";
+import {DepthAnythingV2} from "./src/core/depth";
+import {PointCloudGenerator} from "./src/core/points";
+import {env} from "src/config";
+import fs from "fs";
 
-// Re-export Core and DepthAnythingV2
-export { Core, DepthAnythingV2 };
+
+export {Core, DepthAnythingV2, PointCloudGenerator}

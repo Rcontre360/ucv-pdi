@@ -1,7 +1,6 @@
-import {DepthService} from "src/core/depth";
+import {DepthService, DepthMap} from "src/core/depth";
+import fs from "fs";
 import Replicate from "replicate";
-
-export type DepthMap = string; // Define DepthMap as a base64 string
 
 export class DepthAnythingV2 implements DepthService {
   private replicate: Replicate;
@@ -12,19 +11,24 @@ export class DepthAnythingV2 implements DepthService {
     });
   }
 
-  async getDepthMap(imageData: string): Promise<DepthMap> { // Accepts base64 image data
-    // Assuming imageData is already a base64 data URI
+  async getDepthMap(imagePath: string): Promise<DepthMap> {
+    const image = fs.readFileSync(imagePath, "base64");
+    const dataUri = `data:image/jpeg;base64,${image}`;
+
     const output = (await this.replicate.run(
       "chenxwh/depth-anything-v2:b239ea33cff32bb7abb5db39ffe9a09c14cbc2894331d1ef66fe096eed88ebd4",
       {
         input: {
-          image: imageData, // Use the provided base64 image data directly
+          image: dataUri,
           model_size: "Large",
         },
       }
-    )) as {color_depth: {url: string; bytes: () => Promise<Buffer>}}; // Adjust output type based on Replicate API
+    )) as {grey_depth: string};
 
-    // Replicate returns a URL for the color_depth image, we'll return that URL
-    return output.color_depth.url; 
+    const response = await fetch(output.grey_depth);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    return `data:image/png;base64,${buffer.toString('base64')}`;
   }
 }

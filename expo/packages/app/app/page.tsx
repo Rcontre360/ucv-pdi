@@ -2,7 +2,8 @@
 import { useRef, useState, useEffect } from 'react';
 import { useWebGL } from '../hooks/useWebGL';
 import Loader from '../components/Loader';
-import { Core, DepthAnythingV2 } from 'core';
+// Core and DepthAnythingV2 are now used on the server-side API route
+// import { Core, DepthAnythingV2 } from 'core';
 
 export default function Home() {
   const [userImage, setUserImage] = useState<string | null>(null);
@@ -42,23 +43,25 @@ export default function Home() {
       setUserImage(imageUrl);
 
       try {
-        const REPLICATE_API_TOKEN_PLACEHOLDER = process.env.NEXT_PUBLIC_REPLICATE_API_TOKEN || 'YOUR_REPLICATE_API_TOKEN';
-        if (REPLICATE_API_TOKEN_PLACEHOLDER === 'YOUR_REPLICATE_API_TOKEN' || !REPLICATE_API_TOKEN_PLACEHOLDER) {
-          console.error("REPLICATE_API_TOKEN is not configured. Please set NEXT_PUBLIC_REPLICATE_API_TOKEN in your .env.local file.");
-          alert("REPLICATE_API_TOKEN is not configured. Please set NEXT_PUBLIC_REPLICATE_API_TOKEN in your .env.local file.");
-          setProcessingUserImage(false);
-          return;
+        const response = await fetch('/api/depthmap', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ imageData: imageUrl }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch depth map from API.');
         }
 
-        const depthService = new DepthAnythingV2(REPLICATE_API_TOKEN_PLACEHOLDER);
-        const core = new Core(depthService);
-
-        const depthMap = await core.processImage(imageUrl);
-        setUserDepthMap(depthMap);
+        const data = await response.json();
+        setUserDepthMap(data.depthMap);
 
       } catch (error) {
         console.error("Error processing image with SDK:", error);
-        alert("Error generating depth map. Please check the console for details.");
+        alert(`Error generating depth map: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setUserImage(null);
         setUserDepthMap(null);
       } finally {
