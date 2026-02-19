@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import { useWebGL } from '../hooks/useWebGL';
 import Loader from './Loader';
+import Slider from './Slider';
 
 interface WebGLCanvasProps {
   depthMapUrl: string;
@@ -51,112 +52,107 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImageUrl,
     <>
       {loading && <Loader />}
       <div className="row">
-        <div className="col">
-          <canvas ref={canvasRef}></canvas>
+        <div className="col-12 col-lg-8">
+          <div className="canvas-wrapper" style={{ width: '100%', height: 'auto', overflow: 'hidden' }}>
+            <canvas 
+              ref={canvasRef} 
+              style={{ width: '100%', height: 'auto', display: 'block' }}
+            ></canvas>
+          </div>
         </div>
-        <div className="col">
-          <div className="row">
-            <h6 className="">
+        <div className="col-12 col-lg-4">
+          <div className="p-3 bg-light rounded shadow-sm">
+            <h6 className="mb-3 border-bottom pb-2">
               <u>Light Controls</u>
             </h6>
-          </div>
-          <div className="row">
-            <span className="col">Light Position:</span>
-            <span className="col" id="light-pos-span">
-              [{lightPos[0].toFixed(2)}, {lightPos[1].toFixed(2)}, {lightPos[2].toFixed(2)}]
-            </span>
-          </div>
-          <br />
-          <div className="row">
-            <label className="col-form-label-md" htmlFor="xlightSlider">x :</label>
-            <input
-              className="form-control-range"
-              type="range"
+            
+            <div className="mb-3">
+              <div className="d-flex justify-content-between small text-muted">
+                <span>Light Position:</span>
+                <span id="light-pos-span">
+                  [{lightPos[0].toFixed(2)}, {lightPos[1].toFixed(2)}, {lightPos[2].toFixed(2)}]
+                </span>
+              </div>
+            </div>
+
+            <Slider
               id="xlightSlider"
-              min="-1"
-              max="1"
-              step="0.01"
+              label="X Position"
+              min={-1}
+              max={1}
               value={lightPos[0]}
               onChange={handleSliderChange}
               disabled={processing}
             />
-          </div>
-          <div className="row">
-            <label className="col-form-label-md" htmlFor="ylightSlider">y :</label>
-            <input
-              className="form-control-range"
-              type="range"
+            
+            <Slider
               id="ylightSlider"
-              min="-1"
-              max="1"
-              step="0.01"
+              label="Y Position"
+              min={-1}
+              max={1}
               value={lightPos[1]}
               onChange={handleSliderChange}
               disabled={processing}
             />
-          </div>
-          <div className="row">
-            <label className="col-form-label-md" htmlFor="zlightSlider">z :</label>
-            <input
-              className="form-control-range"
-              type="range"
+            
+            <Slider
               id="zlightSlider"
-              min="-1"
-              max="1"
-              step="0.01"
+              label="Z Position"
+              min={-1}
+              max={1}
               value={lightPos[2]}
               onChange={handleSliderChange}
               disabled={processing}
             />
-          </div>
-          <hr />
-          <div className="form-group row">
-            <label className="form-control-md" htmlFor="lightIntensitySlider">
-              Light Intensity: &nbsp;&nbsp;
-            </label>
-            <span className="form-control-md" id="light-intensity-span">
-              {lightIntensity}
-            </span>
-            <input
-              className="form-control-range"
-              type="range"
-              id="lightIntensitySlider"
-              min="0"
-              max="2"
-              step="0.01"
-              value={lightIntensity}
-              onChange={handleIntensityChange}
-              disabled={processing}
-            />
-          </div>
-          <hr />
-          <div className="row">
-            <div className="col">
-              <div className="form-check">
-                <input
-                  className="form-control-md"
-                  type="checkbox"
-                  id="lighting-checkbox"
-                  checked={textureLighting > 1}
-                  onChange={handleCheckboxChange}
-                  disabled={processing}
-                />
-                <label className="form-check-label col-form-label-md" htmlFor="lighting-checkbox">
-                  Light
-                </label>
+
+            <hr />
+
+            <div className="mb-3">
+              <div className="d-flex justify-content-between small text-muted">
+                <label htmlFor="lightIntensitySlider">Light Intensity:</label>
+                <span id="light-intensity-span">{lightIntensity}</span>
               </div>
-              <div className="form-check">
-                <input
-                  className="form-control-md"
-                  type="checkbox"
-                  id="texture-checkbox"
-                  checked={textureLighting % 2 === 1}
-                  onChange={handleCheckboxChange}
-                  disabled={processing}
-                />
-                <label className="form-check-label col-form-label-md" htmlFor="texture-checkbox">
-                  Texture
-                </label>
+              <Slider
+                id="lightIntensitySlider"
+                label=""
+                min={0}
+                max={2}
+                value={lightIntensity}
+                onChange={handleIntensityChange}
+                disabled={processing}
+              />
+            </div>
+
+            <hr />
+
+            <div className="row">
+              <div className="col">
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="lighting-checkbox"
+                    checked={textureLighting > 1}
+                    onChange={handleCheckboxChange}
+                    disabled={processing}
+                  />
+                  <label className="form-check-label" htmlFor="lighting-checkbox">
+                    Enable Lighting
+                  </label>
+                </div>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="texture-checkbox"
+                    checked={textureLighting % 2 === 1}
+                    onChange={handleCheckboxChange}
+                    disabled={processing}
+                  />
+                  <label className="form-check-label" htmlFor="texture-checkbox">
+                    Enable Texture
+                  </label>
+                </div>
               </div>
             </div>
           </div>

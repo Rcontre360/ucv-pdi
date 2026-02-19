@@ -21,8 +21,6 @@ export class DepthAnythingV2 implements DepthService {
       }
     )) as {grey_depth: string};
 
-    console.log('Replicate API output:', output);
-
     const response = await fetch(output.grey_depth);
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);

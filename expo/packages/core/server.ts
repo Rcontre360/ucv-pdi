@@ -4,6 +4,7 @@ import {json} from 'body-parser';
 import {Core} from './src/core/Core';
 import {DepthAnythingV2} from './src/core/depth/DepthAnythingV2';
 import {PointCloudGenerator} from './src/core/points';
+import { requestLogger, logger } from './src/utils/Logger';
 import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -11,6 +12,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 const app = express();
 const port = process.env.CORE_SERVER_PORT || 8080;
 
+app.use(requestLogger);
 app.use(cors());
 app.use(json({ limit: '50mb' }));
 
@@ -18,6 +20,7 @@ const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || '';
 
 app.post('/depthmap', async (req, res) => {
   if (!REPLICATE_API_TOKEN) {
+    logger.error('REPLICATE_API_TOKEN is not configured.');
     return res.status(500).json({ error: 'REPLICATE_API_TOKEN is not configured on the server.' });
   }
 
@@ -32,15 +35,15 @@ app.post('/depthmap', async (req, res) => {
     const core = new Core(depthService, pointCloudGenerator);
 
     const depthMapDataUri = await core.processImage(imageData);
-    console.log('Generated depth map URI:', depthMapDataUri);
+    logger.info('Generated depth map URI successfully');
 
     res.json({ depthMap: depthMapDataUri });
   } catch (error) {
-    console.error('Core Server Error:', error);
+    logger.error('Core Server Error:', error);
     res.status(500).json({ error: 'Failed to generate depth map.' });
   }
 });
 
 app.listen(port, () => {
-  console.log(`Core server listening on port ${port}`);
+  logger.info(`Core server listening on port ${port}`);
 });
