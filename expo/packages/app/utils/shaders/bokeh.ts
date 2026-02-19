@@ -23,7 +23,7 @@ export const bokehFragmentShader = `
     float depth = depthColor.r;
     
     // Calculate blur radius based on distance from focal plane
-    float blur = abs(depth - u_focusDepth) * u_aperture * 0.05; // Scaling factor
+    float blur = abs(depth - u_focusDepth) * u_aperture * 0.1; // Scaling factor
     
     vec4 col = vec4(0.0);
     float totalWeight = 0.0;
@@ -34,7 +34,7 @@ export const bokehFragmentShader = `
     }
 
     // Limit max blur to prevent performance kill
-    float radius = clamp(blur, 0.0, 0.02); 
+    float radius = clamp(blur, 0.0, 0.05); 
     
     // Box blur kernel
     for (float x = -2.0; x <= 2.0; x++) {

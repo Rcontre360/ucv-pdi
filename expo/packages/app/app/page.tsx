@@ -1,16 +1,17 @@
 'use client';
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import Loader from '../components/Loader';
 import RelightingCanvas from '../components/RelightingCanvas';
 import BokehCanvas from '../components/BokehCanvas';
 import FogCanvas from '../components/FogCanvas';
-import ParallaxCanvas from '../components/ParallaxCanvas';
 import EdgesCanvas from '../components/EdgesCanvas';
+import SSAOCanvas from '../components/SSAOCanvas';
 import DepthMapOverlay from '../components/DepthMapOverlay';
 
-type Mode = 'relighting' | 'bokeh' | 'fog' | 'parallax' | 'edges';
+type Mode = 'relighting' | 'bokeh' | 'fog' | 'edges' | 'ssao';
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
   const [userImage, setUserImage] = useState<string | null>(null);
   const [userDepthMap, setUserDepthMap] = useState<string | null>(null);
   const [processingUserImage, setProcessingUserImage] = useState(false);
@@ -18,6 +19,10 @@ export default function Home() {
   const [showDepthMap, setShowDepthMap] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const content = useMemo(() => {
     if (!userImage || !userDepthMap) {
@@ -31,42 +36,19 @@ export default function Home() {
       );
     }
 
-    if (activeMode === 'relighting') {
-      return (
-        <RelightingCanvas
-          depthMapUrl={userDepthMap}
-          textureImageUrl={userImage}
-          processing={processingUserImage}
-        />
-      );
-    } else if (activeMode === 'bokeh') {
-      return (
-        <BokehCanvas
-          depthMapUrl={userDepthMap}
-          textureImageUrl={userImage}
-        />
-      );
-    } else if (activeMode === 'fog') {
-      return (
-        <FogCanvas
-          depthMapUrl={userDepthMap}
-          textureImageUrl={userImage}
-        />
-      );
-    } else if (activeMode === 'parallax') {
-      return (
-        <ParallaxCanvas
-          depthMapUrl={userDepthMap}
-          textureImageUrl={userImage}
-        />
-      );
-    } else {
-      return (
-        <EdgesCanvas
-          depthMapUrl={userDepthMap}
-          textureImageUrl={userImage}
-        />
-      );
+    switch (activeMode) {
+      case 'relighting':
+        return <RelightingCanvas depthMapUrl={userDepthMap} textureImageUrl={userImage} processing={processingUserImage} />;
+      case 'bokeh':
+        return <BokehCanvas depthMapUrl={userDepthMap} textureImageUrl={userImage} />;
+      case 'fog':
+        return <FogCanvas depthMapUrl={userDepthMap} textureImageUrl={userImage} />;
+      case 'edges':
+        return <EdgesCanvas depthMapUrl={userDepthMap} textureImageUrl={userImage} />;
+      case 'ssao':
+        return <SSAOCanvas depthMapUrl={userDepthMap} textureImageUrl={userImage} />;
+      default:
+        return null;
     }
   }, [userImage, userDepthMap, processingUserImage, activeMode]);
 
@@ -112,6 +94,8 @@ export default function Home() {
     fileInputRef.current?.click();
   };
 
+  if (!mounted) return null;
+
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
       {processingUserImage && <Loader />}
@@ -153,7 +137,7 @@ export default function Home() {
         {/* Mode Selection Tabs */}
         {userImage && (
           <div className="flex justify-center mb-8">
-            <div className="bg-white p-1 rounded-lg shadow-sm inline-flex items-center flex-wrap">
+            <div className="bg-white p-1 rounded-lg shadow-sm inline-flex items-center flex-wrap gap-y-2">
               <button
                 onClick={() => setActiveMode('relighting')}
                 className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ${
@@ -185,16 +169,6 @@ export default function Home() {
                 Virtual Fog
               </button>
               <button
-                onClick={() => setActiveMode('parallax')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
-                  activeMode === 'parallax'
-                    ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                3D Parallax
-              </button>
-              <button
                 onClick={() => setActiveMode('edges')}
                 className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
                   activeMode === 'edges'
@@ -203,6 +177,16 @@ export default function Home() {
                 }`}
               >
                 Depth Edges
+              </button>
+              <button
+                onClick={() => setActiveMode('ssao')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
+                  activeMode === 'ssao'
+                    ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                Amb. Occlusion
               </button>
               
               <div className="h-6 w-px bg-gray-300 mx-4 hidden sm:block"></div>

@@ -154,14 +154,34 @@ class ImageHelper {
     height: number,
     imgContext: CanvasRenderingContext2D
   ): Vector3 {
-    const s = 3;
+    const s = 4; // Increased sampling radius for smoother normals
     const { x, y } = point;
 
     const getPoint = (px: number, py: number) => {
       const nx = Math.max(0, Math.min(width - 1, px));
       const ny = Math.max(0, Math.min(height - 1, py));
-      const data = imgContext.getImageData(nx, ny, 1, 1).data;
-      const z = data[0];
+      
+      // 3x3 Average for smoothing
+      let sum = 0;
+      let count = 0;
+      // Define limits to stay within bounds
+      const startI = Math.max(0, nx - 1);
+      const endI = Math.min(width - 1, nx + 1);
+      const startJ = Math.max(0, ny - 1);
+      const endJ = Math.min(height - 1, ny + 1);
+
+      const data = imgContext.getImageData(startI, startJ, endI - startI + 1, endJ - startJ + 1).data;
+      
+      // getImageData returns a flat array. We need to iterate it correctly.
+      // Width of the block we grabbed:
+      const blockWidth = endI - startI + 1;
+      
+      for (let i = 0; i < data.length; i += 4) {
+          sum += data[i]; // Red channel
+          count++;
+      }
+      
+      const z = count > 0 ? sum / count : 0;
       return new Vector3(nx, ny, z);
     };
 

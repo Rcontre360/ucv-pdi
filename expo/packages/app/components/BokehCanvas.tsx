@@ -14,9 +14,7 @@ const BokehCanvas: React.FC<BokehCanvasProps> = ({ depthMapUrl, textureImageUrl 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const {
     focusDepth,
-    aperture,
     setFocusDepth,
-    setAperture,
     loading
   } = useBokeh(canvasRef, depthMapUrl, textureImageUrl);
 
@@ -56,21 +54,8 @@ const BokehCanvas: React.FC<BokehCanvasProps> = ({ depthMapUrl, textureImageUrl 
               <p className="text-xs text-gray-500 mt-1">Adjust to change the focal plane distance.</p>
             </div>
 
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-medium text-gray-700">Blur Strength</label>
-                <span className="text-sm font-mono text-gray-500">{aperture.toFixed(1)}</span>
-              </div>
-              <Slider
-                id="apertureSlider"
-                label=""
-                min={0}
-                max={5}
-                step={0.1}
-                value={aperture}
-                onChange={(e) => setAperture(parseFloat(e.target.value))}
-              />
-              <p className="text-xs text-gray-500 mt-1">Simulates aperture size to control background blur.</p>
+            <div className="mt-4 p-4 bg-blue-50 rounded text-sm text-blue-800">
+              <p>Blur strength is fixed at a constant level for cinematic consistency.</p>
             </div>
           </div>
         </div>
