@@ -1,36 +1,18 @@
 'use client';
-import {useRef, useState, useCallback, useEffect} from 'react';
-import {useWebGL} from '../hooks/useWebGL';
+import { useRef, useState, useEffect } from 'react';
+import { useWebGL } from '../hooks/useWebGL';
 import Loader from '../components/Loader';
-import {Core, DepthAnythingV2} from 'core';
-
-const images = {
-  img: [
-    'bird.jpg',
-    'coke.jpg',
-    'tunnel.jpg',
-    'room.jpg',
-    'shelf.jpg',
-    'flower.jpg',
-    'misc.jpg',
-    'office.jpg',
-    'kitchen.jpg',
-    'human.jpg',
-  ],
-  texRoot: '/images/texture/',
-  depthRoot: '/images/depth/',
-};
+import { Core, DepthAnythingV2 } from 'core';
 
 export default function Home() {
-  const [imgIdx, setImgIdx] = useState(0);
   const [userImage, setUserImage] = useState<string | null>(null);
   const [userDepthMap, setUserDepthMap] = useState<string | null>(null);
   const [processingUserImage, setProcessingUserImage] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const currentDepthMapUrl = userDepthMap || (images.depthRoot + images.img[imgIdx]);
-  const currentTextureImageUrl = userImage || (images.texRoot + images.img[imgIdx]);
+  const currentDepthMapUrl = userDepthMap || ''; // Empty string if no depth map
+  const currentTextureImageUrl = userImage || ''; // Empty string if no user image
 
   const {
     lightPos,
@@ -46,7 +28,7 @@ export default function Home() {
     currentTextureImageUrl
   );
 
-  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -60,11 +42,13 @@ export default function Home() {
       setUserImage(imageUrl);
 
       try {
-        // IMPORTANT: The REPLICATE_API_TOKEN should NOT be exposed on the client-side in a production environment.
-        // It should be handled via a secure backend API. For local development/demonstration,
-        // you might temporarily use a token here, but be aware of the security implications.
-        // Replace 'YOUR_REPLICATE_API_TOKEN' with an actual token if testing locally.
         const REPLICATE_API_TOKEN_PLACEHOLDER = process.env.NEXT_PUBLIC_REPLICATE_API_TOKEN || 'YOUR_REPLICATE_API_TOKEN';
+        if (REPLICATE_API_TOKEN_PLACEHOLDER === 'YOUR_REPLICATE_API_TOKEN' || !REPLICATE_API_TOKEN_PLACEHOLDER) {
+          console.error("REPLICATE_API_TOKEN is not configured. Please set NEXT_PUBLIC_REPLICATE_API_TOKEN in your .env.local file.");
+          alert("REPLICATE_API_TOKEN is not configured. Please set NEXT_PUBLIC_REPLICATE_API_TOKEN in your .env.local file.");
+          setProcessingUserImage(false);
+          return;
+        }
 
         const depthService = new DepthAnythingV2(REPLICATE_API_TOKEN_PLACEHOLDER);
         const core = new Core(depthService);
@@ -74,6 +58,7 @@ export default function Home() {
 
       } catch (error) {
         console.error("Error processing image with SDK:", error);
+        alert("Error generating depth map. Please check the console for details.");
         setUserImage(null);
         setUserDepthMap(null);
       } finally {
@@ -81,7 +66,35 @@ export default function Home() {
       }
     };
     reader.readAsDataURL(file);
-  }, []);
+  };
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    const newLightPos = [...lightPos];
+    if (id === 'xlightSlider') {
+      newLightPos[0] = parseFloat(value);
+    } else if (id === 'ylightSlider') {
+      newLightPos[1] = parseFloat(value);
+    } else if (id === 'zlightSlider') {
+      newLightPos[2] = parseFloat(value);
+    }
+    setLightPos(newLightPos);
+  };
+
+  const handleIntensityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLightIntensity(parseFloat(e.target.value));
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, checked } = e.target;
+    let newTextureLighting = textureLighting;
+    if (id === 'lighting-checkbox') {
+      newTextureLighting = checked ? newTextureLighting + 2 : newTextureLighting - 2;
+    } else if (id === 'texture-checkbox') {
+      newTextureLighting = checked ? newTextureLighting + 1 : newTextureLighting - 1;
+    }
+    setTextureLighting(newTextureLighting);
+  };
 
   return (
     <div>
@@ -96,30 +109,6 @@ export default function Home() {
             <canvas ref={canvasRef}></canvas>
           </div>
           <div className="col">
-            <div className="form-group row d-flex justify-content-between">
-              <div className="p-0 align-self-center">
-                <span className="image-label"> Image: </span>
-              </div>
-              <div className="p-0 align-self-center">
-                <select
-                  className="col-form-label-md custom-select"
-                  id="image-select"
-                  value={imgIdx}
-                  onChange={(e) => {
-                    setUserImage(null); // Clear user image when selecting default
-                    setUserDepthMap(null);
-                    setImgIdx(parseInt(e.target.value));
-                  }}
-                  disabled={processingUserImage}
-                >
-                  {images.img.map((img, idx) => (
-                    <option key={idx} value={idx}>
-                      {img}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
             <div className="form-group row">
               <label htmlFor="imageUpload" className="col-form-label-md">Upload Custom Image:</label>
               <input

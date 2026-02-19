@@ -30,21 +30,30 @@ export const useWebGL = (
   const depthImageRef = useRef<HTMLImageElement | null>(null);
   const textureImageRef = useRef<HTMLImageElement | null>(null);
 
+  // Effect to load images
   useEffect(() => {
+    if (!depthImageUrl || !textureImageUrl) {
+      setLoading(false);
+      depthImageRef.current = null;
+      textureImageRef.current = null;
+      return;
+    }
+
     setLoading(true);
-    const depthImg = new Image();
-    depthImg.src = depthImageUrl;
-    depthImg.onload = () => {
-      depthImageRef.current = depthImg;
-      const textureImg = new Image();
-      textureImg.src = textureImageUrl;
-      textureImg.onload = () => {
-        textureImageRef.current = textureImg;
+    const newDepthImg = new Image();
+    newDepthImg.onload = () => {
+      depthImageRef.current = newDepthImg;
+      const newTextureImg = new Image();
+      newTextureImg.onload = () => {
+        textureImageRef.current = newTextureImg;
         setLoading(false);
       };
+      newTextureImg.src = textureImageUrl;
     };
+    newDepthImg.src = depthImageUrl;
   }, [depthImageUrl, textureImageUrl]);
 
+  // Effect to setup WebGL and draw
   useEffect(() => {
     if (loading || !canvasRef.current || !depthImageRef.current || !textureImageRef.current) {
       return;
@@ -173,7 +182,7 @@ export const useWebGL = (
 
     draw();
 
-  }, [loading, canvasRef, lightPos, lightIntensity, textureLighting]);
+  }, [loading, canvasRef, depthImageRef.current, textureImageRef.current, lightPos, lightIntensity, textureLighting]);
 
   return {
     lightPos,
