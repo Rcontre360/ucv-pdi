@@ -4,9 +4,11 @@ import Loader from '../components/Loader';
 import RelightingCanvas from '../components/RelightingCanvas';
 import BokehCanvas from '../components/BokehCanvas';
 import FogCanvas from '../components/FogCanvas';
+import ParallaxCanvas from '../components/ParallaxCanvas';
+import EdgesCanvas from '../components/EdgesCanvas';
 import DepthMapOverlay from '../components/DepthMapOverlay';
 
-type Mode = 'relighting' | 'bokeh' | 'fog';
+type Mode = 'relighting' | 'bokeh' | 'fog' | 'parallax' | 'edges';
 
 export default function Home() {
   const [userImage, setUserImage] = useState<string | null>(null);
@@ -44,9 +46,23 @@ export default function Home() {
           textureImageUrl={userImage}
         />
       );
-    } else {
+    } else if (activeMode === 'fog') {
       return (
         <FogCanvas
+          depthMapUrl={userDepthMap}
+          textureImageUrl={userImage}
+        />
+      );
+    } else if (activeMode === 'parallax') {
+      return (
+        <ParallaxCanvas
+          depthMapUrl={userDepthMap}
+          textureImageUrl={userImage}
+        />
+      );
+    } else {
+      return (
+        <EdgesCanvas
           depthMapUrl={userDepthMap}
           textureImageUrl={userImage}
         />
@@ -137,10 +153,10 @@ export default function Home() {
         {/* Mode Selection Tabs */}
         {userImage && (
           <div className="flex justify-center mb-8">
-            <div className="bg-white p-1 rounded-lg shadow-sm inline-flex items-center">
+            <div className="bg-white p-1 rounded-lg shadow-sm inline-flex items-center flex-wrap">
               <button
                 onClick={() => setActiveMode('relighting')}
-                className={`px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ${
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ${
                   activeMode === 'relighting'
                     ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -150,7 +166,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setActiveMode('bokeh')}
-                className={`px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
                   activeMode === 'bokeh'
                     ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -160,7 +176,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setActiveMode('fog')}
-                className={`px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
                   activeMode === 'fog'
                     ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -168,12 +184,32 @@ export default function Home() {
               >
                 Virtual Fog
               </button>
+              <button
+                onClick={() => setActiveMode('parallax')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
+                  activeMode === 'parallax'
+                    ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                3D Parallax
+              </button>
+              <button
+                onClick={() => setActiveMode('edges')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
+                  activeMode === 'edges'
+                    ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                Depth Edges
+              </button>
               
-              <div className="h-6 w-px bg-gray-300 mx-4"></div>
+              <div className="h-6 w-px bg-gray-300 mx-4 hidden sm:block"></div>
               
               <button
                 onClick={() => setShowDepthMap(true)}
-                className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-all duration-200 focus:outline-none flex items-center"
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-all duration-200 focus:outline-none flex items-center ml-auto sm:ml-0 mt-2 sm:mt-0"
                 title="View Depth Map"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
