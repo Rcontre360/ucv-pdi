@@ -6,25 +6,27 @@ export interface WebGLSetupResult {
   loading: boolean;
   gl: WebGLRenderingContext | null;
   program: WebGLProgram | null;
-  textures: {image: WebGLTexture; depth: WebGLTexture} | null;
-  images: {image: HTMLImageElement; depth: HTMLImageElement} | null;
+  textures: { image: WebGLTexture; depth: WebGLTexture } | null;
+  images: { image: HTMLImageElement; depth: HTMLImageElement } | null;
+  aspectRatio: number;
 }
 
 export const useWebGLSetup = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
-  depthMapUri: string,
+  depthMapUrl: string,
   textureImageUrl: string,
   vsSource: string,
   fsSource: string
 ): WebGLSetupResult => {
   const [loading, setLoading] = useState(true);
+  const [aspectRatio, setAspectRatio] = useState(1);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const programRef = useRef<WebGLProgram | null>(null);
-  const texturesRef = useRef<{image: WebGLTexture; depth: WebGLTexture} | null>(null);
-  const imagesRef = useRef<{image: HTMLImageElement; depth: HTMLImageElement} | null>(null);
+  const texturesRef = useRef<{ image: WebGLTexture; depth: WebGLTexture } | null>(null);
+  const imagesRef = useRef<{ image: HTMLImageElement; depth: HTMLImageElement } | null>(null);
 
   useEffect(() => {
-    if (!canvasRef.current || !depthMapUri || !textureImageUrl) return;
+    if (!canvasRef.current || !depthMapUrl || !textureImageUrl) return;
 
     const canvas = canvasRef.current;
     const gl = canvas.getContext('webgl');
@@ -33,12 +35,13 @@ export const useWebGLSetup = (
 
     setLoading(true);
 
-    Promise.all([dataUriToImage(textureImageUrl), dataUriToImage(depthMapUri)])
+    Promise.all([dataUriToImage(textureImageUrl), dataUriToImage(depthMapUrl)])
       .then(([img, depthImg]) => {
         // Sync canvas size to image
         const [w, h] = imageHelper.getImageSize(img);
         canvas.width = w;
         canvas.height = h;
+        setAspectRatio(w / h);
         gl.viewport(0, 0, w, h);
 
         // Compile and Link
@@ -58,13 +61,14 @@ export const useWebGLSetup = (
       })
       .catch(err => console.error("WebGL Setup Error:", err));
 
-  }, [depthMapUri, textureImageUrl, vsSource, fsSource]);
+  }, [depthMapUrl, textureImageUrl, vsSource, fsSource]);
 
   return {
     loading,
     gl: glRef.current,
     program: programRef.current,
     textures: texturesRef.current,
-    images: imagesRef.current
+    images: imagesRef.current,
+    aspectRatio
   };
 };

@@ -15,6 +15,7 @@ const EdgesCanvas: React.FC<EdgesCanvasProps> = ({ depthMapUrl, textureImageUrl 
   const {
     threshold,
     thickness,
+    aspectRatio,
     setThreshold,
     setThickness,
     loading
@@ -28,6 +29,7 @@ const EdgesCanvas: React.FC<EdgesCanvasProps> = ({ depthMapUrl, textureImageUrl 
         <div className="w-full lg:w-2/3 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden min-h-[400px]">
           <canvas 
             ref={canvasRef} 
+            style={{ aspectRatio: `${aspectRatio}` }}
             className="max-w-full max-h-[70vh] object-contain block"
           ></canvas>
         </div>

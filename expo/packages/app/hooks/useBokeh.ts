@@ -8,6 +8,7 @@ interface BokehHook {
   aperture: number;
   setFocusDepth: (v: number) => void;
   setAperture: (v: number) => void;
+  aspectRatio: number;
   loading: boolean;
 }
 
@@ -19,7 +20,7 @@ export const useBokeh = (
   const [focusDepth, setFocusDepth] = useState(0.5);
   const [aperture, setAperture] = useState(1.0);
 
-  const { loading, gl, program, textures } = useWebGLSetup(
+  const { loading, gl, program, textures, aspectRatio } = useWebGLSetup(
     canvasRef, depthMapUrl, textureImageUrl, bokehVertexShader, bokehFragmentShader
   );
 
@@ -45,5 +46,5 @@ export const useBokeh = (
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }, [focusDepth, aperture, loading, gl, program, textures]);
 
-  return { focusDepth, aperture, setFocusDepth, setAperture, loading };
+  return { focusDepth, aperture, setFocusDepth, setAperture, aspectRatio, loading };
 };

@@ -16,10 +16,11 @@ const FogCanvas: React.FC<FogCanvasProps> = ({ depthMapUrl, textureImageUrl }) =
     fogDensity,
     fogNear,
     fogFar,
+    aspectRatio,
+    loading,
     setFogDensity,
     setFogNear,
     setFogFar,
-    loading
   } = useFog(canvasRef, depthMapUrl, textureImageUrl);
 
   return (
@@ -30,6 +31,7 @@ const FogCanvas: React.FC<FogCanvasProps> = ({ depthMapUrl, textureImageUrl }) =
         <div className="w-full lg:w-2/3 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden min-h-[400px]">
           <canvas 
             ref={canvasRef} 
+            style={{ aspectRatio: `${aspectRatio}` }}
             className="max-w-full max-h-[70vh] object-contain block"
           ></canvas>
         </div>

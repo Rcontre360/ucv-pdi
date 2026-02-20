@@ -7,6 +7,7 @@ interface FogHook {
   fogDensity: number;
   fogNear: number;
   fogFar: number;
+  aspectRatio: number;
   setFogDensity: (v: number) => void;
   setFogNear: (v: number) => void;
   setFogFar: (v: number) => void;
@@ -22,7 +23,7 @@ export const useFog = (
   const [fogNear, setFogNear] = useState(0.0);
   const [fogFar, setFogFar] = useState(1.0);
 
-  const { loading, gl, program, textures } = useWebGLSetup(
+  const { loading, gl, program, textures, aspectRatio } = useWebGLSetup(
     canvasRef, depthMapUrl, textureImageUrl, fogVertexShader, fogFragmentShader
   );
 
@@ -49,5 +50,5 @@ export const useFog = (
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }, [fogDensity, fogNear, fogFar, loading, gl, program, textures]);
 
-  return { fogDensity, fogNear, fogFar, setFogDensity, setFogNear, setFogFar, loading };
+  return { fogDensity, fogNear, fogFar, aspectRatio, setFogDensity, setFogNear, setFogFar, loading };
 };

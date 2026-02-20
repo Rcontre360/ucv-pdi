@@ -6,6 +6,7 @@ import { edgesVertexShader, edgesFragmentShader } from '../utils/shaders/edges';
 interface DepthEdgeHook {
   threshold: number;
   thickness: number;
+  aspectRatio: number;
   setThreshold: (v: number) => void;
   setThickness: (v: number) => void;
   loading: boolean;
@@ -19,7 +20,7 @@ export const useDepthEdges = (
   const [threshold, setThreshold] = useState(0.5);
   const [thickness, setThickness] = useState(1.0);
 
-  const { loading, gl, program, textures } = useWebGLSetup(
+  const { loading, gl, program, textures, aspectRatio } = useWebGLSetup(
     canvasRef, depthMapUrl, textureImageUrl, edgesVertexShader, edgesFragmentShader
   );
 
@@ -41,5 +42,5 @@ export const useDepthEdges = (
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }, [threshold, thickness, loading, gl, program, textures]);
 
-  return { threshold, thickness, setThreshold, setThickness, loading };
+  return { threshold, thickness, aspectRatio, setThreshold, setThickness, loading };
 };

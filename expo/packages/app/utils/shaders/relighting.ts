@@ -1,29 +1,4 @@
 const lightingFunctions = `
-    float TraceShadow(vec3 hitPos, vec3 lightDir, float lightDist, sampler2D depthSampler, vec3 lightPos) {
-        float shadow = 1.0;
-        float t = 0.05; 
-        float maxt = length(lightPos.xy - hitPos.xy);
-        maxt = min(maxt, 1.5); 
-        float softShadowK = 8.0; 
-
-        for(int i = 0; i < 48; ++i) { 
-            if (t >= maxt) break;
-            vec3 curPos = hitPos + lightDir * t;
-            vec2 uv = vec2((curPos.x + 1.0) / 2.0, (1.0 - curPos.y) / 2.0);
-            if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) break;
-            float h = texture2D(depthSampler, uv).r;
-            if (curPos.z < h - 0.02) {
-                float y = h - curPos.z;
-                float effectiveDist = max(t, 0.1); 
-                shadow = min(shadow, softShadowK * y / effectiveDist);
-                if (shadow < 0.01) { shadow = 0.0; break; }
-            }
-            t += 0.02; 
-        }
-        float skyFade = smoothstep(0.0, 0.2, hitPos.z);
-        return mix(1.0, clamp(shadow, 0.0, 1.0), skyFade);
-    }
-
     void CalculateBlinnPhong(
         vec3 normal, vec3 lightDir, vec3 viewDir, float shininess,
         vec3 diffColor, vec3 specColor, float lightIntensity,
@@ -37,16 +12,12 @@ const lightingFunctions = `
     }
 `;
 
-// main relighting shaders 
 export const relightingVertexShader = `
     precision highp float;
-
     uniform vec2 imgSize;
     uniform vec2 minMaxZ;
-
     attribute vec3 vPos;
     attribute vec3 normal;
-    
     varying vec3 fPos;
     varying vec3 fNormal;
     varying vec2 texCoords;
@@ -54,12 +25,10 @@ export const relightingVertexShader = `
     void main() {
         float xDiv = imgSize.x / 2.0;
         float yDiv = imgSize.y / 2.0;
-
         vec3 pos;
         pos.x = (vPos.x / xDiv) - 1.0;
         pos.y = -((vPos.y / yDiv) - 1.0);
         pos.z = (vPos.z - minMaxZ.x) / (minMaxZ.y - minMaxZ.x + 1.0);
-
         fPos = pos;
         texCoords = vec2((pos.x + 1.0) / 2.0, (1.0 - pos.y) / 2.0);
         vec3 correctedNormal = normalize(normal);
@@ -68,16 +37,6 @@ export const relightingVertexShader = `
     }
 `;
 
-/**
- * RELIGHTING FRAGMENT SHADER
- * --------------------------
- * Purpose: Renders the actual image with 3D lighting effects.
- * Logic:
- * 1. Samples the original image texture.
- * 2. Samples the depth map to calculate raymarching shadows.
- * 3. Applies Blinn-Phong reflection (Ambient + Diffuse + Specular).
- * 4. Combines everything to produce the final lit pixel color.
- */
 export const relightingFragmentShader = `
     precision highp float;
     const vec3 diffuseColor = vec3(1.0, 1.0, 1.0);
@@ -87,7 +46,6 @@ export const relightingFragmentShader = `
 
     uniform vec3 lightPos;
     uniform sampler2D texSampler;
-    uniform sampler2D depthSampler;
     uniform int textureLighting;
     uniform float lightIntensity;
 
@@ -106,18 +64,14 @@ export const relightingFragmentShader = `
         vec3 viewDir = vec3(0.0, 0.0, 1.0);
 
         float attenuation = 1.0 / (1.0 + 0.05 * distance + 0.01 * distance * distance);
-        float shadow = 1.0;
-        if (dot(normal, lightDir) > 0.0) {
-             shadow = TraceShadow(fPos, lightDir, distance, depthSampler, lightPos);
-        }
 
         vec3 ambient = ambientStrength * texColor.rgb;
         vec3 diffuse;
         vec3 specular;
         CalculateBlinnPhong(normal, lightDir, viewDir, shininess, texColor.rgb, specColor, lightIntensity, diffuse, specular);
 
-        diffuse *= shadow * attenuation;
-        specular *= shadow * attenuation;
+        diffuse *= attenuation;
+        specular *= attenuation;
 
         vec3 finalColor;
         if (textureLighting == 1) {
@@ -129,7 +83,7 @@ export const relightingFragmentShader = `
     }
 `;
 
-// ball shaders to know where's the light point
+// --- Light Visualizer Shaders ---
 export const lightVertexShader = `
     precision highp float;
     attribute vec3 position;
@@ -142,7 +96,12 @@ export const lightVertexShader = `
 export const lightFragmentShader = `
     precision highp float;
     void main() {
-        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); 
+        float r = distance(gl_PointCoord, vec2(0.5));
+        if (r > 0.5) { discard; }
+        if (r > 0.4) {
+            gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        } else {
+            gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+        }
     }
 `;
-

@@ -17,6 +17,7 @@ const BokehCanvas: React.FC<BokehCanvasProps> = ({ depthMapUrl, textureImageUrl 
     aperture,
     setFocusDepth,
     setAperture,
+    aspectRatio,
     loading
   } = useBokeh(canvasRef, depthMapUrl, textureImageUrl);
 
@@ -28,6 +29,7 @@ const BokehCanvas: React.FC<BokehCanvasProps> = ({ depthMapUrl, textureImageUrl 
         <div className="w-full lg:w-2/3 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden min-h-[400px]">
           <canvas 
             ref={canvasRef} 
+            style={{ aspectRatio: `${aspectRatio}` }}
             className="max-w-full max-h-[70vh] object-contain block"
           ></canvas>
         </div>

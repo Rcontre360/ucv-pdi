@@ -14,6 +14,7 @@ interface RelightingHook {
   lightIntensity: number;
   textureLighting: number;
   loading: boolean;
+  aspectRatio: number;
   setLightPos: (pos: number[] | ((prev: number[]) => number[])) => void;
   setLightIntensity: (intensity: number) => void;
   setTextureLighting: (lighting: number) => void;
@@ -32,10 +33,11 @@ export const useRelighting = (
   const bufferRef = useRef<any>({});
   const vertexCountRef = useRef<number>(0);
 
-  const { loading, gl, program, textures, images } = useWebGLSetup(
+  const { loading, gl, program, textures, images, aspectRatio } = useWebGLSetup(
     canvasRef, depthImageUri, textureImageUri, relightingVertexShader, relightingFragmentShader
   );
 
+  // Effect 1: Setup
   useEffect(() => {
     if (!gl || !program || !textures || !images || loading) return;
 
@@ -55,12 +57,12 @@ export const useRelighting = (
     program.minMaxZUnif = gl.getUniformLocation(program, 'minMaxZ');
     program.lightPosUnif = gl.getUniformLocation(program, 'lightPos');
     program.texSamplerUnif = gl.getUniformLocation(program, 'texSampler');
-    program.depthSamplerUnif = gl.getUniformLocation(program, 'depthSampler');
     program.textureLightingUnif = gl.getUniformLocation(program, 'textureLighting');
     program.lightIntensityUnif = gl.getUniformLocation(program, 'lightIntensity');
 
   }, [loading, gl, program, textures, images]);
 
+  // Effect 2: Draw Loop
   useEffect(() => {
     const lightProg = lightProgramRef.current;
     if (!gl || !program || !lightProg || loading || !images) return;
@@ -84,14 +86,11 @@ export const useRelighting = (
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, textures!.image);
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, textures!.depth);
 
     gl.uniform2fv(program.imgSizeUnif, new Float32Array(imageHelper.getImageSize(images.depth)));
     gl.uniform2fv(program.minMaxZUnif, new Float32Array([imageHelper.minZ, imageHelper.maxZ]));
     gl.uniform3fv(program.lightPosUnif, new Float32Array(lightPos));
     gl.uniform1i(program.texSamplerUnif, 0);
-    gl.uniform1i(program.depthSamplerUnif, 1);
     gl.uniform1i(program.textureLightingUnif, textureLighting);
     gl.uniform1f(program.lightIntensityUnif, lightIntensity);
 
@@ -110,5 +109,8 @@ export const useRelighting = (
     }
   }, [loading, gl, program, textures, images, lightPos, lightIntensity, textureLighting]);
 
-  return { lightPos, lightIntensity, textureLighting, loading, setLightPos, setLightIntensity, setTextureLighting };
-};
+    return { lightPos, lightIntensity, textureLighting, loading, aspectRatio, setLightPos, setLightIntensity, setTextureLighting };
+
+  };
+
+  
