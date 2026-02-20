@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { useSSAO } from '../hooks/useSSAO';
 import Loader from './Loader';
 import Slider from './Slider';
+import SaveImageButton from './SaveImageButton';
 
 interface SSAOCanvasProps {
   depthMapUrl: string;
@@ -93,6 +94,12 @@ const SSAOCanvas: React.FC<SSAOCanvasProps> = ({ depthMapUrl, textureImageUrl })
               <p className="text-xs text-gray-500 mt-1">Reduces self-shadowing artifacts on flat surfaces.</p>
             </div>
             
+            <SaveImageButton 
+              canvasRef={canvasRef} 
+              filenamePrefix="ssao-image" 
+              disabled={loading} 
+            />
+
             <div className="mt-4 p-4 bg-gray-100 rounded text-sm text-gray-700">
               <p>This mode visualizes purely the <strong>geometric shadows</strong> calculated from the depth map, ignoring the original colors. It looks like a white clay sculpture.</p>
             </div>

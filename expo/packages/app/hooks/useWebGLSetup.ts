@@ -29,7 +29,7 @@ export const useWebGLSetup = (
     if (!canvasRef.current || !depthMapUrl || !textureImageUrl) return;
 
     const canvas = canvasRef.current;
-    const gl = canvas.getContext('webgl');
+    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
     if (!gl) return;
     glRef.current = gl;
 

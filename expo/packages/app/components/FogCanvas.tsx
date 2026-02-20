@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { useFog } from '../hooks/useFog';
 import Loader from './Loader';
 import Slider from './Slider';
+import SaveImageButton from './SaveImageButton';
 
 interface FogCanvasProps {
   depthMapUrl: string;
@@ -90,6 +91,12 @@ const FogCanvas: React.FC<FogCanvasProps> = ({ depthMapUrl, textureImageUrl }) =
                 onChange={(e) => setFogFar(parseFloat(e.target.value))}
               />
             </div>
+
+            <SaveImageButton 
+              canvasRef={canvasRef} 
+              filenamePrefix="fog-image" 
+              disabled={loading} 
+            />
           </div>
         </div>
       </div>

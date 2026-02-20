@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { useDepthEdges } from '../hooks/useDepthEdges';
 import Loader from './Loader';
 import Slider from './Slider';
+import SaveImageButton from './SaveImageButton';
 
 interface EdgesCanvasProps {
   depthMapUrl: string;
@@ -74,6 +75,12 @@ const EdgesCanvas: React.FC<EdgesCanvasProps> = ({ depthMapUrl, textureImageUrl 
               />
             </div>
             
+            <SaveImageButton 
+              canvasRef={canvasRef} 
+              filenamePrefix="depth-edges" 
+              disabled={loading} 
+            />
+
             <div className="mt-4 p-4 bg-gray-100 rounded text-sm text-gray-700">
               <p>This view highlights <strong>geometric edges</strong> based on depth discontinuities, ignoring texture patterns and shadows.</p>
             </div>

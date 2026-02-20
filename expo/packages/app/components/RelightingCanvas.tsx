@@ -4,6 +4,7 @@ import { useRef, useEffect } from 'react';
 import { useRelighting } from '../hooks/useRelighting';
 import Loader from './Loader';
 import Slider from './Slider';
+import SaveImageButton from './SaveImageButton';
 
 interface WebGLCanvasProps {
   depthMapUrl: string;
@@ -183,6 +184,12 @@ const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImag
                 </label>
               </div>
             </div>
+
+            <SaveImageButton 
+              canvasRef={canvasRef} 
+              filenamePrefix="relighted-image" 
+              disabled={processing || loading} 
+            />
           </div>
           
           <div className="bg-blue-50 p-4 rounded-lg text-xs text-blue-700 border border-blue-100 leading-relaxed shadow-sm">

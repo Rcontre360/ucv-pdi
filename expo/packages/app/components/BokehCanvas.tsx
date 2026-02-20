@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { useBokeh } from '../hooks/useBokeh';
 import Loader from './Loader';
 import Slider from './Slider';
+import SaveImageButton from './SaveImageButton';
 
 interface BokehCanvasProps {
   depthMapUrl: string;
@@ -74,6 +75,12 @@ const BokehCanvas: React.FC<BokehCanvasProps> = ({ depthMapUrl, textureImageUrl 
               />
               <p className="text-xs text-gray-500 mt-1">Simulates aperture size to control background blur.</p>
             </div>
+
+            <SaveImageButton 
+              canvasRef={canvasRef} 
+              filenamePrefix="bokeh-image" 
+              disabled={loading} 
+            />
           </div>
         </div>
       </div>
