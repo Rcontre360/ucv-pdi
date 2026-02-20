@@ -1,5 +1,8 @@
 # dependencies (bun install)
 node_modules
+images
+output
+example
 
 # output
 out
@@ -14,6 +17,7 @@ coverage
 logs
 _.log
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+_tmp_*
 
 # dotenv environment variable files
 .env
