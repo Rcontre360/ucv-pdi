@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useWebGL2D } from './useWebGL2D';
+import { useWebGLSetup } from './useWebGLSetup';
 import { bokehVertexShader, bokehFragmentShader } from '../utils/shaders/bokeh';
+import { createBuffer } from '../utils/webgl_helpers';
 
 interface BokehHook {
   focusDepth: number;
+  aperture: number;
   setFocusDepth: (v: number) => void;
+  setAperture: (v: number) => void;
   loading: boolean;
 }
 
@@ -14,41 +17,33 @@ export const useBokeh = (
   textureImageUrl: string
 ): BokehHook => {
   const [focusDepth, setFocusDepth] = useState(0.5);
-  const aperture = 1.0; // Constant as requested
+  const [aperture, setAperture] = useState(1.0);
 
-  const { loading, gl, program, textures } = useWebGL2D(
-    canvasRef,
-    depthMapUrl,
-    textureImageUrl,
-    bokehVertexShader,
-    bokehFragmentShader
+  const { loading, gl, program, textures } = useWebGLSetup(
+    canvasRef, depthMapUrl, textureImageUrl, bokehVertexShader, bokehFragmentShader
   );
 
   useEffect(() => {
     if (!gl || !program || !textures || loading) return;
 
+    // Quad Buffer
+    createBuffer(gl, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]));
+    const posLoc = gl.getAttribLocation(program, 'position');
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
     gl.useProgram(program);
-
-    // Bind Textures
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, textures.image);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, textures.image);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, textures.depth);
+    
     gl.uniform1i(gl.getUniformLocation(program, 'u_image'), 0);
-
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, textures.depth);
     gl.uniform1i(gl.getUniformLocation(program, 'u_depth'), 1);
-
-    // Uniforms
     gl.uniform1f(gl.getUniformLocation(program, 'u_focusDepth'), focusDepth);
     gl.uniform1f(gl.getUniformLocation(program, 'u_aperture'), aperture);
     gl.uniform2f(gl.getUniformLocation(program, 'u_resolution'), gl.canvas.width, gl.canvas.height);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-  }, [focusDepth, loading, gl, program, textures]);
+  }, [focusDepth, aperture, loading, gl, program, textures]);
 
-  return {
-    focusDepth,
-    setFocusDepth,
-    loading
-  };
+  return { focusDepth, aperture, setFocusDepth, setAperture, loading };
 };

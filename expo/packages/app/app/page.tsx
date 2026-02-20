@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState, useRef, useEffect } from 'react';
+import {useMemo, useState, useRef, useEffect} from 'react';
 import Loader from '../components/Loader';
 import RelightingCanvas from '../components/RelightingCanvas';
 import BokehCanvas from '../components/BokehCanvas';
@@ -17,7 +17,7 @@ export default function Home() {
   const [processingUserImage, setProcessingUserImage] = useState(false);
   const [activeMode, setActiveMode] = useState<Mode>('relighting');
   const [showDepthMap, setShowDepthMap] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function Home() {
           <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <p className="text-xl font-medium">Upload an image to get started</p>
+          <p className="text-xl font-medium">Upload image</p>
         </div>
       );
     }
@@ -67,8 +67,8 @@ export default function Home() {
       try {
         const response = await fetch('http://localhost:8080/depthmap', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageData: imageUrl }),
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({imageData: imageUrl}),
         });
 
         if (!response.ok) {
@@ -99,16 +99,15 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
       {processingUserImage && <Loader />}
-      
-      {/* Header */}
+
       <header className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center">
             <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-indigo-600">
-              Image Effects Studio
+              Depth Map based features
             </h1>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <input
               type="file"
@@ -133,64 +132,58 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* Mode Selection Tabs */}
+
         {userImage && (
           <div className="flex justify-center mb-8">
             <div className="bg-white p-1 rounded-lg shadow-sm inline-flex items-center flex-wrap gap-y-2">
               <button
                 onClick={() => setActiveMode('relighting')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ${
-                  activeMode === 'relighting'
-                    ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ${activeMode === 'relighting'
+                  ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
               >
                 3D Relighting
               </button>
               <button
                 onClick={() => setActiveMode('bokeh')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
-                  activeMode === 'bokeh'
-                    ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${activeMode === 'bokeh'
+                  ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
               >
                 Bokeh Effect
               </button>
               <button
                 onClick={() => setActiveMode('fog')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
-                  activeMode === 'fog'
-                    ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${activeMode === 'fog'
+                  ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
               >
                 Virtual Fog
               </button>
               <button
                 onClick={() => setActiveMode('edges')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
-                  activeMode === 'edges'
-                    ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${activeMode === 'edges'
+                  ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
               >
                 Depth Edges
               </button>
               <button
                 onClick={() => setActiveMode('ssao')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${
-                  activeMode === 'ssao'
-                    ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${activeMode === 'ssao'
+                  ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
               >
-                Amb. Occlusion
+                Ambient Occlusion
               </button>
-              
+
               <div className="h-6 w-px bg-gray-300 mx-4 hidden sm:block"></div>
-              
+
               <button
                 onClick={() => setShowDepthMap(true)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-all duration-200 focus:outline-none flex items-center ml-auto sm:ml-0 mt-2 sm:mt-0"
@@ -199,24 +192,22 @@ export default function Home() {
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                View Depth Map
+                Depth Map
               </button>
             </div>
           </div>
         )}
 
-        {/* Main Content Area */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden min-h-[600px] p-6">
           {content}
         </div>
       </main>
 
-      {/* Depth Map Overlay */}
       {userDepthMap && (
-        <DepthMapOverlay 
-          depthMapUrl={userDepthMap} 
-          isOpen={showDepthMap} 
-          onClose={() => setShowDepthMap(false)} 
+        <DepthMapOverlay
+          depthMapUrl={userDepthMap}
+          isOpen={showDepthMap}
+          onClose={() => setShowDepthMap(false)}
         />
       )}
     </div>

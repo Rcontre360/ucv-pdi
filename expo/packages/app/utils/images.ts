@@ -1,51 +1,6 @@
 "use client"
 
-class Vector3 {
-  x: number;
-  y: number;
-  z: number;
-
-  constructor(x = 0, y = 0, z = 0) {
-    this.x = x;
-    this.y = y;
-    this.z = z;
-  }
-
-  subVectors(a: Vector3, b: Vector3) {
-    this.x = a.x - b.x;
-    this.y = a.y - b.y;
-    this.z = a.z - b.z;
-    return this;
-  }
-
-  crossVectors(a: Vector3, b: Vector3) {
-    const ax = a.x, ay = a.y, az = a.z;
-    const bx = b.x, by = b.y, bz = b.z;
-
-    this.x = ay * bz - az * by;
-    this.y = az * bx - ax * bz;
-    this.z = ax * by - ay * bx;
-
-    return this;
-  }
-
-  add(v: Vector3) {
-    this.x += v.x;
-    this.y += v.y;
-    this.z += v.z;
-    return this;
-  }
-
-  normalize() {
-    const length = Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
-    if (length > 0) {
-      this.x /= length;
-      this.y /= length;
-      this.z /= length;
-    }
-    return this;
-  }
-}
+import { vec3 } from 'gl-matrix';
 
 class ImageHelper {
   private mesh: number[] = [];
@@ -58,88 +13,123 @@ class ImageHelper {
   get minZ() { return this.minZValue; }
   get maxZ() { return this.maxZValue; }
 
-  getMesh(blockSize: number = 2, srcImg: HTMLImageElement): number[] {
+  getMesh(blockSize: number = 5, srcImg: HTMLImageElement): number[] {
     if (this.mesh.length !== 0) {
       return this.mesh;
     }
 
     const imgCanvas = document.createElement('canvas');
     const imgContext = imgCanvas.getContext('2d');
-
-    if (!imgContext) {
-      return [];
-    }
+    if (!imgContext) return [];
 
     const height = srcImg.naturalHeight;
     const width = srcImg.naturalWidth;
     imgCanvas.width = width;
     imgCanvas.height = height;
-
     imgContext.drawImage(srcImg, 0, 0);
 
-    const stepSize = blockSize - 1;
-    const xSteps = Math.floor(width / stepSize);
-    const ySteps = Math.floor(height / stepSize);
+    const stepSize = Math.max(1, blockSize - 1);
+    const xSteps = Math.ceil(width / stepSize);
+    const ySteps = Math.ceil(height / stepSize);
 
-    let idx = 0;
-    const mesh: number[] = [];
-    const normals: number[] = [];
+    // 1. Create Vertex Matrix
+    const vertexMatrix: vec3[][] = [];
     this.minZValue = 255;
     this.maxZValue = 0;
 
     for (let i = 0; i < ySteps; i++) {
+      const row: vec3[] = [];
       for (let j = 0; j < xSteps; j++) {
-        const startX = j * stepSize;
-        const startY = i * stepSize;
+        const x = Math.min(j * stepSize, width - 1);
+        const y = Math.min(i * stepSize, height - 1);
+        
+        // Sample depth with a small 3x3 average for smoothing
+        const data = imgContext.getImageData(Math.max(0, x - 1), Math.max(0, y - 1), 3, 3).data;
+        let sum = 0;
+        let count = 0;
+        for (let k = 0; k < data.length; k += 4) {
+          sum += data[k];
+          count++;
+        }
+        const z = count > 0 ? sum / count : 0;
 
-        const endX = Math.min((j + 1) * stepSize, width - 1);
-        const endY = Math.min((i + 1) * stepSize, height - 1);
+        this.minZValue = Math.min(this.minZValue, z);
+        this.maxZValue = Math.max(this.maxZValue, z);
 
-        const getZ = (x: number, y: number) => {
-          const data = imgContext.getImageData(x, y, 1, 1).data;
-          return data[0];
-        };
-
-        const v0 = getZ(startX, startY);
-        const v1 = getZ(endX, startY);
-        const v2 = getZ(startX, endY);
-        const v3 = getZ(endX, endY);
-
-        this.minZValue = Math.min(this.minZValue, v0, v1, v2, v3);
-        this.maxZValue = Math.max(this.maxZValue, v0, v1, v2, v3);
-
-        const points = [
-          [startX, startY, v0],
-          [endX, startY, v1],
-          [startX, endY, v2],
-          [endX, endY, v3],
-        ];
-
-        // Triangle 1: v0, v1, v2
-        mesh.push(...points[0], ...points[1], ...points[2]);
-        // Triangle 2: v1, v3, v2 (correcting the order from original which seemed to be v1, v2, v3 but wait)
-        // Original code:
-        // for (let m = 0; m < 2; m++) {
-        //   for (let n = 0; n < 3; n++) {
-        //     for (let o = 0; o < 3; o++) {
-        //       mesh[idx] = points[m + n][o];
-        //       idx++;
-        //     }
-        //   }
-        // }
-        // m=0: points[0], points[1], points[2]
-        // m=1: points[1], points[2], points[3]
-        mesh.push(...points[1], ...points[2], ...points[3]);
+        row.push(vec3.fromValues(x, y, z));
       }
+      vertexMatrix.push(row);
     }
 
-    const scale = (this.maxZValue - this.minZValue) * 15;
-    for (let nidx = 0; nidx < mesh.length; nidx += 3) {
-      const pt = new Vector3(mesh[nidx], mesh[nidx + 1], mesh[nidx + 2]);
-      const normal = this.getNormalsForPoint(pt, width, height, imgContext);
-      normals[nidx] = normal.x;
-      normals[nidx + 1] = normal.y;
-      normals[nidx + 2] = normal.z;
+    // 2. Create Normal Matrix
+    const normalMatrix: vec3[][] = [];
+    for (let i = 0; i < ySteps; i++) {
+      const row: vec3[] = [];
+      for (let j = 0; j < xSteps; j++) {
+        // Get neighbors in matrix
+        const p = vertexMatrix[i][j];
+        const p_right = vertexMatrix[i][Math.min(j + 1, xSteps - 1)];
+        const p_down = vertexMatrix[Math.min(i + 1, ySteps - 1)][j];
+        const p_left = vertexMatrix[i][Math.max(0, j - 1)];
+        const p_up = vertexMatrix[Math.max(0, i - 1)][j];
+
+        // Vectors
+        const v1 = vec3.create();
+        const v2 = vec3.create();
+        const v3 = vec3.create();
+        const v4 = vec3.create();
+        
+        vec3.subtract(v1, p_right, p);
+        vec3.subtract(v2, p_down, p);
+        vec3.subtract(v3, p_left, p);
+        vec3.subtract(v4, p_up, p);
+
+        // Cross products for quadrants
+        const n1 = vec3.create();
+        const n2 = vec3.create();
+        const n3 = vec3.create();
+        const n4 = vec3.create();
+
+        vec3.cross(n1, v1, v2);
+        vec3.cross(n2, v2, v3);
+        vec3.cross(n3, v3, v4);
+        vec3.cross(n4, v4, v1);
+
+        const normal = vec3.create();
+        vec3.add(normal, n1, n2);
+        vec3.add(normal, normal, n3);
+        vec3.add(normal, normal, n4);
+        vec3.normalize(normal, normal);
+
+        row.push(normal);
+      }
+      normalMatrix.push(row);
+    }
+
+    // 3. Triangulate and Flatten
+    const mesh: number[] = [];
+    const normals: number[] = [];
+
+    for (let i = 0; i < ySteps - 1; i++) {
+      for (let j = 0; j < xSteps - 1; j++) {
+        const v0 = vertexMatrix[i][j];
+        const v1 = vertexMatrix[i][j + 1];
+        const v2 = vertexMatrix[i + 1][j];
+        const v3 = vertexMatrix[i + 1][j + 1];
+
+        const n0 = normalMatrix[i][j];
+        const n1 = normalMatrix[i][j + 1];
+        const n2 = normalMatrix[i + 1][j];
+        const n3 = normalMatrix[i + 1][j + 1];
+
+        // Triangle 1: v0, v1, v2
+        mesh.push(...v0, ...v1, ...v2);
+        normals.push(...n0, ...n1, ...n2);
+
+        // Triangle 2: v1, v3, v2
+        mesh.push(...v1, ...v3, ...v2);
+        normals.push(...n1, ...n3, ...n2);
+      }
     }
 
     this.mesh = mesh;
@@ -148,73 +138,14 @@ class ImageHelper {
     return this.mesh;
   }
 
-  private getNormalsForPoint(
-    point: Vector3,
-    width: number,
-    height: number,
-    imgContext: CanvasRenderingContext2D
-  ): Vector3 {
-    const s = 4; // Increased sampling radius for smoother normals
-    const { x, y } = point;
-
-    const getPoint = (px: number, py: number) => {
-      const nx = Math.max(0, Math.min(width - 1, px));
-      const ny = Math.max(0, Math.min(height - 1, py));
-      
-      // 3x3 Average for smoothing
-      let sum = 0;
-      let count = 0;
-      // Define limits to stay within bounds
-      const startI = Math.max(0, nx - 1);
-      const endI = Math.min(width - 1, nx + 1);
-      const startJ = Math.max(0, ny - 1);
-      const endJ = Math.min(height - 1, ny + 1);
-
-      const data = imgContext.getImageData(startI, startJ, endI - startI + 1, endJ - startJ + 1).data;
-      
-      // getImageData returns a flat array. We need to iterate it correctly.
-      // Width of the block we grabbed:
-      const blockWidth = endI - startI + 1;
-      
-      for (let i = 0; i < data.length; i += 4) {
-          sum += data[i]; // Red channel
-          count++;
-      }
-      
-      const z = count > 0 ? sum / count : 0;
-      return new Vector3(nx, ny, z);
-    };
-
-    const lt = getPoint(x - s, y - s);
-    const rt = getPoint(x + s, y - s);
-    const lb = getPoint(x - s, y + s);
-    const rb = getPoint(x + s, y + s);
-
-    const rtv = new Vector3().subVectors(rt, point);
-    const ltv = new Vector3().subVectors(lt, point);
-    const lbv = new Vector3().subVectors(lb, point);
-    const rbv = new Vector3().subVectors(rb, point);
-
-    const n1 = new Vector3().crossVectors(rtv, ltv);
-    const n2 = new Vector3().crossVectors(ltv, lbv);
-    const n3 = new Vector3().crossVectors(lbv, rbv);
-    const n4 = new Vector3().crossVectors(rbv, rtv);
-
-    return new Vector3().add(n1).add(n2).add(n3).add(n4).normalize();
-  }
-
   getImageSize(srcImg: HTMLImageElement): [number, number] {
-    if (this.size[0] !== 0) {
-      return this.size;
-    }
+    if (this.size[0] !== 0) return this.size;
     this.size = [srcImg.naturalWidth, srcImg.naturalHeight];
     return this.size;
   }
 
   getAspectRatio(srcImg: HTMLImageElement): number {
-    if (this.aspectRatio !== -1) {
-      return this.aspectRatio;
-    }
+    if (this.aspectRatio !== -1) return this.aspectRatio;
     const size = this.getImageSize(srcImg);
     this.aspectRatio = size[0] / size[1];
     return this.aspectRatio;
@@ -239,18 +170,10 @@ export const imageHelper = new ImageHelper();
 
 export const dataUriToImage = (dataUri: string): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
-    if (!dataUri || dataUri.length < 10) {
-      return reject(new Error("Data URI is empty or too short"));
-    }
-
+    if (!dataUri || dataUri.length < 10) return reject(new Error("Data URI is empty"));
     const img = new Image();
-
     img.onload = () => resolve(img);
-    img.onerror = (e) => {
-      console.error("Image Decode Error Details:", e);
-      reject(new Error(`Failed to load image. Data length: ${dataUri.length}`));
-    };
-
+    img.onerror = (e) => reject(new Error("Failed to load image"));
     const cleanUri = dataUri.replace(/\s/g, '');
     img.src = cleanUri.startsWith('data:') ? cleanUri : `data:image/png;base64,${cleanUri}`;
   });

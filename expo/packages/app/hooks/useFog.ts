@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useWebGL2D } from './useWebGL2D';
+import { useWebGLSetup } from './useWebGLSetup';
 import { fogVertexShader, fogFragmentShader } from '../utils/shaders/fog';
+import { createBuffer } from '../utils/webgl_helpers';
 
 interface FogHook {
   fogDensity: number;
@@ -21,42 +22,32 @@ export const useFog = (
   const [fogNear, setFogNear] = useState(0.0);
   const [fogFar, setFogFar] = useState(1.0);
 
-  const { loading, gl, program, textures } = useWebGL2D(
-    canvasRef,
-    depthMapUrl,
-    textureImageUrl,
-    fogVertexShader,
-    fogFragmentShader
+  const { loading, gl, program, textures } = useWebGLSetup(
+    canvasRef, depthMapUrl, textureImageUrl, fogVertexShader, fogFragmentShader
   );
 
   useEffect(() => {
     if (!gl || !program || !textures || loading) return;
 
+    // Quad Buffer
+    createBuffer(gl, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]));
+    const posLoc = gl.getAttribLocation(program, 'position');
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
     gl.useProgram(program);
-
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, textures.image);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, textures.image);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, textures.depth);
+    
     gl.uniform1i(gl.getUniformLocation(program, 'u_image'), 0);
-
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, textures.depth);
     gl.uniform1i(gl.getUniformLocation(program, 'u_depth'), 1);
-
     gl.uniform1f(gl.getUniformLocation(program, 'u_fogDensity'), fogDensity);
     gl.uniform1f(gl.getUniformLocation(program, 'u_fogNear'), fogNear);
     gl.uniform1f(gl.getUniformLocation(program, 'u_fogFar'), fogFar);
-    gl.uniform3f(gl.getUniformLocation(program, 'u_fogColor'), 0.8, 0.8, 0.9); // Light blueish gray fog
+    gl.uniform3f(gl.getUniformLocation(program, 'u_fogColor'), 0.8, 0.8, 0.9);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }, [fogDensity, fogNear, fogFar, loading, gl, program, textures]);
 
-  return {
-    fogDensity,
-    fogNear,
-    fogFar,
-    setFogDensity,
-    setFogNear,
-    setFogFar,
-    loading
-  };
+  return { fogDensity, fogNear, fogFar, setFogDensity, setFogNear, setFogFar, loading };
 };
