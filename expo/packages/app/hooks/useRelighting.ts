@@ -65,6 +65,7 @@ export const useRelighting = (
     program.minMaxZUnif = gl.getUniformLocation(program, 'minMaxZ');
     program.lightPosUnif = gl.getUniformLocation(program, 'lightPos');
     program.texSamplerUnif = gl.getUniformLocation(program, 'texSampler');
+    program.depthSamplerUnif = gl.getUniformLocation(program, 'depthSampler');
     program.textureLightingUnif = gl.getUniformLocation(program, 'textureLighting');
     program.lightIntensityUnif = gl.getUniformLocation(program, 'lightIntensity');
 
@@ -94,11 +95,14 @@ export const useRelighting = (
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, textures!.image);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, textures!.depth);
 
     gl.uniform2fv(program.imgSizeUnif, new Float32Array(imageHelper.getImageSize(images.depth)));
     gl.uniform2fv(program.minMaxZUnif, new Float32Array([imageHelper.minZ, imageHelper.maxZ]));
     gl.uniform3fv(program.lightPosUnif, new Float32Array(lightPos));
     gl.uniform1i(program.texSamplerUnif, 0);
+    gl.uniform1i(program.depthSamplerUnif, 1);
     gl.uniform1i(program.textureLightingUnif, textureLighting);
     gl.uniform1f(program.lightIntensityUnif, lightIntensity);
 

@@ -48,9 +48,14 @@ const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImag
     setLightIntensity(parseFloat(e.target.value));
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleToggleLighting = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = e.target;
     setTextureLighting(checked ? 3 : 1);
+  };
+
+  const handleToggleRelightDepth = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { checked } = e.target;
+    setTextureLighting(checked ? 4 : 1);
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -168,18 +173,32 @@ const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImag
                 />
               </div>
 
-              <div className="pt-4 border-t border-gray-200">
+              <div className="pt-4 border-t border-gray-200 space-y-3">
                 <label className="flex items-center cursor-pointer group">
                   <input
                     type="checkbox"
                     id="lighting-checkbox"
                     checked={textureLighting === 3}
-                    onChange={handleCheckboxChange}
+                    onChange={handleToggleLighting}
                     disabled={processing}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors"
                   />
                   <span className="ml-3 text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
                     Enable 3D Relighting
+                  </span>
+                </label>
+
+                <label className="flex items-center cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    id="relightdepth-checkbox"
+                    checked={textureLighting === 4}
+                    onChange={handleToggleRelightDepth}
+                    disabled={processing}
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded transition-colors"
+                  />
+                  <span className="ml-3 text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
+                    Relight Depth Map
                   </span>
                 </label>
               </div>

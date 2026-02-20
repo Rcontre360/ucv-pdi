@@ -46,6 +46,7 @@ export const relightingFragmentShader = `
 
     uniform vec3 lightPos;
     uniform sampler2D texSampler;
+    uniform sampler2D depthSampler;
     uniform int textureLighting;
     uniform float lightIntensity;
 
@@ -58,6 +59,7 @@ export const relightingFragmentShader = `
     void main() {
         vec3 normal = normalize(fNormal);
         vec4 texColor = texture2D(texSampler, texCoords);
+        vec4 depthColor = texture2D(depthSampler, texCoords);
         vec3 lightVector = lightPos - fPos;
         float distance = length(lightVector);
         vec3 lightDir = normalize(lightVector);
@@ -65,10 +67,11 @@ export const relightingFragmentShader = `
 
         float attenuation = 1.0 / (1.0 + 0.05 * distance + 0.01 * distance * distance);
 
-        vec3 ambient = ambientStrength * texColor.rgb;
+        vec3 baseColor = (textureLighting == 4) ? depthColor.rgb : texColor.rgb;
+        vec3 ambient = ambientStrength * baseColor;
         vec3 diffuse;
         vec3 specular;
-        CalculateBlinnPhong(normal, lightDir, viewDir, shininess, texColor.rgb, specColor, lightIntensity, diffuse, specular);
+        CalculateBlinnPhong(normal, lightDir, viewDir, shininess, baseColor, specColor, lightIntensity, diffuse, specular);
 
         diffuse *= attenuation;
         specular *= attenuation;
@@ -76,10 +79,14 @@ export const relightingFragmentShader = `
         vec3 finalColor;
         if (textureLighting == 1) {
             finalColor = texColor.rgb;
+        } else if (textureLighting == 2) {
+            finalColor = depthColor.rgb;
+        } else if (textureLighting == 4) {
+            finalColor = ambient + diffuse + specular;
         } else {
             finalColor = ambient + diffuse + specular;
         }
-        gl_FragColor = vec4(finalColor, texColor.a);
+        gl_FragColor = vec4(finalColor, 1.0);
     }
 `;
 
