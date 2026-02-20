@@ -1,5 +1,5 @@
 const lightingFunctions = `
-    void CalculateBlinnPhong(
+    void BlinnPhong(
         vec3 normal, vec3 lightDir, vec3 viewDir, float shininess,
         vec3 diffColor, vec3 specColor, float lightIntensity,
         out vec3 diffuse, out vec3 specular
@@ -42,7 +42,7 @@ export const relightingFragmentShader = `
     const vec3 diffuseColor = vec3(1.0, 1.0, 1.0);
     const vec3 specColor = vec3(1.0, 1.0, 1.0);
     const float shininess = 64.0;
-    const float ambientStrength = 0.7; 
+    const float ambientStrength = 1.0; 
 
     uniform vec3 lightPos;
     uniform sampler2D texSampler;
@@ -71,7 +71,7 @@ export const relightingFragmentShader = `
         vec3 ambient = ambientStrength * baseColor;
         vec3 diffuse;
         vec3 specular;
-        CalculateBlinnPhong(normal, lightDir, viewDir, shininess, baseColor, specColor, lightIntensity, diffuse, specular);
+        BlinnPhong(normal, lightDir, viewDir, shininess, baseColor, specColor, lightIntensity, diffuse, specular);
 
         diffuse *= attenuation;
         specular *= attenuation;

@@ -12,9 +12,7 @@ export const bokehFragmentShader = `
   precision mediump float;
   uniform sampler2D u_image;
   uniform sampler2D u_depth;
-  uniform vec2 u_resolution;
   uniform float u_focusDepth;
-  uniform float u_aperture;
   
   varying vec2 texCoords;
 
@@ -22,13 +20,12 @@ export const bokehFragmentShader = `
     vec4 depthColor = texture2D(u_depth, texCoords);
     float depth = depthColor.r;
     
-    // Calculate blur radius based on distance from focal plane
-    float blur = abs(depth - u_focusDepth) * u_aperture * 0.1; // Scaling factor
+    float blur = min(abs(depth - u_focusDepth) * 0.007, 0.002);
     
     vec4 col = vec4(0.0);
     float totalWeight = 0.0;
     
-    if (blur < 0.001) {
+    if (blur < 0.0001) {
         gl_FragColor = texture2D(u_image, texCoords);
         return;
     }
