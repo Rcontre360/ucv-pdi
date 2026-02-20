@@ -1,18 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
-import { dataUriToImage, imageHelper } from '../utils/images';
-import { createProgram, createTexture } from '../utils/webgl_helpers';
+import {useEffect, useRef, useState} from 'react';
+import {dataUriToImage, imageHelper} from '../utils/images';
+import {createProgram, createTexture} from '../utils/webgl_helpers';
 
 export interface WebGLSetupResult {
   loading: boolean;
   gl: WebGLRenderingContext | null;
   program: WebGLProgram | null;
-  textures: { image: WebGLTexture; depth: WebGLTexture } | null;
-  images: { image: HTMLImageElement; depth: HTMLImageElement } | null;
+  textures: {image: WebGLTexture; depth: WebGLTexture} | null;
+  images: {image: HTMLImageElement; depth: HTMLImageElement} | null;
 }
 
 export const useWebGLSetup = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
-  depthMapUrl: string,
+  depthMapUri: string,
   textureImageUrl: string,
   vsSource: string,
   fsSource: string
@@ -20,11 +20,11 @@ export const useWebGLSetup = (
   const [loading, setLoading] = useState(true);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const programRef = useRef<WebGLProgram | null>(null);
-  const texturesRef = useRef<{ image: WebGLTexture; depth: WebGLTexture } | null>(null);
-  const imagesRef = useRef<{ image: HTMLImageElement; depth: HTMLImageElement } | null>(null);
+  const texturesRef = useRef<{image: WebGLTexture; depth: WebGLTexture} | null>(null);
+  const imagesRef = useRef<{image: HTMLImageElement; depth: HTMLImageElement} | null>(null);
 
   useEffect(() => {
-    if (!canvasRef.current || !depthMapUrl || !textureImageUrl) return;
+    if (!canvasRef.current || !depthMapUri || !textureImageUrl) return;
 
     const canvas = canvasRef.current;
     const gl = canvas.getContext('webgl');
@@ -33,7 +33,7 @@ export const useWebGLSetup = (
 
     setLoading(true);
 
-    Promise.all([dataUriToImage(textureImageUrl), dataUriToImage(depthMapUrl)])
+    Promise.all([dataUriToImage(textureImageUrl), dataUriToImage(depthMapUri)])
       .then(([img, depthImg]) => {
         // Sync canvas size to image
         const [w, h] = imageHelper.getImageSize(img);
@@ -50,18 +50,15 @@ export const useWebGLSetup = (
         const texImage = createTexture(gl, img);
         const texDepth = createTexture(gl, depthImg);
         if (!texImage || !texDepth) return;
-        
-        texturesRef.current = { image: texImage, depth: texDepth };
-        imagesRef.current = { image: img, depth: depthImg };
+
+        texturesRef.current = {image: texImage, depth: texDepth};
+        imagesRef.current = {image: img, depth: depthImg};
 
         setLoading(false);
       })
       .catch(err => console.error("WebGL Setup Error:", err));
 
-    return () => {
-      // Basic cleanup can happen here if needed
-    };
-  }, [depthMapUrl, textureImageUrl, vsSource, fsSource]);
+  }, [depthMapUri, textureImageUrl, vsSource, fsSource]);
 
   return {
     loading,
