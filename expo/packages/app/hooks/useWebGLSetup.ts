@@ -28,6 +28,8 @@ export const useWebGLSetup = (
   useEffect(() => {
     if (!canvasRef.current || !depthMapUrl || !textureImageUrl) return;
 
+    imageHelper.reset();
+
     const canvas = canvasRef.current;
     const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
     if (!gl) return;

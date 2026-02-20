@@ -41,8 +41,16 @@ export const useRelighting = (
   useEffect(() => {
     if (!gl || !program || !textures || !images || loading) return;
 
+    // Clean up old buffers if they exist
+    if (bufferRef.current.positionBuffer) gl.deleteBuffer(bufferRef.current.positionBuffer);
+    if (bufferRef.current.normalBuffer) gl.deleteBuffer(bufferRef.current.normalBuffer);
+    if (bufferRef.current.lightPosBuffer) gl.deleteBuffer(bufferRef.current.lightPosBuffer);
+    bufferRef.current = {};
+
     lightProgramRef.current = createProgram(gl, lightVertexShader, lightFragmentShader);
     
+    // Explicitly reset before calculating to be 100% sure
+    imageHelper.reset();
     const mesh = new Float32Array(imageHelper.getMesh(5, images.depth));
     const normals = new Float32Array(imageHelper.getNormals(images.depth));
     vertexCountRef.current = mesh.length / 3;
