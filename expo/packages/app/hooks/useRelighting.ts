@@ -5,7 +5,7 @@ import { relightingVertexShader, relightingFragmentShader } from '../utils/shade
 import { lightVertexShader, lightFragmentShader } from '../utils/shaders/light';
 import { createProgram, createBuffer } from '../utils/webgl_helpers';
 
-interface WebGLHook {
+interface RelightingHook {
   lightPos: number[];
   lightIntensity: number;
   textureLighting: number;
@@ -15,11 +15,11 @@ interface WebGLHook {
   setTextureLighting: (lighting: number) => void;
 }
 
-export const useWebGL = (
+export const useRelighting = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
   depthImageUri: string,
   textureImageUri: string
-): WebGLHook => {
+): RelightingHook => {
   const [lightPos, setLightPos] = useState([0, 0, -1]);
   const [lightIntensity, setLightIntensity] = useState(0.4);
   const [textureLighting, setTextureLighting] = useState(3);
@@ -33,38 +33,37 @@ export const useWebGL = (
   );
 
   useEffect(() => {
+    // This effect now handles both initialization (if needed) and drawing.
+    // The setup logic will only run once when textures/images are ready.
+    
     if (!gl || !program || !textures || !images || loading) return;
 
-    // 1. Compile Light Program (Setup only handles main program)
-    lightProgramRef.current = createProgram(gl, lightVertexShader, lightFragmentShader);
+    // --- 1. Initialization (Run only once when program changes) ---
+    if (!lightProgramRef.current) {
+        lightProgramRef.current = createProgram(gl, lightVertexShader, lightFragmentShader);
+        
+        const mesh = new Float32Array(imageHelper.getMesh(5, images.depth));
+        const normals = new Float32Array(imageHelper.getNormals(images.depth));
+        vertexCountRef.current = mesh.length / 3;
 
-    // 2. Setup Mesh Buffers
-    const mesh = new Float32Array(imageHelper.getMesh(5, images.depth));
-    const normals = new Float32Array(imageHelper.getNormals(images.depth));
-    vertexCountRef.current = mesh.length / 3;
+        bufferRef.current.positionBuffer = createBuffer(gl, mesh);
+        bufferRef.current.normalBuffer = createBuffer(gl, normals);
+        bufferRef.current.lightPosBuffer = gl.createBuffer(); 
 
-    bufferRef.current.positionBuffer = createBuffer(gl, mesh);
-    bufferRef.current.normalBuffer = createBuffer(gl, normals);
-    bufferRef.current.lightPosBuffer = gl.createBuffer(); // Dynamic
+        program.positionAttr = gl.getAttribLocation(program, 'vPos');
+        program.normalAttr = gl.getAttribLocation(program, 'normal');
+        program.imgSizeUnif = gl.getUniformLocation(program, 'imgSize');
+        program.minMaxZUnif = gl.getUniformLocation(program, 'minMaxZ');
+        program.lightPosUnif = gl.getUniformLocation(program, 'lightPos');
+        program.texSamplerUnif = gl.getUniformLocation(program, 'texSampler');
+        program.depthSamplerUnif = gl.getUniformLocation(program, 'depthSampler');
+        program.textureLightingUnif = gl.getUniformLocation(program, 'textureLighting');
+        program.lightIntensityUnif = gl.getUniformLocation(program, 'lightIntensity');
+    }
 
-    // 3. Cache Locations
-    program.positionAttr = gl.getAttribLocation(program, 'vPos');
-    program.normalAttr = gl.getAttribLocation(program, 'normal');
-    
-    // Cache uniform locations
-    program.imgSizeUnif = gl.getUniformLocation(program, 'imgSize');
-    program.minMaxZUnif = gl.getUniformLocation(program, 'minMaxZ');
-    program.lightPosUnif = gl.getUniformLocation(program, 'lightPos');
-    program.texSamplerUnif = gl.getUniformLocation(program, 'texSampler');
-    program.depthSamplerUnif = gl.getUniformLocation(program, 'depthSampler');
-    program.textureLightingUnif = gl.getUniformLocation(program, 'textureLighting');
-    program.lightIntensityUnif = gl.getUniformLocation(program, 'lightIntensity');
-
-  }, [loading, gl, program, textures, images]);
-
-  const drawFrame = () => {
+    // --- 2. Draw Frame ---
     const lightProg = lightProgramRef.current;
-    if (!gl || !program || !lightProg || loading || !images) return;
+    if (!lightProg) return;
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clearColor(0, 0, 0, 1);
@@ -83,8 +82,10 @@ export const useWebGL = (
     gl.enableVertexAttribArray(program.normalAttr);
     gl.vertexAttribPointer(program.normalAttr, 3, gl.FLOAT, false, 0, 0);
 
-    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, textures!.image);
-    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, textures!.depth);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, textures.image);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, textures.depth);
 
     gl.uniform2fv(program.imgSizeUnif, new Float32Array(imageHelper.getImageSize(images.depth)));
     gl.uniform2fv(program.minMaxZUnif, new Float32Array([imageHelper.minZ, imageHelper.maxZ]));
@@ -101,17 +102,17 @@ export const useWebGL = (
     if (textureLighting !== 1) {
         gl.useProgram(lightProg);
         gl.bindBuffer(gl.ARRAY_BUFFER, bufferRef.current.lightPosBuffer);
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(lightPos)); 
+        // Wait, bufferData is safer for dynamic if size changes but here it's always 3 floats
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lightPos), gl.DYNAMIC_DRAW);
+        
         const lPosAttr = gl.getAttribLocation(lightProg, 'position');
         gl.enableVertexAttribArray(lPosAttr);
         gl.vertexAttribPointer(lPosAttr, 3, gl.FLOAT, false, 0, 0);
         gl.drawArrays(gl.POINTS, 0, 1);
     }
-  };
 
-  useEffect(() => {
-    if (!loading) drawFrame();
-  }, [loading, lightPos, lightIntensity, textureLighting]);
+  }, [loading, gl, program, textures, images, lightPos, lightIntensity, textureLighting]);
 
   return { lightPos, lightIntensity, textureLighting, loading, setLightPos, setLightIntensity, setTextureLighting };
 };

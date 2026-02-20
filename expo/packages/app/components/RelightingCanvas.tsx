@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import { useWebGL } from '../hooks/useWebGL';
+import { useRelighting } from '../hooks/useRelighting';
 import Loader from './Loader';
 import Slider from './Slider';
 
@@ -22,7 +22,7 @@ const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImag
     setLightPos,
     setLightIntensity,
     setTextureLighting,
-  } = useWebGL(
+  } = useRelighting(
     canvasRef,
     depthMapUrl,
     textureImageUrl
