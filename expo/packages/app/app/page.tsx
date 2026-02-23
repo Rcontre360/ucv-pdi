@@ -5,9 +5,10 @@ import RelightingCanvas from '../components/RelightingCanvas';
 import BokehCanvas from '../components/BokehCanvas';
 import FogCanvas from '../components/FogCanvas';
 import EdgesCanvas from '../components/EdgesCanvas';
+import UnderwaterCanvas from '../components/UnderwaterCanvas';
 import DepthMapOverlay from '../components/DepthMapOverlay';
 
-type Mode = 'relighting' | 'bokeh' | 'fog' | 'edges';
+type Mode = 'relighting' | 'bokeh' | 'fog' | 'edges' | 'underwater';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -44,6 +45,8 @@ export default function Home() {
         return <FogCanvas depthMapUrl={userDepthMap} textureImageUrl={userImage} />;
       case 'edges':
         return <EdgesCanvas depthMapUrl={userDepthMap} textureImageUrl={userImage} />;
+      case 'underwater':
+        return <UnderwaterCanvas depthMapUrl={userDepthMap} textureImageUrl={userImage} />;
       default:
         return null;
     }
@@ -168,6 +171,15 @@ export default function Home() {
                   }`}
               >
                 Depth Edges
+              </button>
+              <button
+                onClick={() => setActiveMode('underwater')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none ml-2 ${activeMode === 'underwater'
+                  ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+              >
+                Underwater
               </button>
 
               <div className="h-6 w-px bg-gray-300 mx-4 hidden sm:block"></div>
