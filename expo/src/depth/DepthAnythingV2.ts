@@ -1,4 +1,4 @@
-import {DepthService, DepthMap} from "src/core/depth";
+import {DepthService, DepthMap} from "src/depth";
 import Replicate from "replicate";
 
 export class DepthAnythingV2 implements DepthService {

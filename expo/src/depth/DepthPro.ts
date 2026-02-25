@@ -1,4 +1,4 @@
-import {DepthService, DepthMap} from "src/core/depth";
+import {DepthService, DepthMap} from "src/depth";
 import fs from "fs";
 import Replicate from "replicate";
 

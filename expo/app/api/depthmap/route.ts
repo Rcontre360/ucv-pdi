@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Core } from 'src/core/Core';
-import { DepthAnythingV2 } from 'src/core/depth/DepthAnythingV2';
-import { PointCloudGenerator } from 'src/core/points';
+import { DepthAnythingV2 } from 'src/depth/DepthAnythingV2';
 import { logger } from 'src/utils/Logger';
 
 export async function POST(req: Request) {
@@ -27,10 +25,8 @@ export async function POST(req: Request) {
     }
 
     const depthService = new DepthAnythingV2(REPLICATE_API_TOKEN);
-    const pointCloudGenerator = new PointCloudGenerator(1.0, 15.0, 0.1);
-    const core = new Core(depthService, pointCloudGenerator);
-
-    const depthMapDataUri = await core.processImage(imageData);
+    const depthMapDataUri = await depthService.getDepthMap(imageData);
+    
     logger.info('Generated depth map URI successfully');
 
     return NextResponse.json({ depthMap: depthMapDataUri });

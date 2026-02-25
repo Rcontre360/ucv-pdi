@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Button from './Button';
 
 interface SaveImageButtonProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -25,16 +26,16 @@ const SaveImageButton: React.FC<SaveImageButtonProps> = ({ canvasRef, filenamePr
 
   return (
     <div className="pt-6 border-t border-gray-200">
-      <button
+      <Button
         onClick={handleSaveImage}
         disabled={disabled}
-        className="w-full flex items-center justify-center px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95"
+        className="w-full"
       >
         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
         </svg>
         Save Resulting Image
-      </button>
+      </Button>
     </div>
   );
 };
