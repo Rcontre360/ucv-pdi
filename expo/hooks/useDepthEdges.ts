@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useWebGLSetup } from './useWebGLSetup';
 import { createBuffer } from '../utils/webgl_helpers';
-import { edgesVertexShader, edgesFragmentShader } from '../utils/shaders/edges';
+import {basicVertexShader} from '../utils/shaders/common';
+import { edgesFragmentShader } from '../utils/shaders/edges';
 
 interface DepthEdgeHook {
   threshold: number;
@@ -21,7 +22,7 @@ export const useDepthEdges = (
   const [thickness, setThickness] = useState(1.0);
 
   const { loading, gl, program, textures, aspectRatio } = useWebGLSetup(
-    canvasRef, depthMapUrl, textureImageUrl, edgesVertexShader, edgesFragmentShader
+    canvasRef, depthMapUrl, textureImageUrl, basicVertexShader, edgesFragmentShader
   );
 
   useEffect(() => {

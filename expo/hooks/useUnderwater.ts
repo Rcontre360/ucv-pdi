@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useWebGLSetup } from './useWebGLSetup';
-import { underwaterVertexShader, underwaterFragmentShader } from '../utils/shaders/underwater';
+import {basicVertexShader} from '../utils/shaders/common';
+import { underwaterFragmentShader } from '../utils/shaders/underwater';
 import { createBuffer } from '../utils/webgl_helpers';
 
 interface UnderwaterHook {
@@ -21,7 +22,7 @@ export const useUnderwater = (
   const [redAbsorb, setRedAbsorb] = useState(0.8);
   
   const { loading, gl, program, textures, aspectRatio } = useWebGLSetup(
-    canvasRef, depthMapUrl, textureImageUrl, underwaterVertexShader, underwaterFragmentShader
+    canvasRef, depthMapUrl, textureImageUrl, basicVertexShader, underwaterFragmentShader
   );
 
   useEffect(() => {

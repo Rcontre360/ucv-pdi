@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react';
 import {useWebGLSetup} from './useWebGLSetup';
-import {bokehVertexShader, bokehFragmentShader} from '../utils/shaders/bokeh';
+import {basicVertexShader} from '../utils/shaders/common';
+import {bokehFragmentShader} from '../utils/shaders/bokeh';
 import {createBuffer} from '../utils/webgl_helpers';
 
 interface BokehHook {
@@ -18,7 +19,7 @@ export const useBokeh = (
   const [focusDepth, setFocusDepth] = useState(0.5);
 
   const {loading, gl, program, textures, aspectRatio} = useWebGLSetup(
-    canvasRef, depthMapUrl, textureImageUrl, bokehVertexShader, bokehFragmentShader
+    canvasRef, depthMapUrl, textureImageUrl, basicVertexShader, bokehFragmentShader
   );
 
   useEffect(() => {

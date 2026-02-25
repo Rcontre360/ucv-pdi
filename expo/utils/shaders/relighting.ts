@@ -90,7 +90,7 @@ export const relightingFragmentShader = `
     }
 `;
 
-// --- Light Visualizer Shaders ---
+// light ball
 export const lightVertexShader = `
     precision highp float;
     attribute vec3 position;

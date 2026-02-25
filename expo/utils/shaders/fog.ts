@@ -1,13 +1,3 @@
-export const fogVertexShader = `
-  attribute vec2 position;
-  varying vec2 texCoords;
-  void main() {
-    texCoords = (position + 1.0) / 2.0;
-    texCoords.y = 1.0 - texCoords.y; // Flip Y
-    gl_Position = vec4(position, 0.0, 1.0);
-  }
-`;
-
 export const fogFragmentShader = `
   precision mediump float;
   uniform sampler2D u_image;
@@ -24,10 +14,8 @@ export const fogFragmentShader = `
     vec4 depthVal = texture2D(u_depth, texCoords);
     float depth = depthVal.r;
     
-    // Linear Fog
     float fogFactor = smoothstep(u_fogNear, u_fogFar, depth);
     
-    // Mix with density
     fogFactor *= u_fogDensity;
     fogFactor = clamp(fogFactor, 0.0, 1.0);
     

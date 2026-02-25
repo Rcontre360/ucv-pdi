@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useWebGLSetup } from './useWebGLSetup';
-import { fogVertexShader, fogFragmentShader } from '../utils/shaders/fog';
+import {basicVertexShader} from '../utils/shaders/common';
+import { fogFragmentShader } from '../utils/shaders/fog';
 import { createBuffer } from '../utils/webgl_helpers';
 
 interface FogHook {
@@ -24,7 +25,7 @@ export const useFog = (
   const [fogFar, setFogFar] = useState(1.0);
 
   const { loading, gl, program, textures, aspectRatio } = useWebGLSetup(
-    canvasRef, depthMapUrl, textureImageUrl, fogVertexShader, fogFragmentShader
+    canvasRef, depthMapUrl, textureImageUrl, basicVertexShader, fogFragmentShader
   );
 
   useEffect(() => {

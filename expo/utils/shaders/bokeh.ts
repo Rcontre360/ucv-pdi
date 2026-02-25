@@ -1,13 +1,3 @@
-export const bokehVertexShader = `
-  attribute vec2 position;
-  varying vec2 texCoords;
-  void main() {
-    texCoords = (position + 1.0) / 2.0;
-    texCoords.y = 1.0 - texCoords.y; // Flip Y for texture
-    gl_Position = vec4(position, 0.0, 1.0);
-  }
-`;
-
 export const bokehFragmentShader = `
   precision mediump float;
   uniform sampler2D u_image;
@@ -30,10 +20,8 @@ export const bokehFragmentShader = `
         return;
     }
 
-    // Limit max blur to prevent performance kill
     float radius = clamp(blur, 0.0, 0.05); 
     
-    // Box blur kernel
     for (float x = -2.0; x <= 2.0; x++) {
       for (float y = -2.0; y <= 2.0; y++) {
         vec2 offset = vec2(x, y) * radius;
