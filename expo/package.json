@@ -1,23 +1,33 @@
 {
-  "name": "pdi-depth-workspace",
+  "name": "pdi-depth-app",
+  "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "packages/app",
-    "packages/core"
-  ],
   "scripts": {
-    "dev:app": "bun --filter app dev",
-    "build:app": "bun --filter app build"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "dependencies": {
-    "@types/three": "^0.183.0",
+    "dotenv": "^17.3.1",
+    "gl-matrix": "^3.4.4",
+    "jimp": "^1.6.0",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "replicate": "^1.4.0",
     "three": "^0.183.0",
     "uuid": "^13.0.0",
     "zod": "^3.23.3"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20.0.0",
-    "eslint": "^9.0.0"
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/three": "^0.183.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "16.1.6",
+    "tailwindcss": "^4",
+    "typescript": "^5.0.0"
   }
 }
