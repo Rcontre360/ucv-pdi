@@ -18,6 +18,7 @@ export const underwaterFragmentShader = `
     float greenFactor = exp(-dist * u_redAbsorb * 2.5);
     float blueFactor = exp(-dist * u_redAbsorb * 0.8);
     
+    vec3 waterColor = vec3(0.0, 0.2, 0.3);
     vec3 absorbed = color;
     absorbed.r *= redFactor;
     absorbed.g *= greenFactor;
