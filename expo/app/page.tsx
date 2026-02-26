@@ -198,8 +198,10 @@ export default function Home() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden min-h-[600px] p-6">
-          {content}
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden min-h-[600px] p-6 flex flex-col">
+          <div className="flex-1 w-full flex flex-col">
+            {content}
+          </div>
         </div>
       </main>
 

@@ -23,14 +23,16 @@ const BokehCanvas: React.FC<BokehCanvasProps> = ({depthMapUrl, textureImageUrl})
   return (
     <>
       {loading && <Loader />}
-      <div className="flex flex-col lg:flex-row gap-8 h-full">
+      <div className="flex flex-col lg:flex-row gap-8 h-full flex-1 w-full">
         {/* Canvas Section */}
         <div className="w-full lg:w-2/3 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden min-h-[400px]">
-          <canvas
-            ref={canvasRef}
-            style={{aspectRatio: `${aspectRatio}`}}
-            className="max-w-full max-h-[70vh] object-contain block"
-          ></canvas>
+          <div className="relative w-full h-full flex items-center justify-center">
+            <canvas
+              ref={canvasRef}
+              style={{aspectRatio: `${aspectRatio}`}}
+              className="max-w-full max-h-[70vh] object-contain block shadow-md"
+            ></canvas>
+          </div>
         </div>
 
         {/* Controls Section */}

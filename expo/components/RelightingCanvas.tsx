@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
-import { useRelighting } from '../hooks/useRelighting';
+import {useRef, useEffect} from 'react';
+import {useRelighting} from '../hooks/useRelighting';
 import Loader from './Loader';
 import Slider from './Slider';
 import SaveImageButton from './SaveImageButton';
@@ -12,10 +12,10 @@ interface WebGLCanvasProps {
   processing: boolean;
 }
 
-const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImageUrl, processing }) => {
+const RelightingCanvas: React.FC<WebGLCanvasProps> = ({depthMapUrl, textureImageUrl, processing}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const {
     lightPos,
     lightIntensity,
@@ -32,9 +32,9 @@ const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImag
   );
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
+    const {id, value} = e.target;
     const val = parseFloat(value);
-    
+
     setLightPos((prev) => {
       const next = [...prev];
       if (id === 'xlightSlider') next[0] = val;
@@ -49,25 +49,25 @@ const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImag
   };
 
   const handleToggleLighting = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { checked } = e.target;
+    const {checked} = e.target;
     setTextureLighting(checked ? 3 : 1);
   };
 
   const handleToggleRelightDepth = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { checked } = e.target;
+    const {checked} = e.target;
     setTextureLighting(checked ? 4 : 1);
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (processing || !canvasRef.current) return;
-    
+
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     const normalizedX = (x / rect.width) * 2 - 1;
-    const normalizedY = -((y / rect.height) * 2 - 1); 
-    
+    const normalizedY = -((y / rect.height) * 2 - 1);
+
     setLightPos((prev) => [normalizedX, normalizedY, prev[2]]);
   };
 
@@ -78,18 +78,18 @@ const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImag
     const handleWheel = (e: WheelEvent) => {
       if (processing) return;
       e.preventDefault();
-      
+
       const zoomSpeed = 0.1;
       const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
-      
+
       setLightPos((prev) => {
         const newZ = Math.max(-1, Math.min(1, prev[2] + delta));
         return [prev[0], prev[1], newZ];
       });
     };
 
-    canvas.addEventListener('wheel', handleWheel, { passive: false });
-    
+    canvas.addEventListener('wheel', handleWheel, {passive: false});
+
     return () => {
       canvas.removeEventListener('wheel', handleWheel);
     };
@@ -98,13 +98,13 @@ const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImag
   return (
     <>
       {loading && <Loader />}
-      <div className="flex flex-col lg:flex-row gap-8 h-full">
+      <div className="flex flex-col lg:flex-row gap-8 h-full flex-1 w-full">
         {/* Canvas Section */}
         <div className="w-full lg:w-2/3 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden min-h-[400px]">
-          <div ref={containerRef} className="relative max-w-full max-h-full">
-             <canvas 
-              ref={canvasRef} 
-              style={{ aspectRatio: `${aspectRatio}` }}
+          <div ref={containerRef} className="relative w-full h-full flex items-center justify-center">
+            <canvas
+              ref={canvasRef}
+              style={{aspectRatio: `${aspectRatio}`}}
               className="max-w-full max-h-[70vh] object-contain cursor-crosshair block shadow-md"
               onClick={handleCanvasClick}
             ></canvas>
@@ -120,14 +120,14 @@ const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImag
               </svg>
               Light Controls
             </h3>
-            
+
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-xs font-mono text-gray-500 mb-2 bg-white p-2 rounded border border-gray-100">
                   <span>POS (X,Y,Z):</span>
                   <span>[{lightPos[0].toFixed(2)}, {lightPos[1].toFixed(2)}, {lightPos[2].toFixed(2)}]</span>
                 </div>
-                
+
                 <Slider
                   id="xlightSlider"
                   label="Horizontal (X)"
@@ -204,13 +204,13 @@ const RelightingCanvas: React.FC<WebGLCanvasProps> = ({ depthMapUrl, textureImag
               </div>
             </div>
 
-            <SaveImageButton 
-              canvasRef={canvasRef} 
-              filenamePrefix="relighted-image" 
-              disabled={processing || loading} 
+            <SaveImageButton
+              canvasRef={canvasRef}
+              filenamePrefix="relighted-image"
+              disabled={processing || loading}
             />
           </div>
-          
+
           <div className="bg-blue-50 p-4 rounded-lg text-xs text-blue-700 border border-blue-100 leading-relaxed shadow-sm">
             <strong>Pro Tip:</strong> You can click/drag on the image to move the light horizontally and vertically, or use the mouse wheel to move it closer or further away.
           </div>
